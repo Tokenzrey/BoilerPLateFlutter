@@ -4,16 +4,16 @@ import 'package:validators/validators.dart';
 
 part 'form_store.g.dart';
 
-class FormStore = _FormStore with _$FormStore;
+class FormStore = FormStoreBase with _$FormStore;
 
-abstract class _FormStore with Store {
+abstract class FormStoreBase with Store {
   // store for handling form errors
   final FormErrorStore formErrorStore;
 
   // store for handling error messages
   final ErrorStore errorStore;
 
-  _FormStore(this.formErrorStore, this.errorStore) {
+  FormStoreBase(this.formErrorStore, this.errorStore) {
     _setupValidations();
   }
 
@@ -43,7 +43,9 @@ abstract class _FormStore with Store {
 
   @computed
   bool get canLogin =>
-      !formErrorStore.hasErrorsInLogin && userEmail.isNotEmpty && password.isNotEmpty;
+      !formErrorStore.hasErrorsInLogin &&
+      userEmail.isNotEmpty &&
+      password.isNotEmpty;
 
   @computed
   bool get canRegister =>
@@ -118,9 +120,9 @@ abstract class _FormStore with Store {
   }
 }
 
-class FormErrorStore = _FormErrorStore with _$FormErrorStore;
+class FormErrorStore = FormErrorStoreBase with _$FormErrorStore;
 
-abstract class _FormErrorStore with Store {
+abstract class FormErrorStoreBase with Store {
   @observable
   String? userEmail;
 

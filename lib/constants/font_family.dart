@@ -1,6 +1,7 @@
 class FontFamily {
   FontFamily._();
 
-  static String productSans = "ProductSans";
-  static String roboto = "Roboto";
+  static const String poppins = 'Poppins';
+  static const String helvetica = 'Helvetica';
+  static const String roboto = 'Roboto';
 }

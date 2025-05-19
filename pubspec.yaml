@@ -10,7 +10,7 @@ description: A flutter boilerplate project created using MobX and Provider.
 version: 1.0.0+1
 
 environment:
-  sdk: '>=3.0.6 <4.0.0'
+  sdk: ">=3.0.6 <4.0.0"
 
 dependencies:
   flutter:
@@ -30,15 +30,15 @@ dependencies:
   event_bus: ^2.0.0
   # F
   flutter_mobx: ^2.0.6+5
+  flutter_lints: ^5.0.0
   # G
-  get_it: ^7.2.0
-  google_fonts: ^4.0.3
+  get_it: ^8.0.3
+  google_fonts: ^6.2.1
   # H
-  http: ^0.13.5
+  http: ^1.3.0
   # I
   intl: ^0.19.0
   # J
-  json_serializable: ^6.6.1
   # K
   # L
   # M
@@ -53,6 +53,7 @@ dependencies:
   shared_preferences: ^2.1.0
   sembast_web: ^2.1.3
   sembast: ^3.4.4
+  shadcn_flutter: ^0.0.34
   # T
   # U
   # V
@@ -60,6 +61,34 @@ dependencies:
   # W
   # X
   xxtea: ^2.1.0
+  json_annotation: ^4.9.0
+  path: ^1.9.1
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+  flutter_secure_storage: ^8.0.0
+  freezed_annotation: ^2.4.4
+  equatable: ^2.0.7
+  hive_generator: ^2.0.1
+  fpdart: ^1.1.1
+  uuid: ^4.5.1
+  synchronized: ^3.3.1
+  bcrypt: ^1.1.3
+  dart_style: ^2.3.8
+  crypto: ^3.0.6
+  pointycastle: ^4.0.0
+  skeletonizer: ^1.4.3
+  file_picker: ^10.1.2
+  image_picker: ^1.1.2
+  mime: ^2.0.0
+  go_router: ^15.1.1
+  provider: ^6.1.5
+  data_widget: ^0.0.2
+  gap: ^3.0.1
+  email_validator: ^3.0.0
+  firebase_core: ^3.13.0
+  firebase_auth: ^5.5.3
+  cloud_firestore: ^5.6.7
+  dartz: ^0.10.1
   # Y
   # Z
 
@@ -71,13 +100,15 @@ dev_dependencies:
   # run below mentioned commands to generate launcher icons
   # flutter packages get
   # flutter packages pub run flutter_launcher_icons:main
-  flutter_launcher_icons: ^0.13.1
+  flutter_launcher_icons: ^0.14.3
   mobx_codegen: ^2.2.0
-  build_runner: ^2.3.3
-  analyzer: ^5.10.0
+  build_runner: ^2.4.15
+  analyzer: ^6.11.0
+  freezed: ^2.5.7
+  json_serializable: ^6.9.0
 
 flutter_icons:
-  image_path: "assets/icons/ic_launcher.png"
+  image_path: "assets/icons/ic_app.png"
   android: true
   ios: true
 
@@ -91,8 +122,28 @@ flutter:
   fonts:
     - family: ProductSans
       fonts:
-        - asset: assets/fonts/Product-Sans-Regular.ttf
-        - asset: assets/fonts/Product-Sans-Italic.ttf
+        # Regular (w400)
+        - asset: assets/fonts/Helvetica.ttf
+          weight: 400
+        - asset: assets/fonts/Helvetica-Oblique.ttf
+          weight: 400
           style: italic
-        - asset: assets/fonts/Product-Sans-Bold.ttf
+
+        # Light (w300)
+        - asset: assets/fonts/helvetica-light.ttf
+          weight: 300
+
+        # Medium (w600)
+        - asset: assets/fonts/helvetica-rounded-bold.otf
+          weight: 600
+
+        # Bold (w700)
+        - asset: assets/fonts/Helvetica-Bold.ttf
           weight: 700
+        - asset: assets/fonts/Helvetica-BoldOblique.ttf
+          weight: 700
+          style: italic
+
+        # ExtraBold (w700)
+        - asset: assets/fonts/helvetica-compressed.otf
+          weight: 600

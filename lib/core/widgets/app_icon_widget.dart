@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 
 class AppIconWidget extends StatelessWidget {
-  final image;
+  final dynamic image;
 
   const AppIconWidget({
-    Key? key,
+    super.key,
     this.image,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

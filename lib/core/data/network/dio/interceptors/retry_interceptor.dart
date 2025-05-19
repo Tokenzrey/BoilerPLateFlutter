@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 
 /// An interceptor that will try to send failed request again
 class RetryInterceptor extends Interceptor {
@@ -34,8 +35,10 @@ class RetryInterceptor extends Interceptor {
       ..addAll(extra.toExtra());
 
     if (shouldLog) {
-      print(
-          '[${err.requestOptions.uri}] An error occurred during request, trying a again (remaining tries: ${extra.retries}, error: ${err.error})');
+      if (kDebugMode) {
+        print(
+            '[${err.requestOptions.uri}] An error occurred during request, trying a again (remaining tries: ${extra.retries}, error: ${err.error})');
+      }
     }
     // We retry with the updated options
     await dio
