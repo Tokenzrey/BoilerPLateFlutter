@@ -1,8 +1,9 @@
+import 'package:boilerplate/core/widgets/components/typography.dart';
 import 'package:boilerplate/data/sharedpref/constants/preferences.dart';
 import 'package:boilerplate/di/service_locator.dart';
-import 'package:boilerplate/presentation/store/language/language_store.dart';
+import 'package:boilerplate/domain/entity/user/user.dart';
+import 'package:boilerplate/presentation/store/auth_firebase/auth_store.dart';
 import 'package:boilerplate/presentation/store/theme/theme_store.dart';
-import 'package:boilerplate/utils/locale/app_localization.dart';
 import 'package:boilerplate/utils/routes/routes_config.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_mobx/flutter_mobx.dart';
@@ -17,28 +18,45 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  //stores:---------------------------------------------------------------------
   final ThemeStore _themeStore = getIt<ThemeStore>();
-  final LanguageStore _languageStore = getIt<LanguageStore>();
+  final AuthStore _authStore = getIt<AuthStore>();
+
+  @override
+  void initState() {
+    super.initState();
+    _authStore.currentUser;
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: _buildAppBar(),
+      body: Observer(
+        builder: (_) {
+          final user = _authStore.currentUser;
+          if (_authStore.isLoading) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (user == null) {
+            return Center(
+              child: AppText('No user data.', variant: TextVariant.titleLarge),
+            );
+          }
+          return _buildUserDetail(user);
+        },
+      ),
     );
   }
 
-  // app bar methods:-----------------------------------------------------------
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
-      title: Text(AppLocalizations.of(context).translate('home_tv_posts')),
+      title: AppText('Home', variant: TextVariant.headlineMedium),
       actions: _buildActions(context),
     );
   }
 
   List<Widget> _buildActions(BuildContext context) {
     return <Widget>[
-      _buildLanguageButton(),
       _buildThemeButton(),
       _buildLogoutButton(),
     ];
@@ -64,79 +82,119 @@ class _HomeScreenState extends State<HomeScreen> {
       onPressed: () {
         SharedPreferences.getInstance().then((preference) {
           preference.setBool(Preferences.isLoggedIn, false);
+          _authStore.logout();
           if (!mounted) return;
           context.go(RoutePaths.unauthorized);
         });
       },
-      icon: Icon(
-        Icons.power_settings_new,
-      ),
+      icon: const Icon(Icons.power_settings_new),
     );
   }
 
-  Widget _buildLanguageButton() {
-    return IconButton(
-      onPressed: () {
-        _buildLanguageDialog();
-      },
-      icon: Icon(
-        Icons.language,
-      ),
-    );
-  }
+  Widget _buildUserDetail(User user) {
+    final formKey = GlobalKey<FormState>();
+    final usernameController = TextEditingController(text: user.username);
+    final fullNameController = TextEditingController(text: user.fullName);
 
-  _buildLanguageDialog() {
-    _showDialog<String>(
-      context: context,
-      child: AlertDialog(
-        // borderRadius: 5.0,
-        // enableFullWidth: true,
-
-        title: Text(
-          AppLocalizations.of(context).translate('home_tv_choose_language'),
-        ),
-        // headerColor: Theme.of(context).primaryColor,
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        // closeButtonColor: Colors.white,
-        // enableCloseButton: true,
-        // enableBackButton: false,
-        // onCloseButtonClicked: () {
-        //   Navigator.of(context).pop();
-        // },
-        actions: _languageStore.supportedLanguages
-            // children: _languageStore.supportedLanguages
-            .map(
-              (object) => ListTile(
-                dense: true,
-                contentPadding: EdgeInsets.all(0.0),
-                title: Text(
-                  object.language,
-                  style: TextStyle(
-                    color: _languageStore.locale == object.locale
-                        ? Theme.of(context).primaryColor
-                        : _themeStore.darkMode
-                            ? Colors.white
-                            : Colors.black,
-                  ),
-                ),
-                onTap: () {
-                  Navigator.of(context).pop();
-                  // change user language based on selected locale
-                  _languageStore.changeLanguage(object.locale);
-                },
+    return Padding(
+      padding: const EdgeInsets.all(24),
+      child: Form(
+        key: formKey,
+        child: ListView(
+          children: [
+            AppText('User Profile', variant: TextVariant.titleLarge),
+            const SizedBox(height: 16),
+            AppText('Email (not editable)', variant: TextVariant.bodyMedium),
+            const SizedBox(height: 4),
+            TextFormField(
+              initialValue: user.email,
+              enabled: false,
+              decoration: const InputDecoration(
+                border: OutlineInputBorder(),
               ),
-            )
-            .toList(),
+            ),
+            const SizedBox(height: 16),
+            AppText('Username', variant: TextVariant.bodyMedium),
+            const SizedBox(height: 4),
+            TextFormField(
+              controller: usernameController,
+              decoration: const InputDecoration(
+                border: OutlineInputBorder(),
+                hintText: 'Username',
+              ),
+              validator: (value) => (value == null || value.trim().isEmpty)
+                  ? 'Enter username'
+                  : null,
+            ),
+            const SizedBox(height: 16),
+            AppText('Full Name', variant: TextVariant.bodyMedium),
+            const SizedBox(height: 4),
+            TextFormField(
+              controller: fullNameController,
+              decoration: const InputDecoration(
+                border: OutlineInputBorder(),
+                hintText: 'Full Name',
+              ),
+              validator: (value) => (value == null || value.trim().isEmpty)
+                  ? 'Enter full name'
+                  : null,
+            ),
+            const SizedBox(height: 24),
+            Observer(
+              builder: (_) => ElevatedButton(
+                onPressed: _authStore.isLoading
+                    ? null
+                    : () async {
+                        if (formKey.currentState?.validate() ?? false) {
+                          final newUsername = usernameController.text.trim();
+                          final newFullName = fullNameController.text.trim();
+                          final success = await _authStore.updateUserData(
+                            newFullName,
+                            newUsername,
+                            null,
+                          );
+                          if (success && mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Profile updated!')),
+                            );
+                          } else if (_authStore.errorMessage != null &&
+                              mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(_authStore.errorMessage!)),
+                            );
+                          }
+                        }
+                      },
+                child: _authStore.isLoading
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : AppText('Update Profile', variant: TextVariant.bodyLarge),
+              ),
+            ),
+            if (_authStore.hasError)
+              Padding(
+                padding: const EdgeInsets.only(top: 16.0),
+                child: AppText(
+                  _authStore.errorMessage ?? '',
+                  variant: TextVariant.bodyMedium,
+                  color: Colors.red,
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            const SizedBox(height: 32),
+            AppText('Roles: ${user.roles.join(', ')}',
+                variant: TextVariant.bodySmall, color: Colors.grey[700]),
+            AppText('Created At: ${user.createdAt}',
+                variant: TextVariant.bodySmall, color: Colors.grey[700]),
+            if (user.lastLogin != null)
+              AppText('Last Login: ${user.lastLogin}',
+                  variant: TextVariant.bodySmall, color: Colors.grey[700]),
+          ],
+        ),
       ),
     );
-  }
-
-  _showDialog<T>({required BuildContext context, required Widget child}) {
-    showDialog<T>(
-      context: context,
-      builder: (BuildContext context) => child,
-    ).then<void>((T? value) {
-      // The value passed to Navigator.pop() or null.
-    });
   }
 }

@@ -61,12 +61,6 @@ class RouteConfig {
 class RoutesConfig {
   static final List<RouteConfig> publicRoutes = [
     RouteConfig(
-      path: RoutePaths.home,
-      name: 'home',
-      builder: (context, params) => const HomeScreen(),
-      requiresAuth: true,
-    ),
-    RouteConfig(
       path: RoutePaths.sandbox,
       name: 'sandbox',
       builder: (context, params) => const SandboxScreen(),
@@ -90,6 +84,12 @@ class RoutesConfig {
   ];
 
   static final List<RouteConfig> authenticatedRoutes = [
+    RouteConfig(
+      path: RoutePaths.home,
+      name: 'home',
+      builder: (context, params) => const HomeScreen(),
+      requiresAuth: true,
+    ),
     RouteConfig(
       path: RoutePaths.profile,
       name: 'profile',

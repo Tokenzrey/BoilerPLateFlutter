@@ -6,11 +6,11 @@ import 'package:boilerplate/core/widgets/empty_app_bar_widget.dart';
 import 'package:boilerplate/core/widgets/progress_indicator_widget.dart';
 import 'package:boilerplate/core/widgets/rounded_button_widget.dart';
 import 'package:boilerplate/core/widgets/textfield_widget.dart';
+import 'package:boilerplate/core/widgets/components/typography.dart';
 import 'package:boilerplate/data/sharedpref/constants/preferences.dart';
 import 'package:boilerplate/presentation/store/theme/theme_store.dart';
-import 'package:boilerplate/presentation/store/auth/login_store.dart';
+import 'package:boilerplate/presentation/store/auth_firebase/auth_store.dart';
 import 'package:boilerplate/utils/device/device_utils.dart';
-import 'package:boilerplate/utils/locale/app_localization.dart';
 import 'package:boilerplate/utils/routes/routes.dart';
 import 'package:boilerplate/utils/routes/routes_config.dart';
 import 'package:flutter/material.dart';
@@ -34,7 +34,7 @@ class LoginScreenState extends State<LoginScreen> {
   // Stores
   final ThemeStore _themeStore = getIt<ThemeStore>();
   final FormStore _formStore = getIt<FormStore>();
-  final UserStore _userStore = getIt<UserStore>();
+  final AuthStore _authStore = getIt<AuthStore>();
 
   // Focus
   late FocusNode _passwordFocusNode;
@@ -46,6 +46,7 @@ class LoginScreenState extends State<LoginScreen> {
   void initState() {
     super.initState();
     _passwordFocusNode = FocusNode();
+    _authStore.resetError();
   }
 
   @override
@@ -69,15 +70,24 @@ class LoginScreenState extends State<LoginScreen> {
               )
             : Center(child: _buildRightSide()),
         Observer(builder: (_) {
-          if (_userStore.success && !_hasNavigated) {
+          if (_authStore.isLoggedIn && !_hasNavigated) {
             _hasNavigated = true;
             _navigateToHome();
           }
+
+          if (_authStore.errorMessage != null &&
+              _authStore.errorMessage!.isNotEmpty) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              _showErrorMessage(_authStore.errorMessage!);
+              _authStore.setErrorMessage(null);
+            });
+          }
+
           return Container();
         }),
         Observer(builder: (_) {
           return Visibility(
-            visible: _userStore.isLoading,
+            visible: _authStore.isLoading,
             child: CustomProgressIndicatorWidget(),
           );
         }),
@@ -103,10 +113,28 @@ class LoginScreenState extends State<LoginScreen> {
           children: <Widget>[
             AppIconWidget(image: 'assets/icons/ic_appicon.png'),
             const SizedBox(height: 24.0),
+            // --- Headline login
+            AppText('Sign In', variant: TextVariant.headlineMedium),
+            const SizedBox(height: 16.0),
             _buildUserIdField(),
             _buildPasswordField(),
-            _buildForgotPasswordButton(),
+            const SizedBox(height: 16.0),
             _buildSignInButton(),
+            _buildRegisterButton(),
+            Observer(builder: (_) {
+              if (_authStore.hasError && _authStore.errorMessage != null) {
+                return Padding(
+                  padding: const EdgeInsets.only(top: 16.0),
+                  child: AppText(
+                    _authStore.errorMessage!,
+                    variant: TextVariant.bodyMedium,
+                    color: Colors.red,
+                    textAlign: TextAlign.center,
+                  ),
+                );
+              }
+              return const SizedBox.shrink();
+            }),
           ],
         ),
       ),
@@ -116,7 +144,7 @@ class LoginScreenState extends State<LoginScreen> {
   Widget _buildUserIdField() {
     return Observer(builder: (_) {
       return TextFieldWidget(
-        hint: AppLocalizations.of(context).translate('login_et_user_email'),
+        hint: 'Login with email',
         inputType: TextInputType.emailAddress,
         icon: Icons.person,
         iconColor: _themeStore.darkMode ? Colors.white70 : Colors.black54,
@@ -133,11 +161,13 @@ class LoginScreenState extends State<LoginScreen> {
   Widget _buildPasswordField() {
     return Observer(builder: (_) {
       return TextFieldWidget(
-        hint: AppLocalizations.of(context).translate('login_et_user_password'),
+        hint: 'Login with password',
         isObscure: true,
         padding: const EdgeInsets.only(top: 16.0),
         icon: Icons.lock,
-        iconColor: _themeStore.darkMode ? Colors.white70 : Colors.black54,
+        iconColor: _themeStore.darkMode
+            ? Colors.white70
+            : const Color.fromARGB(137, 63, 62, 62),
         textController: _passwordController,
         focusNode: _passwordFocusNode,
         onChanged: (_) => _formStore.setPassword(_passwordController.text),
@@ -146,38 +176,40 @@ class LoginScreenState extends State<LoginScreen> {
     });
   }
 
-  Widget _buildForgotPasswordButton() {
-    return Align(
-      alignment: Alignment.centerRight,
-      child: TextButton(
-        style: TextButton.styleFrom(padding: EdgeInsets.zero),
-        child: Text(
-          AppLocalizations.of(context).translate('login_btn_forgot_password'),
-          style: Theme.of(context)
-              .textTheme
-              .bodySmall
-              ?.copyWith(color: Colors.orangeAccent),
-        ),
-        onPressed: () {},
-      ),
-    );
-  }
-
   Widget _buildSignInButton() {
     return RoundedButtonWidget(
-      buttonText: AppLocalizations.of(context).translate('login_btn_sign_in'),
+      buttonText: 'Login',
       buttonColor: Colors.orangeAccent,
       textColor: Colors.white,
-      onPressed: () {
+      onPressed: () async {
         if (_formStore.canLogin) {
           DeviceUtils.hideKeyboard(context);
-          _userStore.login(
+
+          final success = await _authStore.login(
             _userEmailController.text,
             _passwordController.text,
           );
+
+          if (!success && !_hasNavigated) {
+            _hasNavigated = true;
+            _showErrorMessage(_authStore.errorMessage ?? 'Login failed');
+          }
         } else {
           _showErrorMessage('Please fill in all fields');
         }
+      },
+    );
+  }
+
+  Widget _buildRegisterButton() {
+    return TextButton(
+      child: AppText(
+        'Register',
+        variant: TextVariant.bodyMedium,
+        color: Theme.of(context).colorScheme.secondary,
+      ),
+      onPressed: () {
+        AppRouter.push(context, RoutePaths.register);
       },
     );
   }
@@ -196,7 +228,7 @@ class LoginScreenState extends State<LoginScreen> {
       if (!mounted) return;
       FlushbarHelper.createError(
         message: message,
-        title: AppLocalizations.of(context).translate('home_tv_error'),
+        title: 'Error',
         duration: const Duration(seconds: 3),
       ).show(context);
     });

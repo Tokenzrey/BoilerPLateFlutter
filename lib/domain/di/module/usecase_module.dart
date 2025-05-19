@@ -6,6 +6,8 @@ import 'package:boilerplate/domain/usecase/auth_firebase/get_is_logged_in_usecas
 import 'package:boilerplate/domain/usecase/auth_firebase/login_usecase.dart';
 import 'package:boilerplate/domain/usecase/auth_firebase/logout_usecase.dart';
 import 'package:boilerplate/domain/usecase/auth_firebase/register_usecase.dart';
+import 'package:boilerplate/domain/usecase/auth_firebase/save_is_logged_in_usecase.dart';
+import 'package:boilerplate/domain/usecase/auth_firebase/save_user_data_usecase.dart';
 import 'package:boilerplate/domain/usecase/auth_firebase/update_password_usecase.dart';
 import 'package:boilerplate/domain/usecase/auth_firebase/update_user_usecase.dart';
 
@@ -54,6 +56,17 @@ class UseCaseModule {
 
     getIt.registerSingleton<UpdateUserUseCase>(
       UpdateUserUseCase(
+        getIt<AuthFirebaseRepository>(),
+      ),
+    );
+
+    getIt.registerSingleton<SaveLoginStatusUseCase>(
+      SaveLoginStatusUseCase(
+        getIt<AuthFirebaseRepository>(),
+      ),
+    );
+    getIt.registerSingleton<SaveUserDataUseCase>(
+      SaveUserDataUseCase(
         getIt<AuthFirebaseRepository>(),
       ),
     );
