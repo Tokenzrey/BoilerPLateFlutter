@@ -12,8 +12,8 @@ class GetCurrentUserUseCase extends NoParamsUseCase<User?> {
   @override
   Future<Either<Failure, User?>> execute(NoParams params) async {
     try {
-      final currentUser = repository.getCurrentUser();
-      return Right(currentUser);
+      final currentUser = await repository.getCurrentUser();
+      return currentUser;
     } catch (e) {
       return Left(AuthFailure(e.toString()));
     }

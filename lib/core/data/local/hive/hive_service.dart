@@ -651,7 +651,7 @@ class HiveService implements DatabaseService {
     checkInitialized();
 
     if (!Hive.isAdapterRegistered(adapter.typeId)) {
-      Hive.registerAdapter(adapter);
+      Hive.registerAdapter<T>(adapter);
     }
   }
 

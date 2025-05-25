@@ -1,9 +1,9 @@
 import 'dart:async';
 
+import 'package:boilerplate/core/widgets/notification.dart';
 import 'package:boilerplate/di/service_locator.dart';
 import 'package:boilerplate/presentation/pages/my_app.dart';
 import 'package:boilerplate/utils/routes/routes.dart';
-import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
@@ -16,19 +16,12 @@ Future<void> main() async {
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   await setPreferredOrientations();
   await ServiceLocator.configureDependencies();
-  AwesomeNotifications().initialize(
-    null,
-    [
-      NotificationChannel(
-        channelKey: 'basic_channel',
-        channelName: 'Basic Notifications',
-        channelDescription: 'Notifikasi untuk info penting',
-        defaultColor: Colors.deepPurple,
-        importance: NotificationImportance.High,
-        channelShowBadge: true,
-      ),
-    ],
+  await NotificationService().init(
+    onDidReceiveNotificationResponse: (response) {
+      debugPrint('Notification tapped! payload: ${response.payload}');
+    },
   );
+
   runApp(
     Provider<GoRouter>(
       create: (_) => AppRouter.router,

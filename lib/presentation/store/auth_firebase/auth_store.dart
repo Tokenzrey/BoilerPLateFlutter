@@ -21,7 +21,6 @@ part 'auth_store.g.dart';
 class AuthStore = AuthStoreBase with _$AuthStore;
 
 abstract class AuthStoreBase with Store {
-  // constructor:---------------------------------------------------------------
   AuthStoreBase(
     this._registerUserUseCase,
     this._loginUserUseCase,
@@ -36,7 +35,8 @@ abstract class AuthStoreBase with Store {
     this.errorStore,
   ) {
     _setupDisposers();
-
+    // Pastikan init NotificationService di main.dart atau di sini
+    _notificationService.init();
     checkLoginStatus();
   }
 
@@ -52,6 +52,8 @@ abstract class AuthStoreBase with Store {
 
   final FormErrorStore formErrorStore;
   final ErrorStore errorStore;
+
+  final NotificationService _notificationService = NotificationService();
 
   late List<ReactionDisposer> _disposers;
 
@@ -88,6 +90,15 @@ abstract class AuthStoreBase with Store {
   @action
   void setErrorMessage(String? message) {
     errorMessage = message;
+    if (message != null && message.isNotEmpty) {
+      _notificationService.showNotification(
+        id: DateTime.now()
+            .millisecondsSinceEpoch
+            .remainder(1000000), // Gunakan ID unik
+        title: 'Error',
+        body: message,
+      );
+    }
   }
 
   @action
@@ -110,8 +121,8 @@ abstract class AuthStoreBase with Store {
 
     final result = await _registerUserUseCase(params);
 
-    return result.fold(
-      (failure) {
+    return await result.fold(
+      (failure) async {
         setErrorMessage(failure.message);
         setLoading(false);
         return false;
@@ -123,6 +134,12 @@ abstract class AuthStoreBase with Store {
         await _saveLoginStatusUseCase(
             const SaveLoginStatusParams(isLoggedIn: true));
         await _saveUserDataUseCase(SaveUserDataParams(userData: user));
+
+        _notificationService.showNotification(
+          id: DateTime.now().millisecondsSinceEpoch.remainder(1000000),
+          title: 'Registration Successful',
+          body: 'Welcome, ${user.fullName}!',
+        );
 
         setLoading(false);
         return true;
@@ -138,8 +155,8 @@ abstract class AuthStoreBase with Store {
     final params = LoginParams(email: email, password: password);
     final result = await _loginUserUseCase(params);
 
-    return result.fold(
-      (failure) {
+    return await result.fold(
+      (failure) async {
         setErrorMessage(failure.message);
         setLoading(false);
         return false;
@@ -152,13 +169,13 @@ abstract class AuthStoreBase with Store {
             const SaveLoginStatusParams(isLoggedIn: true));
         await _saveUserDataUseCase(SaveUserDataParams(userData: user));
 
-        setLoading(false);
-
-        NotificationHelper.showNotification(
-          title: "Login Berhasil",
-          body: "Selamat datang, ${user.fullName}!",
+        _notificationService.showNotification(
+          id: DateTime.now().millisecondsSinceEpoch.remainder(1000000),
+          title: 'Login Successful',
+          body: 'Hello again, ${user.fullName}!',
         );
 
+        setLoading(false);
         return true;
       },
     );
@@ -178,8 +195,8 @@ abstract class AuthStoreBase with Store {
 
     final result = await _updateUserDataUseCase(params);
 
-    return result.fold(
-      (failure) {
+    return await result.fold(
+      (failure) async {
         setErrorMessage(failure.message);
         setLoading(false);
         return false;
@@ -189,13 +206,13 @@ abstract class AuthStoreBase with Store {
 
         await _saveUserDataUseCase(SaveUserDataParams(userData: user));
 
-        setLoading(false);
-
-        NotificationHelper.showNotification(
-          title: "Profil Diperbarui",
-          body: "Data profil berhasil diperbarui.",
+        _notificationService.showNotification(
+          id: DateTime.now().millisecondsSinceEpoch.remainder(1000000),
+          title: 'Profile Updated',
+          body: 'Your profile has been updated.',
         );
 
+        setLoading(false);
         return true;
       },
     );
@@ -214,13 +231,19 @@ abstract class AuthStoreBase with Store {
 
     final result = await _updatePasswordUseCase(params);
 
-    return result.fold(
-      (failure) {
+    return await result.fold(
+      (failure) async {
         setErrorMessage(failure.message);
         setLoading(false);
         return false;
       },
-      (_) {
+      (_) async {
+        _notificationService.showNotification(
+          id: DateTime.now().millisecondsSinceEpoch.remainder(1000000),
+          title: 'Password Updated',
+          body: 'Your password has been changed successfully.',
+        );
+
         setLoading(false);
         return true;
       },
@@ -234,8 +257,8 @@ abstract class AuthStoreBase with Store {
 
     final result = await _logoutUserUseCase(const NoParams());
 
-    return result.fold(
-      (failure) {
+    return await result.fold(
+      (failure) async {
         setErrorMessage(failure.message);
         setLoading(false);
         return false;
@@ -248,13 +271,13 @@ abstract class AuthStoreBase with Store {
             const SaveLoginStatusParams(isLoggedIn: false));
         await _saveUserDataUseCase(const SaveUserDataParams(userData: null));
 
-        setLoading(false);
-
-        NotificationHelper.showNotification(
-          title: "Logout",
-          body: "Anda telah keluar.",
+        _notificationService.showNotification(
+          id: DateTime.now().millisecondsSinceEpoch.remainder(1000000),
+          title: 'Logged Out',
+          body: 'You have been logged out.',
         );
 
+        setLoading(false);
         return true;
       },
     );
@@ -298,7 +321,6 @@ abstract class AuthStoreBase with Store {
 
   void _setupDisposers() {
     _disposers = [
-      // reaction to be added
       reaction((_) => currentUser, (_) {
         if (kDebugMode) {
           print("Current user changed: $currentUser");

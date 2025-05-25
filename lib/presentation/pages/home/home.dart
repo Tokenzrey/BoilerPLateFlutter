@@ -42,6 +42,7 @@ class _HomeScreenState extends State<HomeScreen> {
               child: AppText('No user data.', variant: TextVariant.titleLarge),
             );
           }
+          debugPrint('User: $user');
           return _buildUserDetail(user);
         },
       ),

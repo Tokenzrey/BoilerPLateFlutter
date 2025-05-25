@@ -26,20 +26,25 @@ if (flutterVersionName == null) {
 }
 
 android {
-    compileSdkVersion 35
+    // Menggunakan nilai dari rootProject.ext yang sudah didefinisikan di android/build.gradle (level project)
+    compileSdkVersion rootProject.ext.compileSdkVersion
+    namespace 'com.iotecksolutions.todoapp'
 
+    sourceSets {
+        main.java.srcDirs += 'src/main/kotlin'
+    }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId "com.iotecksolutions.todoapp"
-        minSdkVersion flutter.minSdkVersion
-        targetSdkVersion 35
+        minSdkVersion rootProject.ext.minSdkVersionProp // Menggunakan dari rootProject.ext
+        targetSdkVersion rootProject.ext.targetSdkVersion // Menggunakan dari rootProject.ext
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
-    
+
     compileOptions {
+        coreLibraryDesugaringEnabled true
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
     }
@@ -50,12 +55,10 @@ android {
 
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig signingConfigs.debug
         }
     }
-    namespace 'com.iotecksolutions.todoapp'
+
     lint {
         disable 'InvalidPackage'
     }
@@ -66,7 +69,8 @@ flutter {
 }
 
 dependencies {
-    testImplementation 'junit:junit:4.12'
-    androidTestImplementation 'androidx.test.ext:junit:1.1.1'
-    androidTestImplementation 'androidx.test.espresso:espresso-core:3.1.0'
+    testImplementation 'junit:junit:4.13.2'
+    androidTestImplementation 'androidx.test.ext:junit:1.2.1'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.6.1'
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.5'
 }

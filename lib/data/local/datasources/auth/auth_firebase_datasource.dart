@@ -173,21 +173,7 @@ class AuthFirebaseDataSource {
     }
   }
 
-  FirebaseUserModel? getCurrentUser() {
-    final user = firebaseAuth.currentUser;
-    if (user != null) {
-      return FirebaseUserModel(
-        id: user.uid,
-        email: user.email ?? '',
-        username: '',
-        fullName: user.displayName ?? '',
-        createdAt: DateTime.now(),
-      );
-    }
-    return null;
-  }
-
-  Future<FirebaseUserModel?> getCompleteCurrentUser() async {
+  Future<FirebaseUserModel?> getCurrentUser() async {
     final user = firebaseAuth.currentUser;
     if (user != null) {
       final userDoc = await firestore.collection('users').doc(user.uid).get();
@@ -195,4 +181,13 @@ class AuthFirebaseDataSource {
     }
     return null;
   }
+
+  // Future<FirebaseUserModel?> getCompleteCurrentUser() async {
+  //   final user = firebaseAuth.currentUser;
+  //   if (user != null) {
+  //     final userDoc = await firestore.collection('users').doc(user.uid).get();
+  //     return FirebaseUserModel.fromFirebase(user, userDoc.data());
+  //   }
+  //   return null;
+  // }
 }

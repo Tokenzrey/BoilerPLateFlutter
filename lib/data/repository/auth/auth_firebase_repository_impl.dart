@@ -78,9 +78,14 @@ class AuthFirebaseRepositoryImpl implements AuthFirebaseRepository {
   }
 
   @override
-  User? getCurrentUser() {
-    final user = dataSource.getCurrentUser();
-    return user != null ? _mapFirebaseUserToUser(user) : null;
+  Future<Either<Failure, User?>> getCurrentUser() async {
+    try {
+      final userModel = await dataSource.getCurrentUser();
+      return Right(
+          userModel != null ? _mapFirebaseUserToUser(userModel) : null);
+    } catch (e) {
+      return Left(AuthFailure(e.toString()));
+    }
   }
 
   @override

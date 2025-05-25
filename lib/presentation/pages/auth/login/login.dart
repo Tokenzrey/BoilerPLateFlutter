@@ -1,13 +1,10 @@
 import 'package:another_flushbar/flushbar_helper.dart';
-import 'package:boilerplate/constants/assets.dart';
-import 'package:boilerplate/core/stores/form/form_store.dart';
-import 'package:boilerplate/core/widgets/app_icon_widget.dart';
 import 'package:boilerplate/core/widgets/empty_app_bar_widget.dart';
 import 'package:boilerplate/core/widgets/progress_indicator_widget.dart';
 import 'package:boilerplate/core/widgets/rounded_button_widget.dart';
 import 'package:boilerplate/core/widgets/textfield_widget.dart';
 import 'package:boilerplate/core/widgets/components/typography.dart';
-import 'package:boilerplate/data/sharedpref/constants/preferences.dart';
+import 'package:boilerplate/core/stores/form/form_store.dart';
 import 'package:boilerplate/presentation/store/theme/theme_store.dart';
 import 'package:boilerplate/presentation/store/auth_firebase/auth_store.dart';
 import 'package:boilerplate/utils/device/device_utils.dart';
@@ -27,19 +24,14 @@ class LoginScreen extends StatefulWidget {
 }
 
 class LoginScreenState extends State<LoginScreen> {
-  // Controllers
   final TextEditingController _userEmailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
-  // Stores
   final ThemeStore _themeStore = getIt<ThemeStore>();
   final FormStore _formStore = getIt<FormStore>();
   final AuthStore _authStore = getIt<AuthStore>();
 
-  // Focus
   late FocusNode _passwordFocusNode;
-
-  // Navigation guard
   bool _hasNavigated = false;
 
   @override
@@ -51,24 +43,95 @@ class LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = _themeStore.darkMode;
     return Scaffold(
-      primary: true,
+      backgroundColor:
+          isDark ? const Color(0xFF17181C) : const Color(0xFFF4F6FB),
       appBar: EmptyAppBar(),
-      body: _buildBody(),
+      body: Center(
+        child: SingleChildScrollView(
+            child: Padding(
+          padding: EdgeInsets.symmetric(vertical: 0, horizontal: 16),
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 400),
+            padding: const EdgeInsets.all(32),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(32),
+              color: isDark ? const Color(0xFF22232C) : Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: isDark
+                      ? Colors.black45
+                      : Colors.grey.withValues(alpha: 0.2),
+                  spreadRadius: 3,
+                  blurRadius: 24,
+                  offset: const Offset(0, 12),
+                ),
+              ],
+            ),
+            child: _buildFormContents(context, isDark),
+          ),
+        )),
+      ),
     );
   }
 
-  Widget _buildBody() {
+  Widget _buildFormContents(BuildContext context, bool isDark) {
     return Stack(
-      children: <Widget>[
-        MediaQuery.of(context).orientation == Orientation.landscape
-            ? Row(
-                children: <Widget>[
-                  Expanded(flex: 1, child: _buildLeftSide()),
-                  Expanded(flex: 1, child: _buildRightSide()),
-                ],
-              )
-            : Center(child: _buildRightSide()),
+      children: [
+        Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Center(
+              child: AppText(
+                'Welcome Back!',
+                variant: TextVariant.headlineMedium,
+                fontWeight: FontWeight.bold,
+                color: isDark ? Colors.white : Colors.black87,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Center(
+              child: AppText(
+                'Sign in to your account',
+                variant: TextVariant.bodyMedium,
+                color: isDark ? Colors.white70 : Colors.grey[700],
+              ),
+            ),
+            const SizedBox(height: 32),
+            _buildUserIdField(),
+            const SizedBox(height: 16),
+            _buildPasswordField(),
+            const SizedBox(height: 24),
+            _buildSignInButton(),
+            const SizedBox(height: 8),
+            _buildRegisterButton(),
+            const SizedBox(height: 8),
+            Observer(builder: (_) {
+              if (_authStore.hasError && _authStore.errorMessage != null) {
+                return Padding(
+                  padding: const EdgeInsets.only(top: 8.0),
+                  child: AppText(
+                    _authStore.errorMessage!,
+                    variant: TextVariant.bodyMedium,
+                    color: Colors.red,
+                    textAlign: TextAlign.center,
+                  ),
+                );
+              }
+              return const SizedBox.shrink();
+            }),
+          ],
+        ),
+        Observer(
+          builder: (_) => Visibility(
+            visible: _authStore.isLoading,
+            child: const Positioned.fill(
+              child: Center(child: CustomProgressIndicatorWidget()),
+            ),
+          ),
+        ),
         Observer(builder: (_) {
           if (_authStore.isLoggedIn && !_hasNavigated) {
             _hasNavigated = true;
@@ -82,71 +145,18 @@ class LoginScreenState extends State<LoginScreen> {
               _authStore.setErrorMessage(null);
             });
           }
-
           return Container();
         }),
-        Observer(builder: (_) {
-          return Visibility(
-            visible: _authStore.isLoading,
-            child: CustomProgressIndicatorWidget(),
-          );
-        }),
       ],
-    );
-  }
-
-  Widget _buildLeftSide() => SizedBox.expand(
-        child: Image.asset(
-          Assets.carBackground,
-          fit: BoxFit.cover,
-        ),
-      );
-
-  Widget _buildRightSide() {
-    return SingleChildScrollView(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24.0),
-        child: Column(
-          mainAxisSize: MainAxisSize.max,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            AppIconWidget(image: 'assets/icons/ic_appicon.png'),
-            const SizedBox(height: 24.0),
-            // --- Headline login
-            AppText('Sign In', variant: TextVariant.headlineMedium),
-            const SizedBox(height: 16.0),
-            _buildUserIdField(),
-            _buildPasswordField(),
-            const SizedBox(height: 16.0),
-            _buildSignInButton(),
-            _buildRegisterButton(),
-            Observer(builder: (_) {
-              if (_authStore.hasError && _authStore.errorMessage != null) {
-                return Padding(
-                  padding: const EdgeInsets.only(top: 16.0),
-                  child: AppText(
-                    _authStore.errorMessage!,
-                    variant: TextVariant.bodyMedium,
-                    color: Colors.red,
-                    textAlign: TextAlign.center,
-                  ),
-                );
-              }
-              return const SizedBox.shrink();
-            }),
-          ],
-        ),
-      ),
     );
   }
 
   Widget _buildUserIdField() {
     return Observer(builder: (_) {
       return TextFieldWidget(
-        hint: 'Login with email',
+        hint: 'Email address',
         inputType: TextInputType.emailAddress,
-        icon: Icons.person,
+        icon: Icons.email_outlined,
         iconColor: _themeStore.darkMode ? Colors.white70 : Colors.black54,
         textController: _userEmailController,
         inputAction: TextInputAction.next,
@@ -161,13 +171,10 @@ class LoginScreenState extends State<LoginScreen> {
   Widget _buildPasswordField() {
     return Observer(builder: (_) {
       return TextFieldWidget(
-        hint: 'Login with password',
+        hint: 'Password',
         isObscure: true,
-        padding: const EdgeInsets.only(top: 16.0),
-        icon: Icons.lock,
-        iconColor: _themeStore.darkMode
-            ? Colors.white70
-            : const Color.fromARGB(137, 63, 62, 62),
+        icon: Icons.lock_outline,
+        iconColor: _themeStore.darkMode ? Colors.white70 : Colors.black54,
         textController: _passwordController,
         focusNode: _passwordFocusNode,
         onChanged: (_) => _formStore.setPassword(_passwordController.text),
@@ -179,7 +186,7 @@ class LoginScreenState extends State<LoginScreen> {
   Widget _buildSignInButton() {
     return RoundedButtonWidget(
       buttonText: 'Login',
-      buttonColor: Colors.orangeAccent,
+      buttonColor: Colors.deepOrangeAccent,
       textColor: Colors.white,
       onPressed: () async {
         if (_formStore.canLogin) {
@@ -202,21 +209,28 @@ class LoginScreenState extends State<LoginScreen> {
   }
 
   Widget _buildRegisterButton() {
-    return TextButton(
-      child: AppText(
-        'Register',
-        variant: TextVariant.bodyMedium,
-        color: Theme.of(context).colorScheme.secondary,
-      ),
-      onPressed: () {
-        AppRouter.push(context, RoutePaths.register);
-      },
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        AppText('Don\'t have an account?', variant: TextVariant.bodySmall),
+        TextButton(
+          child: AppText(
+            'Register',
+            variant: TextVariant.bodyMedium,
+            color: Colors.deepOrangeAccent,
+            fontWeight: FontWeight.bold,
+          ),
+          onPressed: () {
+            AppRouter.push(context, RoutePaths.register);
+          },
+        ),
+      ],
     );
   }
 
   Future<void> _navigateToHome() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(Preferences.isLoggedIn, true);
+    await prefs.setBool('is_logged_in', true);
     if (!mounted) return;
     AppRouter.pushReplacement(context, RoutePaths.home);
   }
