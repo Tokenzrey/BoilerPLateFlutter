@@ -287,6 +287,149 @@ class MyApp extends StatelessWidget {
 }
 ```
 
+---
+
+## 🔔 Notifikasi Lokal
+
+### Penjelasan
+
+Aplikasi ini menggunakan service `NotificationService` untuk menampilkan notifikasi lokal. Notifikasi lokal berguna untuk mengingatkan/menginformasikan user secara langsung dari perangkat, tanpa koneksi internet.
+
+#### Fitur `NotificationService`
+- Inisialisasi plugin sesuai platform (Android/iOS)
+- Meminta izin notifikasi (Android 13+, iOS)
+- Menampilkan notifikasi sederhana
+
+#### Cara Pakai
+
+1. **Inisialisasi** (pada saat aplikasi mulai, misal di `main()`):
+
+    ```dart
+    await NotificationService().init();
+    ```
+
+2. **Menampilkan Notifikasi**:
+
+    ```dart
+    NotificationService().showNotification(
+      id: 0,
+      title: 'Judul Notifikasi',
+      body: 'Ini isi notifikasi',
+    );
+    ```
+
+#### Catatan Penting
+
+- **Android 13+**: Izin notifikasi (`POST_NOTIFICATIONS`) harus diminta secara eksplisit (sudah di-handle di service).
+- **iOS**: Izin notifikasi juga diminta otomatis.
+- Tambahkan permission terkait di `AndroidManifest.xml` dan `Info.plist` (iOS).
+
+#### Contoh Implementasi Service
+
+```dart
+// Ringkasan implementasi NotificationService
+await NotificationService().init();
+await NotificationService().showNotification(
+  id: 1,
+  title: 'Hello!',
+  body: 'Selamat datang di aplikasi ini.'
+);
+```
+
+#### Screenshoot
+<div align="center" style="display: flex; gap: 16px; flex-wrap: wrap; justify-content: center;">
+
+<img src="https://github.com/user-attachments/assets/25308101-d064-4393-8c1a-84ae73020812" alt="Screenshot 1" width="230" style="margin: 8px; border-radius: 12px; box-shadow: 0 2px 8px #0001;">
+<img src="https://github.com/user-attachments/assets/a45ce413-1c28-41bb-ab01-84e3fe1c5465" alt="Screenshot 2" width="230" style="margin: 8px; border-radius: 12px; box-shadow: 0 2px 8px #0001;">
+<img src="https://github.com/user-attachments/assets/5b10c1ad-8bd7-482f-b51b-9759e6b10d7f" alt="Screenshot 3" width="230" style="margin: 8px; border-radius: 12px; box-shadow: 0 2px 8px #0001;">
+
+</div>
+
+## 🔥 Integrasi Firebase
+
+### Penjelasan
+
+Aplikasi ini telah terintegrasi dengan **Firebase** untuk kebutuhan otentikasi dan database cloud (Firestore).  
+Konfigurasi multi-platform dikelola melalui file `firebase_options.dart` yang di-generate otomatis oleh FlutterFire CLI.
+
+#### File Penting
+
+- **lib/core/data/network/firebase/firebase_options.dart**  
+  Berisi konfigurasi kredensial Firebase untuk Android, iOS, web, macOS, Windows (lihat contoh di bawah).
+
+- **lib/data/di/module/network_module.dart**  
+  Fungsi `_configureFirebase()` untuk inisialisasi dan registrasi singleton `FirebaseAuth` dan `FirebaseFirestore` pada service locator (getIt).
+
+- **lib/data/local/models/user_model.dart**  
+  Model user menggunakan [freezed](https://pub.dev/packages/freezed) & [Hive](https://pub.dev/packages/hive) untuk serialisasi & penyimpanan lokal.
+
+- **lib/data/repository/auth/auth_firebase_repository_impl.dart**  
+  Implementasi repository autentikasi: register, login, update profile, update password, logout, dsb.
+
+### Cara Inisialisasi Firebase
+
+1. **Konfigurasi firebase_options.dart**  
+   (Sudah otomatis ter-generate, contoh cuplikan:)
+   ```dart
+   await Firebase.initializeApp(
+     options: DefaultFirebaseOptions.currentPlatform,
+   );
+   ```
+
+2. **Registrasi di Service Locator**  
+   (Di dalam `network_module.dart`)
+   ```dart
+   getIt.registerSingleton<FirebaseAuth>(FirebaseAuth.instance);
+   getIt.registerSingleton<FirebaseFirestore>(FirebaseFirestore.instance);
+   ```
+
+3. **Penggunaan di Repository**  
+   Lakukan operasi autentikasi atau database lewat repository, misal:
+   ```dart
+   final result = await authFirebaseRepository.login(email, password);
+   result.fold(
+     (failure) => ...,
+     (user) => ...,
+   );
+   ```
+
+### Contoh firebase_options.dart (ringkasan)
+
+```dart
+class DefaultFirebaseOptions {
+  static FirebaseOptions get currentPlatform => ...; // logic platform
+  static const FirebaseOptions android = FirebaseOptions(
+    apiKey: 'xxx',
+    appId: 'xxx',
+    // dst
+  );
+  // platform lain...
+}
+```
+
+---
+
+## 📦 Struktur File Terkait
+
+```
+lib/
+├─ core/
+│   └─ widgets/
+│       └─ notification.dart      # Service notifikasi lokal
+│
+├─ core/data/network/firebase/
+│   └─ firebase_options.dart      # Konfigurasi multi-platform Firebase
+│
+├─ data/di/module/
+│   └─ network_module.dart        # Inisialisasi & Registrasi Firebase
+│
+├─ data/local/models/
+│   └─ user_model.dart            # Model user (freezed + Hive)
+│
+├─ data/repository/auth/
+│   └─ auth_firebase_repository_impl.dart # Repository autentikasi
+```
+
 ## Wiki
 
 Checkout [wiki](https://github.com/zubairehman/flutter-boilerplate-project/wiki) for more info
