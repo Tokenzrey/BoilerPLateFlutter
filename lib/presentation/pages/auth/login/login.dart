@@ -221,7 +221,7 @@ class LoginScreenState extends State<LoginScreen> {
             fontWeight: FontWeight.bold,
           ),
           onPressed: () {
-            AppRouter.push(context, RoutePaths.register);
+            AppRouter.push(context, RoutePaths.comicCardSandbox);
           },
         ),
       ],

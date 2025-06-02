@@ -4,6 +4,7 @@ import 'package:boilerplate/presentation/pages/sandbox/button_sandbox.dart';
 import 'package:boilerplate/presentation/pages/sandbox/popover_sandbox.dart';
 // import 'package:boilerplate/presentation/pages/sandbox/select_sandbox.dart';
 import 'package:boilerplate/presentation/pages/sandbox/typography_sandbox.dart';
+import 'package:boilerplate/presentation/pages/sandbox/comic_card_sandbox.dart';
 import 'package:flutter/material.dart';
 
 class SandboxScreen extends StatefulWidget {
@@ -21,19 +22,20 @@ class _SandboxScreenState extends State<SandboxScreen> {
       body: ListView(
         padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
         children: [
-          const SizedBox(height: 200),
-          const TypographyExamplePage(),
-          const SizedBox(height: 200),
-          const ButtonSandboxPage(),
-          const SizedBox(height: 200),
-          const PopoverSandbox(),
-          const SizedBox(height: 200),
+          // const SizedBox(height: 200),
+          // const TypographyExamplePage(),
+          // const SizedBox(height: 200),
+          // const ButtonSandboxPage(),
+          // const SizedBox(height: 200),
+          // const PopoverSandbox(),
+          // const SizedBox(height: 200),
           // const SelectSandbox(),
           const SizedBox(height: 200),
-          const SizedBox(height: 200),
-          const SizedBox(height: 200),
-          const AnimationSandboxPage(),
-          const SizedBox(height: 200),
+          const ComicCardPage(),
+          // const SizedBox(height: 200),
+          // const SizedBox(height: 200),
+          // const AnimationSandboxPage(),
+          // const SizedBox(height: 200),
         ],
       ),
     );
