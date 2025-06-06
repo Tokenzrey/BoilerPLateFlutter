@@ -5,7 +5,6 @@ import 'package:boilerplate/presentation/pages/auth/login/login.dart';
 import 'package:boilerplate/presentation/pages/sandbox/sandbox_page.dart';
 import 'package:boilerplate/presentation/pages/users/profile/profile.dart';
 import 'package:boilerplate/presentation/pages/users/profile_detail/profile_detail.dart';
-import 'package:boilerplate/presentation/pages/sandbox/comic_card_sandbox.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -17,7 +16,6 @@ class RoutePaths {
   static const String profile = '/profile';
   static const String profileDetails = '/profile/:id';
   static const String unauthorized = '/unauthorized';
-  static const String comicCardSandbox = '/sandbox/comic-card';
   // static const String adminDashboard = '/admin/dashboard';
   // static const String adminUsers = '/admin/users';
 }
@@ -82,11 +80,6 @@ class RoutesConfig {
       path: RoutePaths.unauthorized,
       name: 'unauthorized',
       builder: (context, params) => const UnauthorizedScreen(),
-    ),
-    RouteConfig(
-      path: RoutePaths.comicCardSandbox,
-      name: 'comicCardSandbox',
-      builder: (context, params) => const ComicCardPage(),
     ),
   ];
 

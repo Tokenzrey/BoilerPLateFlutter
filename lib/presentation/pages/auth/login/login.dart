@@ -108,6 +108,16 @@ class LoginScreenState extends State<LoginScreen> {
             const SizedBox(height: 8),
             _buildRegisterButton(),
             const SizedBox(height: 8),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.grey[800],
+                foregroundColor: Colors.white,
+              ),
+              onPressed: () {
+                AppRouter.push(context, RoutePaths.sandbox);
+              },
+              child: const Text("Go to Sandbox"),
+            ),
             Observer(builder: (_) {
               if (_authStore.hasError && _authStore.errorMessage != null) {
                 return Padding(
@@ -221,7 +231,7 @@ class LoginScreenState extends State<LoginScreen> {
             fontWeight: FontWeight.bold,
           ),
           onPressed: () {
-            AppRouter.push(context, RoutePaths.comicCardSandbox);
+            AppRouter.push(context, RoutePaths.register);
           },
         ),
       ],
