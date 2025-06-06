@@ -1,5 +1,5 @@
 import 'package:boilerplate/constants/app_theme.dart';
-import 'package:boilerplate/core/widgets/components/buttons/button.dart';
+import 'package:boilerplate/core/widgets/components/display/button.dart';
 import 'package:boilerplate/core/widgets/components/typography.dart';
 import 'package:boilerplate/core/widgets/empty_app_bar_widget.dart';
 import 'package:flutter/material.dart';
