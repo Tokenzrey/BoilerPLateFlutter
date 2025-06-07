@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 
 class ComicSearchResult extends StatefulWidget {
@@ -21,6 +23,7 @@ class ComicSearchResult extends StatefulWidget {
 }
 
 class _ComicListItemState extends State<ComicSearchResult> {
+  bool _isHovering = false;
 
   List<TextSpan> _highlightedText(String fullText, String keyword) {
     if (keyword.isEmpty) return [TextSpan(text: fullText)];
@@ -58,99 +61,48 @@ class _ComicListItemState extends State<ComicSearchResult> {
   Widget build(BuildContext context) {
     final joinedAltTitle = widget.altTitle.join(', ');
 
-    return ListTile(
-      leading: ClipRRect(
-        borderRadius: BorderRadius.circular(4),
-        child: Image.network(
-          widget.imageUrl,
-          width: 60,
-          height: 90,
-          fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) => Container(
-            width: 60,
-            height: 90,
-            color: Colors.grey,
-            child: const Icon(Icons.broken_image),
+    return InkWell(
+      onTap: () {},
+      onHover: (hovering) {
+        setState(() {
+          _isHovering = hovering;
+        });
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        color: _isHovering ? Colors.blueGrey.shade800 : Colors.transparent,
+        child: ListTile(
+          leading: ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: Image.network(
+              widget.imageUrl,
+              width: 60,
+              height: 90,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => Container(
+                width: 60,
+                height: 90,
+                color: Colors.grey,
+                child: const Icon(Icons.broken_image),
+              ),
+            ),
+          ),
+          title: Text.rich(
+            TextSpan(
+              children: _highlightedText(widget.title, widget.searchKeyword),
+            ),
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          subtitle: Text(
+            joinedAltTitle,
+            style: TextStyle(fontSize: 14, color: Colors.grey.withOpacity(0.7)),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ),
-      ),
-      title: Text.rich(
-        TextSpan(
-          children: _highlightedText(widget.title, widget.searchKeyword),
-        ),
-        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black),
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-      ),
-      subtitle: Text(
-        joinedAltTitle,
-        style: TextStyle(fontSize: 14, color: Colors.grey.withOpacity(0.7)),
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
       ),
     );
   }
 }
-    // return MouseRegion(
-    //   onEnter: (_) => setState(() => isHovering = true),
-    //   onExit: (_) => setState(() => isHovering = false),
-    //   child: Material(
-    //     color: isHovering ? Colors.grey[850] : Colors.transparent,
-    //     child: InkWell(
-    //       // onTap: widget.onTap,
-    //       splashColor: Colors.greenAccent,
-    //       child: Padding(
-    //         padding: const EdgeInsets.all(8),
-    //         child: Row(
-    //           children: [
-    //             // Thumbnail
-    //             ClipRRect(
-    //               borderRadius: BorderRadius.circular(4),
-    //               child: Image.network(
-    //                 widget.imageUrl,
-    //                 width: 60,
-    //                 height: 90,
-    //                 fit: BoxFit.cover,
-    //                 errorBuilder: (_, __, ___) => Container(
-    //                   width: 60,
-    //                   height: 90,
-    //                   color: Colors.grey,
-    //                   child: const Icon(Icons.broken_image),
-    //                 ),
-    //               ),
-    //             ),
-    //             const SizedBox(width: 12),
-    //             // Texts
-    //             Expanded(
-    //               child: Column(
-    //                 crossAxisAlignment: CrossAxisAlignment.start,
-    //                 children: [
-    //                   // Title with highlight
-    //                   Text.rich(
-    //                     TextSpan(
-    //                       children: _highlightedText(widget.title, widget.searchKeyword),
-    //                     ),
-    //                     style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.white),
-    //                     maxLines: 2,
-    //                     overflow: TextOverflow.ellipsis,
-    //                   ),
-    //                   const SizedBox(height: 4),
-    //                   Text(
-    //                     widget.altTitle,
-    //                     style: const TextStyle(
-    //                       fontSize: 13,
-    //                       color: Colors.white70,
-    //                     ),
-    //                     maxLines: 1,
-    //                     overflow: TextOverflow.ellipsis,
-    //                   ),
-    //                 ],
-    //               ),
-    //             ),
-    //           ],
-    //         ),
-    //       ),
-    //     ),
-    //   ),
-    // );
-

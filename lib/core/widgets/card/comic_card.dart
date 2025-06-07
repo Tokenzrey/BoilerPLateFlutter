@@ -79,8 +79,8 @@ class _ComicCardState extends State<ComicCard> {
                   // Country flag
                   if (widget.showCountryFlag)
                     Positioned(
-                      top: 8,
-                      left: 8,
+                      top: 1,
+                      left: 1,
                       child: Image.network(
                         widget.countryCodeUrl,
                         width: 24,
@@ -91,8 +91,8 @@ class _ComicCardState extends State<ComicCard> {
                   // Bookmark icon
                   if (widget.showBookmark)
                     Positioned(
-                      top: 8,
-                      right: 8,
+                      // top: 1,
+                      right: 1,
                       child: InkWell(
                         onTap: () {
                           setState(() => isBookmarked = !isBookmarked);
@@ -101,17 +101,27 @@ class _ComicCardState extends State<ComicCard> {
                           setState(() => isHovering = hovering);
                         },
                         child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          curve: Curves.ease,
+                          duration: const Duration(milliseconds: 300),
+                          curve: Curves.easeInOut,
                           padding: const EdgeInsets.all(4),
-                          decoration: isBookmarked ? null : BoxDecoration(
-                            color: Colors.black45,
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Icon(
-                            Icons.bookmark, 
-                            color: isBookmarked || isHovering? Colors.greenAccent : null, 
-                            size: isBookmarked? 28 : 20,
+                          child: TweenAnimationBuilder<double>(
+                            tween: Tween<double>(
+                              begin: 20,
+                              end: (isBookmarked || isHovering) ? 28 : 20,
+                            ),
+                            duration: const Duration(milliseconds: 200),
+                            curve: Curves.easeInOut,
+                            builder: (context, size, child) {
+                              return Icon(
+                                Icons.bookmark,
+                                size: size,
+                                color: Color.lerp(
+                                  Colors.grey,
+                                  Colors.greenAccent,
+                                  (isBookmarked || isHovering) ? 1 : 0,
+                                ),
+                              );
+                            },
                           ),
                         ),
                       ),
