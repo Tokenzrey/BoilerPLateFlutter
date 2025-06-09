@@ -2,18 +2,11 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 class Breadcrumb extends StatelessWidget {
-  /// Default separator: panah kecil “>”
+  // Default separator: >”
   static const Widget arrowSeparator = _ArrowSeparator();
-
-  /// Separator garis miring “/”
   static const Widget slashSeparator = _SlashSeparator();
-
-  /// List item pada breadcrumb (biasanya Text widgets)
   final List<Widget> children;
-
-  /// Separator yang ingin dipakai (panah atau slash)
   final Widget separator;
-
   const Breadcrumb({
     super.key,
     required this.children,
@@ -23,7 +16,6 @@ class Breadcrumb extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    // Style “muted small” untuk semua teks breadcrumb
     final TextStyle itemStyle = theme.textTheme.bodySmall!
         .copyWith(color: theme.colorScheme.onSurface.withValues(alpha: 0.6));
 
@@ -64,21 +56,19 @@ class Breadcrumb extends StatelessWidget {
   }
 
   Widget _styledItem(Widget item, TextStyle style, {required bool isLast}) {
-    // Jika item adalah Text, apply style & foreground
     if (item is Text) {
       return Text(
         item.data ?? '',
         style: style.copyWith(
           color: isLast
               ? style.color!
-                  .withValues(alpha: 1.0) // full opacity untuk terakhir
+                  .withValues(alpha: 1.0)
               : style.color,
           fontWeight: isLast ? FontWeight.w600 : style.fontWeight,
         ),
         overflow: TextOverflow.ellipsis,
       );
     }
-    // Jika bukan Text, bungkus saja
     return item;
   }
 }

@@ -31,7 +31,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'display/skeleton.dart';
-import 'display/circular_progress.dart';
+import 'progress/circular.dart';
 
 enum ImageSource { asset, network, file, memory }
 
