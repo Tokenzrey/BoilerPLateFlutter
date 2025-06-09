@@ -16,6 +16,9 @@ class ComicCardSandboxPage extends StatelessWidget {
         likes: '1067',
         countryCodeUrl: 'https://flagcdn.com/w40/us.png',
         isBookmarked: true,
+        showCountryFlag: true,
+        showBookmark: true,
+        onlyTitle: false,
       ),
       ComicCard(
         title: 'The Infinite Mage',
