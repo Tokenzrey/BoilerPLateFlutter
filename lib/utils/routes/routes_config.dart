@@ -1,7 +1,8 @@
+import 'package:boilerplate/presentation/pages/auth/auth_screen.dart';
 import 'package:boilerplate/presentation/pages/auth/register/register.dart';
 import 'package:boilerplate/presentation/pages/auth/unauthorized/unauthorized.dart';
 import 'package:boilerplate/presentation/pages/home/home.dart';
-import 'package:boilerplate/presentation/pages/auth/login/login.dart';
+// import 'package:boilerplate/presentation/pages/auth/login/login.dart';
 import 'package:boilerplate/presentation/pages/sandbox/sandbox_page.dart';
 import 'package:boilerplate/presentation/pages/users/profile/profile.dart';
 import 'package:boilerplate/presentation/pages/users/profile_detail/profile_detail.dart';
@@ -69,7 +70,7 @@ class RoutesConfig {
     RouteConfig(
       path: RoutePaths.login,
       name: 'login',
-      builder: (context, params) => const LoginScreen(),
+      builder: (context, params) => const AuthScreen(),
     ),
     RouteConfig(
       path: RoutePaths.register,
