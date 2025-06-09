@@ -1,17 +1,13 @@
-/// {@template form_input_field}
-/// A comprehensive text input field that integrates with the enhanced form system.
-/// Supports modular features, visibility controls, and rich interaction patterns.
-/// {@endtemplate}
 library;
 
 import 'dart:async';
+import 'package:boilerplate/core/widgets/components/forms/app_form.dart';
 import 'package:boilerplate/core/widgets/components/forms/error_text.dart';
 import 'package:boilerplate/core/widgets/components/forms/helper_text.dart';
 import 'package:boilerplate/core/widgets/components/forms/label_text.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'form.dart';
 
 /// {@template input_feature_visibility}
 /// Controls when an input feature should be visible
@@ -1467,14 +1463,17 @@ class InputTextField extends StatefulWidget {
 /// providing a complete solution for form fields with validation.
 /// {@endtemplate}
 class FormInputField extends StatefulWidget {
-  /// Unique form key for this field
-  final FormKey<String> formKey;
+  /// Form controller to register this field with
+  final FormController? formController;
+
+  /// Field name for registration with FormController
+  final String? name;
+
+  /// Validation rules to apply to this field
+  final List<ValidationRule<String>> rules;
 
   /// Initial value for the field
   final String? initialValue;
-
-  /// Validators for this field
-  final List<Validator<String>> validators;
 
   /// Label text shown above the input field
   final String? label;
@@ -1563,9 +1562,10 @@ class FormInputField extends StatefulWidget {
   /// {@template form_input_field_constructor}
   /// Creates a form input field.
   ///
-  /// [formKey] Unique key for this field in the form system
+  /// [formController] Form controller to register the field with
+  /// [name] Field name for registration with FormController
+  /// [rules] List of validation rules to apply
   /// [initialValue] Initial text value
-  /// [validators] List of validators to apply to this field
   /// [label] Text label displayed above the field
   /// [isRequired] Whether this field is required (shows indicator in label)
   /// [obscureText] Whether to hide the text (for passwords)
@@ -1597,9 +1597,10 @@ class FormInputField extends StatefulWidget {
   /// {@endtemplate}
   const FormInputField({
     super.key,
-    required this.formKey,
+    this.formController,
+    this.name,
+    this.rules = const [],
     this.initialValue,
-    this.validators = const [],
     this.label,
     this.helperText,
     this.isRequired = false,
@@ -1628,7 +1629,10 @@ class FormInputField extends StatefulWidget {
     this.onFieldSubmitted,
     this.onChanged,
     this.onSelectionChanged,
-  });
+  }) : assert(
+          (formController == null) || (name != null),
+          'If formController is provided, name is required',
+        );
 
   @override
   FormInputFieldState createState() => FormInputFieldState();
@@ -1636,91 +1640,201 @@ class FormInputField extends StatefulWidget {
 
 class FormInputFieldState extends State<FormInputField> {
   late FocusNode _focusNode;
+  FieldController<String>? _fieldController;
+  TextEditingController? _textController;
+  String? _errorText;
+  bool isPending = false;
 
   @override
   void initState() {
     super.initState();
     _focusNode = widget.focusNode ?? FocusNode();
-    if (widget.onFocusChange != null) {
-      _focusNode.addListener(_onFocusChanged);
+    _focusNode.addListener(_onFocusChanged);
+    _initializeControllers();
+  }
+
+  void _initializeControllers() {
+    // If we have a form controller and name, register the field
+    if (widget.formController != null && widget.name != null) {
+      _fieldController = widget.formController!.register<String>(
+        widget.name!,
+        defaultValue: widget.initialValue,
+        rules: widget.rules,
+      );
+
+      // Create a text controller that stays in sync with field controller
+      _textController = TextEditingController(
+        text: _fieldController?.value ?? widget.initialValue,
+      );
+
+      // Listen for field state changes
+      _fieldController!.stateNotifier.addListener(_onFieldStateChanged);
+    } else {
+      // Just create a standalone text controller
+      _textController = TextEditingController(text: widget.initialValue);
+    }
+  }
+
+  void _onFieldStateChanged() {
+    if (_fieldController != null) {
+      final currentFieldState = _fieldController!.state;
+
+      // Update text if it's different (avoid loops)
+      if (_textController!.text != currentFieldState.value) {
+        _textController!.text = currentFieldState.value ?? '';
+      }
+
+      setState(() {
+        _errorText = currentFieldState.error;
+      });
+    }
+  }
+
+  @override
+  void didUpdateWidget(FormInputField oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    // If form controller or name changed, re-register the field
+    if (widget.formController != oldWidget.formController ||
+        widget.name != oldWidget.name) {
+      if (_fieldController != null) {
+        _fieldController!.stateNotifier.removeListener(_onFieldStateChanged);
+      }
+
+      _disposeControllers();
+      _initializeControllers();
+    }
+
+    // Update focus node if needed
+    if (widget.focusNode != oldWidget.focusNode) {
+      if (widget.onFocusChange != null && oldWidget.focusNode == null) {
+        _focusNode.removeListener(_onFocusChanged);
+      }
+
+      _focusNode = widget.focusNode ?? FocusNode();
+
+      if (widget.onFocusChange != null) {
+        _focusNode.addListener(_onFocusChanged);
+      }
+    }
+  }
+
+  void _onFocusChanged() {
+    debugPrint(
+        '[onFocusChanged] field: ${widget.name}, hasFocus: ${_focusNode.hasFocus}');
+    widget.onFocusChange?.call(_focusNode.hasFocus);
+
+    // If using onBlur validation mode, trigger validation when focus is lost
+    if (!_focusNode.hasFocus && _fieldController != null) {
+      debugPrint(
+          '[FormInputFieldState._onFocusChanged] field: ${widget.name}, call markAsTouched()');
+      _fieldController!.markAsTouched();
+    }
+  }
+
+  void _disposeControllers() {
+    if (_fieldController != null) {
+      _fieldController!.stateNotifier.removeListener(_onFieldStateChanged);
+      _fieldController = null;
+    }
+
+    // Only dispose if we created it
+    if (_textController != null && widget.formController != null) {
+      _textController!.dispose();
+      _textController = null;
     }
   }
 
   @override
   void dispose() {
+    _disposeControllers();
+    _focusNode.removeListener(_onFocusChanged);
     if (widget.onFocusChange != null && widget.focusNode == null) {
-      _focusNode.removeListener(_onFocusChanged);
       _focusNode.dispose();
     }
+
     super.dispose();
   }
 
-  void _onFocusChanged() {
-    widget.onFocusChange?.call(_focusNode.hasFocus);
+  void _handleTextChanged(String value) {
+    // Update the field controller if we have one
+    if (_fieldController != null) {
+      _fieldController!.setValue(value);
+    }
+
+    // Call the onChange callback if provided
+    widget.onChanged?.call(value);
+  }
+
+  void _handleSubmitted(String value) {
+    // Call the onFieldSubmitted callback if provided
+    widget.onFieldSubmitted?.call(value);
+
+    // Trigger validation if using onSubmit mode
+    if (_fieldController != null) {
+      _fieldController!.markAsTouched();
+      _fieldController!.validate();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    // Use FormEntry from our enhanced form system to connect with the form controller
-    return FormEntry<String>(
-      formKey: widget.formKey,
-      initialValue: widget.initialValue,
-      validators: widget.validators,
-      builder: (context, field) {
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (widget.label != null) ...[
-              LabelText(
-                widget.label!,
-                isRequired: widget.isRequired,
+    // Use ValueListenableBuilder to ensure the widget rebuilds when field state changes
+    return ValueListenableBuilder<FieldState<String>>(
+        valueListenable: _fieldController?.stateNotifier ??
+            ValueNotifier(const FieldState<String>()),
+        builder: (context, fieldState, _) {
+          debugPrint(
+              '[FormInputField.ValueListenableBuilder] field: ${widget.name}, error: ${fieldState.error}, isTouched: ${fieldState.isTouched}');
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (widget.label != null) ...[
+                LabelText(
+                  widget.label!,
+                  isRequired: widget.isRequired,
+                ),
+                SizedBox(height: widget.verticalSpacing / 2),
+              ],
+              InputTextField(
+                controller: _textController,
+                focusNode: _focusNode,
+                obscureText: widget.obscureText,
+                keyboardType: widget.keyboardType,
+                decoration: widget.decoration,
+                enabled: widget.enabled,
+                readOnly: widget.readOnly,
+                autofocus: widget.autofocus,
+                maxLines: widget.maxLines,
+                minLines: widget.minLines,
+                maxLength: widget.maxLength,
+                textInputAction: widget.textInputAction,
+                inputFormatters: widget.inputFormatters,
+                submitFormatters: widget.submitFormatters,
+                textStyle: widget.textStyle,
+                prefixIcon: widget.prefixIcon,
+                suffixIcon: widget.suffixIcon,
+                hintText: widget.hintText,
+                errorText: fieldState.error ?? _errorText,
+                isPending: isPending,
+                features: widget.features,
+                borderRadius: widget.borderRadius,
+                filled: widget.filled,
+                onFieldSubmitted: _handleSubmitted,
+                onChanged: _handleTextChanged,
+                onSelectionChanged: widget.onSelectionChanged,
               ),
-              SizedBox(height: widget.verticalSpacing / 2),
+              if (widget.helperText != null &&
+                  (fieldState.error == null && _errorText == null)) ...[
+                SizedBox(height: widget.verticalSpacing),
+                HelperText(widget.helperText!),
+              ],
+              if (fieldState.error != null || _errorText != null) ...[
+                SizedBox(height: widget.verticalSpacing),
+                ErrorMessage(errorText: fieldState.error ?? _errorText!),
+              ],
             ],
-            InputTextField(
-              initialValue: field.value,
-              focusNode: _focusNode,
-              obscureText: widget.obscureText,
-              keyboardType: widget.keyboardType,
-              decoration: widget.decoration,
-              enabled: widget.enabled,
-              readOnly: widget.readOnly,
-              autofocus: widget.autofocus,
-              maxLines: widget.maxLines,
-              minLines: widget.minLines,
-              maxLength: widget.maxLength,
-              textInputAction: widget.textInputAction,
-              inputFormatters: widget.inputFormatters,
-              submitFormatters: widget.submitFormatters,
-              textStyle: widget.textStyle,
-              prefixIcon: widget.prefixIcon,
-              suffixIcon: widget.suffixIcon,
-              hintText: widget.hintText,
-              errorText: field.error,
-              isPending: field.isPending,
-              features: widget.features,
-              borderRadius: widget.borderRadius,
-              filled: widget.filled,
-              onFieldSubmitted: (value) {
-                widget.onFieldSubmitted?.call(value);
-              },
-              onChanged: (value) {
-                field.setValue(value);
-                widget.onChanged?.call(value);
-              },
-              onSelectionChanged: widget.onSelectionChanged,
-            ),
-            if (widget.helperText != null && field.error == null) ...[
-              SizedBox(height: widget.verticalSpacing),
-              HelperText(widget.helperText!),
-            ],
-            if (field.error != null) ...[
-              SizedBox(height: widget.verticalSpacing),
-              ErrorMessage(errorText: field.error!),
-            ],
-          ],
-        );
-      },
-    );
+          );
+        });
   }
 }

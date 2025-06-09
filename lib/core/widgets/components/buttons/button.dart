@@ -57,6 +57,7 @@
 /// {@endtemplate}
 library;
 
+import 'package:boilerplate/constants/colors.dart';
 import 'package:boilerplate/core/widgets/components/typography.dart';
 import 'package:flutter/material.dart';
 
@@ -415,7 +416,7 @@ enum TextTransform {
 ///     gradient: LinearGradient(         // Gradient background
 ///       colors: [Colors.purple, Colors.pink],
 ///     ),
-///     splash: Colors.purpleAccent.withOpacity(0.2), // Ripple color
+///     splash: Colors.purpleAccent.withValues(alpha:0.2), // Ripple color
 ///   ),
 ///   onPressed: customAction,
 /// )
@@ -539,7 +540,7 @@ class ButtonColors {
   /// - Accepts any [Color].
   /// - If `null`, uses a semi-transparent version of [background] or theme default.
   ///
-  /// *Example*: `splash: Colors.pinkAccent.withOpacity(0.2)`
+  /// *Example*: `splash: Colors.pinkAccent.withValues(alpha:0.2)`
   final Color? splash;
 
   /// The **gradient background** for the button.
@@ -1186,7 +1187,7 @@ class ButtonLayout {
 ///   effects: ButtonEffects(
 ///     elevation: 2.0,                              // Default elevation (z-depth)
 ///     hoverElevation: 4.0,                         // Elevation on hover
-///     shadowColor: Colors.purple.withOpacity(0.3), // Custom shadow color
+///     shadowColor: Colors.purple.withValues(alpha:0.3), // Custom shadow color
 ///     animationDuration: Duration(milliseconds: 300), // Longer animation
 ///     animationCurve: Curves.easeOutBack,          // Springy animation
 ///     enableFeedback: true,                        // Haptic feedback on tap
@@ -1261,7 +1262,7 @@ class ButtonEffects {
   /// - Accepts any [Color].
   /// - If `null`, defaults to the theme's shadow color (often `Colors.black26`).
   ///
-  /// *Example*: `shadowColor: Colors.black.withOpacity(0.2)`
+  /// *Example*: `shadowColor: Colors.black.withValues(alpha:0.2)`
   final Color? shadowColor;
 
   /// The **offset of the drop shadow** in logical pixels.
@@ -2150,7 +2151,7 @@ class _ButtonState extends State<Button> {
               child: CircularProgressIndicator(
                 strokeWidth: config.loading.strokeWidth,
                 valueColor: AlwaysStoppedAnimation<Color>(
-                  config.loading.color ?? _getContentColor(theme),
+                  config.loading.color ?? _getContentColor(theme)!,
                 ),
               ),
             ),
@@ -2198,7 +2199,7 @@ class _ButtonState extends State<Button> {
 
   Widget _buildButtonContent(ThemeData theme) {
     final config = widget.styleConfig;
-    final Color contentColor = _getContentColor(theme);
+    final Color? contentColor = _getContentColor(theme);
     final double spacing =
         config.layout.iconSpacing ?? _getDefaultIconSpacing();
     final double iconSize = config.layout.iconSize ?? _getIconSize();
@@ -2332,9 +2333,9 @@ class _ButtonState extends State<Button> {
         overlayColor = colorScheme.onSecondary.withValues(alpha: 0.1);
         break;
       case ButtonVariant.warning:
-        backgroundColor = config.colors.background ?? Colors.amber;
-        foregroundColor = config.colors.text ?? Colors.black87;
-        overlayColor = Colors.black12;
+        backgroundColor = config.colors.background ?? AppColors.orange;
+        foregroundColor = config.colors.text ?? AppColors.neutral[950];
+        overlayColor = AppColors.neutral[950];
         break;
       case ButtonVariant.neutral:
         backgroundColor = config.colors.background ?? colorScheme.surface;
@@ -2380,7 +2381,7 @@ class _ButtonState extends State<Button> {
       backgroundColor =
           config.colors.disabled ?? backgroundColor.withValues(alpha: opacity);
       foregroundColor = config.colors.disabledText ??
-          foregroundColor.withValues(alpha: opacity);
+          foregroundColor?.withValues(alpha: opacity);
       if (borderColor != null) {
         borderColor = config.colors.disabledBorder ??
             borderColor.withValues(alpha: opacity);
@@ -2579,7 +2580,7 @@ class _ButtonState extends State<Button> {
     }
   }
 
-  Color _getContentColor(ThemeData theme) {
+  Color? _getContentColor(ThemeData theme) {
     final config = widget.styleConfig;
     if (config.disabled) {
       return config.colors.disabledText ??
@@ -2592,7 +2593,7 @@ class _ButtonState extends State<Button> {
       case ButtonVariant.secondary:
         return config.colors.text ?? theme.colorScheme.onSecondary;
       case ButtonVariant.warning:
-        return config.colors.text ?? Colors.black87;
+        return config.colors.text ?? AppColors.neutral[950];
       case ButtonVariant.neutral:
         return config.colors.text ?? theme.colorScheme.onSurface;
       case ButtonVariant.danger:

@@ -72,7 +72,7 @@ class Divider extends StatelessWidget implements PreferredSizeWidget {
                         endIndent: 0,
                       ),
                       duration: kDefaultDuration,
-                      lerp: DividerProperties.lerp,
+                      lerp: (a, b, t) => DividerProperties.lerp(a!, b!, t),
                       builder: (context, value, child) {
                         return CustomPaint(
                           painter: DividerPainter(
@@ -107,7 +107,7 @@ class Divider extends StatelessWidget implements PreferredSizeWidget {
                         endIndent: endIndent ?? 0,
                       ),
                       duration: kDefaultDuration,
-                      lerp: DividerProperties.lerp,
+                      lerp: (a, b, t) => DividerProperties.lerp(a!, b!, t),
                       builder: (context, value, child) {
                         return CustomPaint(
                           painter: DividerPainter(
@@ -135,7 +135,7 @@ class Divider extends StatelessWidget implements PreferredSizeWidget {
             indent: indent ?? 0,
             endIndent: endIndent ?? 0,
           ),
-          lerp: DividerProperties.lerp,
+          lerp: (a, b, t) => DividerProperties.lerp(a!, b!, t),
           duration: kDefaultDuration,
           builder: (context, value, child) {
             return CustomPaint(
@@ -261,7 +261,7 @@ class VerticalDivider extends StatelessWidget implements PreferredSizeWidget {
                         endIndent: 0,
                       ),
                       duration: kDefaultDuration,
-                      lerp: DividerProperties.lerp,
+                      lerp: (a, b, t) => DividerProperties.lerp(a!, b!, t),
                       builder: (context, value, child) {
                         return CustomPaint(
                           painter: VerticalDividerPainter(
@@ -296,7 +296,7 @@ class VerticalDivider extends StatelessWidget implements PreferredSizeWidget {
                         endIndent: endIndent ?? 0,
                       ),
                       duration: kDefaultDuration,
-                      lerp: DividerProperties.lerp,
+                      lerp: (a, b, t) => DividerProperties.lerp(a!, b!, t),
                       builder: (context, value, child) {
                         return CustomPaint(
                           painter: VerticalDividerPainter(
@@ -324,7 +324,7 @@ class VerticalDivider extends StatelessWidget implements PreferredSizeWidget {
             indent: indent ?? 0,
             endIndent: endIndent ?? 0,
           ),
-          lerp: DividerProperties.lerp,
+          lerp: (a, b, t) => DividerProperties.lerp(a!, b!, t),
           duration: kDefaultDuration,
           builder: (context, value, child) {
             return CustomPaint(

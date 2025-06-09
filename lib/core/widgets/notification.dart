@@ -11,6 +11,8 @@ class NotificationService {
   final FlutterLocalNotificationsPlugin _flutterLocalNotificationsPlugin =
       FlutterLocalNotificationsPlugin();
 
+  bool _isRequestingPermission = false;
+
   Future<void> init({
     void Function(NotificationResponse)? onDidReceiveNotificationResponse,
   }) async {
@@ -33,25 +35,31 @@ class NotificationService {
       onDidReceiveNotificationResponse: onDidReceiveNotificationResponse,
     );
 
-    // Minta izin notifikasi
     await _requestPermissions();
   }
 
   Future<void> _requestPermissions() async {
-    if (Platform.isAndroid) {
-      // Untuk Android 13 ke atas
-      if (await Permission.notification.isDenied) {
-        await Permission.notification.request();
+    if (_isRequestingPermission) return;
+    _isRequestingPermission = true;
+    try {
+      if (Platform.isAndroid) {
+        // Untuk Android 13+ perlu permission.notification
+        final status = await Permission.notification.status;
+        if (status.isDenied || status.isRestricted) {
+          await Permission.notification.request();
+        }
+      } else if (Platform.isIOS) {
+        await _flutterLocalNotificationsPlugin
+            .resolvePlatformSpecificImplementation<
+                IOSFlutterLocalNotificationsPlugin>()
+            ?.requestPermissions(
+              alert: true,
+              badge: true,
+              sound: true,
+            );
       }
-    } else if (Platform.isIOS) {
-      await _flutterLocalNotificationsPlugin
-          .resolvePlatformSpecificImplementation<
-              IOSFlutterLocalNotificationsPlugin>()
-          ?.requestPermissions(
-            alert: true,
-            badge: true,
-            sound: true,
-          );
+    } finally {
+      _isRequestingPermission = false;
     }
   }
 
