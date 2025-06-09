@@ -1,8 +1,7 @@
+import 'package:boilerplate/core/widgets/components/breadcrumb/breadcrumb.dart';
+import 'package:boilerplate/core/widgets/components/typography.dart';
 import 'package:boilerplate/core/widgets/empty_app_bar_widget.dart';
-import 'package:boilerplate/presentation/pages/sandbox/animation_sandbox.dart';
 import 'package:boilerplate/presentation/pages/sandbox/button_sandbox.dart';
-import 'package:boilerplate/presentation/pages/sandbox/popover_sandbox.dart';
-// import 'package:boilerplate/presentation/pages/sandbox/select_sandbox.dart';
 import 'package:boilerplate/presentation/pages/sandbox/typography_sandbox.dart';
 import 'package:flutter/material.dart';
 
@@ -25,15 +24,24 @@ class _SandboxScreenState extends State<SandboxScreen> {
           const TypographyExamplePage(),
           const SizedBox(height: 200),
           const ButtonSandboxPage(),
-          const SizedBox(height: 200),
-          const PopoverSandbox(),
-          const SizedBox(height: 200),
-          // const SelectSandbox(),
-          const SizedBox(height: 200),
-          const SizedBox(height: 200),
-          const SizedBox(height: 200),
-          const AnimationSandboxPage(),
-          const SizedBox(height: 200),
+          Center(
+            child: Breadcrumb(
+              // defaultnya arrow separator
+              separator: Breadcrumb.slashSeparator,
+                children: [
+                  const AppText("slash-1"),
+                  const AppText("slash-2")
+                ]),
+          ),
+          const SizedBox(height: 15),
+          Center(
+            child: Breadcrumb(
+              // defaultnya arrow separator
+                children: [
+                  const AppText("arrow-1"),
+                  const AppText("arrow-2")
+                ]),
+          ),
         ],
       ),
     );
