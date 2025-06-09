@@ -1,4 +1,5 @@
 import 'package:boilerplate/core/widgets/components/breadcrumb/breadcrumb.dart';
+import 'package:boilerplate/core/widgets/components/progress/circular.dart';
 import 'package:boilerplate/core/widgets/components/typography.dart';
 import 'package:boilerplate/core/widgets/empty_app_bar_widget.dart';
 import 'package:boilerplate/presentation/pages/sandbox/button_sandbox.dart';
@@ -42,6 +43,8 @@ class _SandboxScreenState extends State<SandboxScreen> {
                   const AppText("arrow-2")
                 ]),
           ),
+          const SizedBox(height: 15),
+          AppCircularProgress(showPercentage: true, center: AppText("Tes"))
         ],
       ),
     );
