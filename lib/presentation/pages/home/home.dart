@@ -193,6 +193,18 @@ class _HomeScreenState extends State<HomeScreen> {
             if (user.lastLogin != null)
               AppText('Last Login: ${user.lastLogin}',
                   variant: TextVariant.bodySmall, color: Colors.grey[700]),
+            const SizedBox(height: 48),
+            ElevatedButton.icon(
+              icon: const Icon(Icons.science),
+              label: AppText('Go to Sandbox', variant: TextVariant.bodyLarge),
+              style: ElevatedButton.styleFrom(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+              ),
+              onPressed: () {
+                context.goNamed('sandbox');
+              },
+            ),
           ],
         ),
       ),
