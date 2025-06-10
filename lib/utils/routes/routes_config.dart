@@ -3,6 +3,7 @@ import 'package:boilerplate/presentation/pages/auth/unauthorized/unauthorized.da
 import 'package:boilerplate/presentation/pages/home/home.dart';
 import 'package:boilerplate/presentation/pages/auth/login/login.dart';
 import 'package:boilerplate/presentation/pages/sandbox/sandbox_page.dart';
+import 'package:boilerplate/presentation/pages/showcase/pagination.dart';
 import 'package:boilerplate/presentation/pages/users/profile/profile.dart';
 import 'package:boilerplate/presentation/pages/users/profile_detail/profile_detail.dart';
 import 'package:flutter/material.dart';
@@ -78,6 +79,11 @@ class RoutesConfig {
       path: RoutePaths.unauthorized,
       name: 'unauthorized',
       builder: (context, params) => const UnauthorizedScreen(),
+    ),
+    RouteConfig(
+      path: RoutePaths.showcasePagination,
+      name: 'showcase-pagination',
+      builder: (context, params) => const PaginationShowcasePage(),
     ),
   ];
 
