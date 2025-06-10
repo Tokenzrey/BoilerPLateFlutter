@@ -3,6 +3,7 @@ import 'package:boilerplate/presentation/pages/auth/unauthorized/unauthorized.da
 import 'package:boilerplate/presentation/pages/home/home.dart';
 import 'package:boilerplate/presentation/pages/auth/login/login.dart';
 import 'package:boilerplate/presentation/pages/sandbox/sandbox_page.dart';
+import 'package:boilerplate/presentation/pages/showcase/pagination.dart';
 import 'package:boilerplate/presentation/pages/users/profile/profile.dart';
 import 'package:boilerplate/presentation/pages/users/profile_detail/profile_detail.dart';
 import 'package:flutter/material.dart';
@@ -16,8 +17,7 @@ class RoutePaths {
   static const String profile = '/profile';
   static const String profileDetails = '/profile/:id';
   static const String unauthorized = '/unauthorized';
-  // static const String adminDashboard = '/admin/dashboard';
-  // static const String adminUsers = '/admin/users';
+  static const String showcasePagination = '/sc-pagination';
 }
 
 class RouteParams {
@@ -81,6 +81,11 @@ class RoutesConfig {
       name: 'unauthorized',
       builder: (context, params) => const UnauthorizedScreen(),
     ),
+    RouteConfig(
+      path: RoutePaths.showcasePagination,
+      name: 'showcase-pagination',
+      builder: (context, params) => const PaginationShowcasePage(),
+    ),
   ];
 
   static final List<RouteConfig> authenticatedRoutes = [
@@ -105,25 +110,6 @@ class RoutesConfig {
       requiresAuth: true,
     ),
   ];
-
-  // static final List<RouteConfig> adminRoutes = [
-  //   RouteConfig(
-  //     path: RoutePaths.adminDashboard,
-  //     name: 'adminDashboard',
-  //     builder: (context, params) => const AdminDashboardScreen(),
-  //     requiresAuth: true,
-  //     requiresAdmin: true,
-  //     allowedRoles: ['admin'],
-  //   ),
-  //   RouteConfig(
-  //     path: RoutePaths.adminUsers,
-  //     name: 'adminUsers',
-  //     builder: (context, params) => const AdminUsersScreen(),
-  //     requiresAuth: true,
-  //     requiresAdmin: true,
-  //     allowedRoles: ['admin'],
-  //   ),
-  // ];
 
   static List<RouteConfig> get allRoutes => [
         ...publicRoutes,
