@@ -1,11 +1,14 @@
 import 'package:boilerplate/core/widgets/components/breadcrumb/breadcrumb.dart';
+import 'package:boilerplate/core/widgets/components/buttons/button.dart';
 import 'package:boilerplate/core/widgets/components/collapsible/collapsible.dart';
 import 'package:boilerplate/core/widgets/components/progress/circular.dart';
 import 'package:boilerplate/core/widgets/components/typography.dart';
 import 'package:boilerplate/core/widgets/empty_app_bar_widget.dart';
 import 'package:boilerplate/presentation/pages/sandbox/button_sandbox.dart';
 import 'package:boilerplate/presentation/pages/sandbox/typography_sandbox.dart';
+import 'package:boilerplate/presentation/pages/showcase/pagination.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class SandboxScreen extends StatefulWidget {
   const SandboxScreen({super.key});
@@ -67,6 +70,9 @@ class _SandboxScreenState extends State<SandboxScreen> {
               ],
           ),
           const SizedBox(height: 15),
+          Button(text: "pagination-showcase", onPressed: (){
+            context.go('/sc-pagination');
+          })
         ],
       ),
     );
