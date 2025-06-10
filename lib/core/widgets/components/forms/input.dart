@@ -1100,7 +1100,6 @@ class TextFieldState extends State<InputTextField>
     // Add error or validation indicator
     if (widget.errorText != null && widget.errorText!.isNotEmpty) {
       widgets.add(const SizedBox(width: 4));
-      widgets.add(const Icon(Icons.error_outline, size: 16, color: Colors.red));
     } else if (widget.isPending) {
       widgets.add(const SizedBox(width: 4));
       widgets.add(const SizedBox(
