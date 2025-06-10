@@ -1,5 +1,7 @@
 import 'package:another_flushbar/flushbar_helper.dart';
-import 'package:boilerplate/core/widgets/empty_app_bar_widget.dart';
+import 'package:boilerplate/core/widgets/navbar/bottom_navbar.dart';
+// import 'package:boilerplate/core/widgets/empty_app_bar_widget.dart';
+import 'package:boilerplate/core/widgets/navbar/top_navbar.dart';
 import 'package:boilerplate/core/widgets/progress_indicator_widget.dart';
 import 'package:boilerplate/core/widgets/rounded_button_widget.dart';
 import 'package:boilerplate/core/widgets/textfield_widget.dart';
@@ -47,7 +49,8 @@ class LoginScreenState extends State<LoginScreen> {
     return Scaffold(
       backgroundColor:
           isDark ? const Color(0xFF17181C) : const Color(0xFFF4F6FB),
-      appBar: EmptyAppBar(),
+      appBar: TopNavbar(),
+      bottomNavigationBar: BottomNavbar(),
       body: Center(
         child: SingleChildScrollView(
             child: Padding(
