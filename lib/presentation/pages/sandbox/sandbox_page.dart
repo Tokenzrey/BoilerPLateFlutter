@@ -1,4 +1,5 @@
 import 'package:boilerplate/core/widgets/components/breadcrumb/breadcrumb.dart';
+import 'package:boilerplate/core/widgets/components/collapsible/collapsible.dart';
 import 'package:boilerplate/core/widgets/components/progress/circular.dart';
 import 'package:boilerplate/core/widgets/components/typography.dart';
 import 'package:boilerplate/core/widgets/empty_app_bar_widget.dart';
@@ -44,7 +45,28 @@ class _SandboxScreenState extends State<SandboxScreen> {
                 ]),
           ),
           const SizedBox(height: 15),
-          AppCircularProgress(showPercentage: true, center: AppText("Tes"))
+          AppCircularProgress(showPercentage: true, center: AppText("Tes")),
+          const SizedBox(height: 15),
+          const AppCollapsible(
+              children: [
+                AppCollapsibleTrigger(
+                  child: Text("Click to expand"),
+                ),
+                AppCollapsibleContent(
+                  child: Padding(
+                    padding: EdgeInsets.only(top: 8.0),
+                      child: AppExpandableText(
+                        text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua',
+                        maxLines: 2,
+                        expandText: 'Show More',
+                        collapseText: 'Show Less',
+                      ),
+                      // child: Text('This content can be collapsed and expanded.'),
+                  ),
+                ),
+              ],
+          ),
+          const SizedBox(height: 15),
         ],
       ),
     );
