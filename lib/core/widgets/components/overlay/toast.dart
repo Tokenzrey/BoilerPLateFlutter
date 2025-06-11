@@ -1120,6 +1120,7 @@ class ToastOverlayHandler extends OverlayHandler {
     List<PopoverAnimationType>? enterAnimations,
     List<PopoverAnimationType>? exitAnimations,
     PopoverAnimationConfig? animationConfig,
+    bool? alwaysFocus,
   }) {
     throw UnimplementedError(
         'Toast handler does not use standard overlay params. '

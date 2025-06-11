@@ -408,6 +408,7 @@ class PopoverOverlayHandler extends OverlayHandler {
     PopoverAnimationConfig? animationConfig,
     bool autoFocus = false,
     bool? stayVisibleOnScroll,
+    bool? alwaysFocus = false,
   }) {
     final OverlayPopoverEntry<T> popoverEntry = _createPopoverEntry<T>(
       context: context,
@@ -451,6 +452,7 @@ class PopoverOverlayHandler extends OverlayHandler {
           ),
       autoFocus: autoFocus,
       stayVisibleOnScroll: stayVisibleOnScroll ?? true,
+      alwaysFocus: alwaysFocus,
     );
 
     return popoverEntry;
@@ -485,6 +487,7 @@ class PopoverOverlayHandler extends OverlayHandler {
     required PopoverAnimationConfig animationConfig,
     required bool autoFocus,
     required bool stayVisibleOnScroll,
+    bool? alwaysFocus = false,
   }) {
     final TextDirection textDirection = Directionality.of(context);
     final Alignment resolvedAlignment = alignment.resolve(textDirection);
@@ -565,6 +568,7 @@ class PopoverOverlayHandler extends OverlayHandler {
       animationConfig: effectiveAnimConfig,
       autoFocus: autoFocus,
       stayVisibleOnScroll: stayVisibleOnScroll,
+      alwaysFocus: alwaysFocus,
     );
 
     popoverEntry.initialize(
@@ -688,6 +692,7 @@ class PopoverOverlayHandler extends OverlayHandler {
     required PopoverAnimationConfig animationConfig,
     required bool autoFocus,
     required bool stayVisibleOnScroll,
+    bool? alwaysFocus = false,
   }) {
     return OverlayEntry(
       builder: (innerContext) {
@@ -698,8 +703,10 @@ class PopoverOverlayHandler extends OverlayHandler {
               animation: isClosed,
               builder: (innerContext, child) {
                 return FocusScope(
-                  autofocus: autoFocus && dismissBackdropFocus,
-                  canRequestFocus: !isClosed.value && autoFocus,
+                  autofocus:
+                      alwaysFocus! || (autoFocus && dismissBackdropFocus),
+                  canRequestFocus:
+                      alwaysFocus || (!isClosed.value && autoFocus),
                   child: PopoverOverlayWidget<T>(
                     animationConfig: animationConfig,
                     onTapOutside: modal
@@ -1244,9 +1251,6 @@ class PopoverOverlayWidgetState extends State<PopoverOverlayWidget>
   late _UpdateThrottler _positionUpdateThrottle;
 
   MediaQueryData? _lastMediaQuery;
-
-  // Storing active keyboard offset value
-  double _currentKeyboardOffset = 0.0;
 
   // Track if dispose has been called
   bool _isDisposed = false;
@@ -1872,62 +1876,12 @@ class PopoverOverlayWidgetState extends State<PopoverOverlayWidget>
       setState(() {
         _anchorSize = size;
 
-        // Smooth keyboard adjustment implementation
         final targetPosition = newPos;
-        final adjustedPosition =
-            _adjustPositionForKeyboard(targetPosition, mediaQuery);
-
-        // If position changed due to keyboard, animate the change
-        if (_currentKeyboardOffset != mediaQuery.viewInsets.bottom &&
-            mediaQuery.viewInsets.bottom > 0) {
-          // Calculate keyboard offset relative to current position
-          final Offset keyboardAdjustment =
-              Offset(0, adjustedPosition.dy - targetPosition.dy);
-
-          // Animate keyboard offset using controller-based animation
-          _keyboardOffsetAnimation = Tween<Offset>(
-            begin: Offset.zero,
-            end: keyboardAdjustment,
-          ).animate(
-            CurvedAnimation(
-              parent: _controller,
-              curve: _animationConfig.keyboardTransitionCurve,
-            ),
-          );
-
-          _currentKeyboardOffset = mediaQuery.viewInsets.bottom;
-        } else if (mediaQuery.viewInsets.bottom == 0 &&
-            _currentKeyboardOffset > 0) {
-          // Keyboard closed, animate back to normal position
-          _keyboardOffsetAnimation = Tween<Offset>(
-            begin: _keyboardOffsetAnimation.value,
-            end: Offset.zero,
-          ).animate(
-            CurvedAnimation(
-              parent: _controller,
-              curve: _animationConfig.keyboardTransitionCurve,
-            ),
-          );
-
-          _currentKeyboardOffset = 0;
-        }
 
         _position = targetPosition;
         widget.onTickFollow?.call(this);
       });
     }
-  }
-
-  Offset _adjustPositionForKeyboard(
-      Offset position, MediaQueryData mediaQuery) {
-    if (mediaQuery.viewInsets.bottom > 0) {
-      final double maxY =
-          mediaQuery.size.height - mediaQuery.viewInsets.bottom - 20;
-      if (position.dy > maxY) {
-        return Offset(position.dx, maxY);
-      }
-    }
-    return position;
   }
 
   void _handleAnchorDisappeared() {
@@ -2820,9 +2774,9 @@ OverlayCompleter<T?> showPopover<T>({
   double initialScale = 0.9,
   PopoverAnimationConfig? animationConfig,
   bool stayVisibleOnScroll = true,
+  bool? alwaysFocus = false,
 }) {
   handler ??= OverlayManager.of(context);
-
   // Create animation config if not provided
   final effectiveAnimConfig = animationConfig ??
       PopoverAnimationConfig(
@@ -2872,6 +2826,7 @@ OverlayCompleter<T?> showPopover<T>({
     enterAnimations: enterAnimations,
     exitAnimations: exitAnimations,
     animationConfig: effectiveAnimConfig,
+    alwaysFocus: alwaysFocus,
   );
 }
 

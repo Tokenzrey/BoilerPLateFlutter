@@ -40,6 +40,7 @@ class OverlayConfig<T> {
   final List<PopoverAnimationType>? enterAnimations;
   final List<PopoverAnimationType>? exitAnimations;
   final PopoverAnimationConfig? animationConfig;
+  final bool? alwaysFocus;
 
   const OverlayConfig({
     required this.context,
@@ -76,6 +77,7 @@ class OverlayConfig<T> {
     this.enterAnimations,
     this.exitAnimations,
     this.animationConfig,
+    this.alwaysFocus = false,
   });
 
   /// Creates a copy of this config with the given fields replaced with new values
@@ -114,6 +116,7 @@ class OverlayConfig<T> {
     List<PopoverAnimationType>? enterAnimations,
     List<PopoverAnimationType>? exitAnimations,
     PopoverAnimationConfig? animationConfig,
+    bool? alwaysFocus,
   }) {
     return OverlayConfig<T>(
       context: context ?? this.context,
@@ -151,6 +154,7 @@ class OverlayConfig<T> {
       enterAnimations: enterAnimations ?? this.enterAnimations,
       exitAnimations: exitAnimations ?? this.exitAnimations,
       animationConfig: animationConfig ?? this.animationConfig,
+      alwaysFocus: alwaysFocus ?? this.alwaysFocus,
     );
   }
 }
@@ -265,6 +269,7 @@ abstract class OverlayHandler {
     List<PopoverAnimationType>? enterAnimations,
     List<PopoverAnimationType>? exitAnimations,
     PopoverAnimationConfig? animationConfig,
+    bool? alwaysFocus = false,
   });
 
   /// Shows an overlay using a configuration object
@@ -301,6 +306,7 @@ abstract class OverlayHandler {
       enterAnimations: config.enterAnimations,
       exitAnimations: config.exitAnimations,
       animationConfig: config.animationConfig,
+      alwaysFocus: config.alwaysFocus,
     );
   }
 
@@ -390,6 +396,7 @@ abstract class OverlayManager implements OverlayHandler {
     List<PopoverAnimationType>? enterAnimations,
     List<PopoverAnimationType>? exitAnimations,
     PopoverAnimationConfig? animationConfig,
+    bool? alwaysFocus = false,
   });
 
   @override
@@ -528,6 +535,7 @@ class _OverlayManagerLayerState extends State<OverlayManagerLayer>
     List<PopoverAnimationType>? enterAnimations,
     List<PopoverAnimationType>? exitAnimations,
     PopoverAnimationConfig? animationConfig,
+    bool? alwaysFocus = false,
   }) {
     final config = OverlayConfig<T>(
       context: context,
@@ -560,6 +568,7 @@ class _OverlayManagerLayerState extends State<OverlayManagerLayer>
       enterAnimations: enterAnimations,
       exitAnimations: exitAnimations,
       animationConfig: animationConfig,
+      alwaysFocus: alwaysFocus,
     );
 
     return showWithConfig(config);

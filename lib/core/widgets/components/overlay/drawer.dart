@@ -370,6 +370,7 @@ class DrawerOverlayHandler extends OverlayHandler {
     List<PopoverAnimationType>? enterAnimations,
     List<PopoverAnimationType>? exitAnimations,
     PopoverAnimationConfig? animationConfig,
+    bool? alwaysFocus,
   }) {
     throw UnimplementedError(
         'DrawerOverlayHandler does not implement standard overlay show method. '

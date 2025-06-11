@@ -1989,6 +1989,7 @@ class DialogOverlayHandler extends OverlayHandler {
     PopoverAnimationConfig? animationConfig,
     List<PopoverAnimationType>? enterAnimations,
     List<PopoverAnimationType>? exitAnimations,
+    bool? alwaysFocus,
   }) {
     // Default dialog animation type
     final DialogAnimationType animationType = DialogAnimationType.scale;
@@ -2147,6 +2148,7 @@ class FullScreenDialogOverlayHandler extends OverlayHandler {
     PopoverAnimationConfig? animationConfig,
     List<PopoverAnimationType>? enterAnimations,
     List<PopoverAnimationType>? exitAnimations,
+    bool? alwaysFocus,
   }) {
     // Default fullscreen dialog settings
     final DialogAnimationType animationType = DialogAnimationType.fade;
