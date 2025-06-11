@@ -542,7 +542,7 @@ class _ClickableState extends State<Clickable> {
               child: AnimatedBuilder(
                 animation: _controller,
                 builder: (context, child) {
-                  return AnimatedValueBuilder(
+                  return AnimatedValueBuilder<Matrix4?>(
                     value: widget.transform?.resolve(widgetStates),
                     duration: const Duration(milliseconds: 50),
                     lerp: lerpMatrix4,

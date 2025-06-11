@@ -198,7 +198,7 @@ class DashedLine extends StatelessWidget {
           color: color ?? theme.colorScheme.outline,
         ),
         duration: kDefaultDuration,
-        lerp: DashedLineProperties.lerp,
+        lerp: (a, b, t) => DashedLineProperties.lerp(a!, b!, t),
         builder: (context, value, child) {
           return CustomPaint(
             painter: DashedLinePainter(
@@ -275,7 +275,7 @@ class DashedContainer extends StatelessWidget {
       ),
       duration: kDefaultDuration,
       lerp: (a, b, t) {
-        return DashedContainerProperties.lerp(context, a, b, t);
+        return DashedContainerProperties.lerp(context, a!, b!, t);
       },
       builder: (context, value, child) {
         return CustomPaint(

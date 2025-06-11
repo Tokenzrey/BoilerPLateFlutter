@@ -1,6 +1,8 @@
 import 'package:boilerplate/constants/app_theme.dart';
+import 'package:boilerplate/core/widgets/components/overlay/drawer.dart';
 import 'package:boilerplate/core/widgets/components/overlay/overlay.dart';
 import 'package:boilerplate/core/widgets/components/overlay/popover.dart';
+import 'package:boilerplate/core/widgets/components/overlay/toast.dart';
 import 'package:boilerplate/presentation/store/language/language_store.dart';
 import 'package:boilerplate/presentation/store/theme/theme_store.dart';
 import 'package:boilerplate/utils/locale/app_localization.dart';
@@ -21,37 +23,48 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final router = Provider.of<GoRouter>(context);
-    return OverlayManagerLayer(
-        popoverHandler: const PopoverOverlayHandler(),
-        tooltipHandler: const PopoverOverlayHandler(),
-        menuHandler: const PopoverOverlayHandler(),
-        child: Observer(
-          builder: (context) {
-            return MaterialApp.router(
-              debugShowCheckedModeBanner: false,
-              theme: _themeStore.darkMode
-                  ? AppThemeData.darkThemeData
-                  : AppThemeData.lightThemeData,
-              routerDelegate: router.routerDelegate,
-              routeInformationParser: router.routeInformationParser,
-              routeInformationProvider: router.routeInformationProvider,
-              backButtonDispatcher: router.backButtonDispatcher,
-              locale: Locale(_languageStore.locale),
-              supportedLocales: _languageStore.supportedLanguages
-                  .map((language) => Locale(language.locale, language.code))
-                  .toList(),
-              localizationsDelegates: [
-                // A class which loads the translations from JSON files
-                AppLocalizations.delegate,
-                // Built-in localization of basic text for Material widgets
-                GlobalMaterialLocalizations.delegate,
-                // Built-in localization for text direction LTR/RTL
-                GlobalWidgetsLocalizations.delegate,
-                // Built-in localization of basic text for Cupertino widgets
-                GlobalCupertinoLocalizations.delegate,
-              ],
+
+    // Konfigurasi Toast
+    ToastConfig.configure(
+      defaultPosition: ToastPosition.bottomRight,
+      maxVisibleToasts: 3,
+      defaultDuration: const Duration(seconds: 4),
+      spacing: 8,
+      padding: const EdgeInsets.all(16),
+    );
+
+    return Observer(
+      builder: (context) {
+        return MaterialApp.router(
+          debugShowCheckedModeBanner: false,
+          theme: _themeStore.darkMode
+              ? AppThemeData.darkThemeData
+              : AppThemeData.lightThemeData,
+          routerDelegate: router.routerDelegate,
+          routeInformationParser: router.routeInformationParser,
+          routeInformationProvider: router.routeInformationProvider,
+          backButtonDispatcher: router.backButtonDispatcher,
+          locale: Locale(_languageStore.locale),
+          supportedLocales: _languageStore.supportedLanguages
+              .map((language) => Locale(language.locale, language.code))
+              .toList(),
+          localizationsDelegates: [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          builder: (context, child) {
+            return OverlayManagerLayer(
+              popoverHandler: const PopoverOverlayHandler(),
+              menuHandler: const PopoverOverlayHandler(),
+              toastHandler: ToastOverlayHandler(),
+              drawerHandler: DrawerOverlayHandler(),
+              child: child ?? const SizedBox(),
             );
           },
-        ));
+        );
+      },
+    );
   }
 }

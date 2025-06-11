@@ -1,8 +1,47 @@
+// ignore_for_file: use_build_context_synchronously
+
+import 'package:boilerplate/constants/colors.dart';
 import 'package:boilerplate/core/widgets/components/typography.dart';
+import 'package:boilerplate/core/widgets/components/forms/app_form.dart';
+import 'package:boilerplate/core/widgets/components/forms/input.dart';
+import 'package:boilerplate/core/widgets/components/buttons/button.dart';
 import 'package:boilerplate/presentation/store/auth_firebase/auth_store.dart';
+import 'package:boilerplate/utils/device/device_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_mobx/flutter_mobx.dart';
 import '../../../../di/service_locator.dart';
+
+class RegisterModel {
+  final String email;
+  final String password;
+  final String username;
+  final String fullName;
+
+  RegisterModel({
+    this.email = '',
+    this.password = '',
+    this.username = '',
+    this.fullName = '',
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'email': email,
+      'password': password,
+      'username': username,
+      'fullName': fullName,
+    };
+  }
+
+  factory RegisterModel.fromJson(Map<String, dynamic> json) {
+    return RegisterModel(
+      email: json['email'] as String? ?? '',
+      password: json['password'] as String? ?? '',
+      username: json['username'] as String? ?? '',
+      fullName: json['fullName'] as String? ?? '',
+    );
+  }
+}
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -13,215 +52,276 @@ class RegisterScreen extends StatefulWidget {
 
 class _RegisterScreenState extends State<RegisterScreen> {
   final AuthStore _authStore = getIt<AuthStore>();
-  final _formKey = GlobalKey<FormState>();
-  String emailForm = '';
-  String passwordForm = '';
-  String usernameForm = '';
-  String fullNameForm = '';
-  bool _obscurePassword = true;
 
-  Future<void> _submit() async {
-    if (_formKey.currentState?.validate() ?? false) {
-      _formKey.currentState?.save();
-
-      final success = await _authStore.register(
-        emailForm,
-        passwordForm,
-        usernameForm,
-        fullNameForm,
-      );
-
-      if (success) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Registration successful!')),
-          );
-          Navigator.of(context).pop();
-        }
-      } else {
-        if (mounted && _authStore.errorMessage != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(_authStore.errorMessage!)),
-          );
-        }
-      }
-    }
+  @override
+  void initState() {
+    super.initState();
+    _authStore.resetError();
   }
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
-      backgroundColor:
-          isDark ? const Color(0xFF17181C) : const Color(0xFFF4F6FB),
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        centerTitle: true,
-        title: AppText('Register', variant: TextVariant.headlineMedium),
-      ),
-      body: Center(
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 0),
-            child: Container(
-              constraints: const BoxConstraints(maxWidth: 420),
-              padding: const EdgeInsets.all(32),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(32),
-                color: isDark ? const Color(0xFF22232C) : Colors.white,
-                boxShadow: [
-                  BoxShadow(
-                    color: isDark
-                        ? Colors.black45
-                        : Colors.grey.withValues(alpha: .15),
-                    spreadRadius: 2,
-                    blurRadius: 20,
-                    offset: const Offset(0, 10),
-                  ),
-                ],
-              ),
-              child: Observer(
-                builder: (_) => Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Center(
-                        child: AppText(
-                          'Create an Account',
-                          variant: TextVariant.titleLarge,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      TextFormField(
-                        keyboardType: TextInputType.emailAddress,
-                        decoration: InputDecoration(
-                          labelText: 'Email',
-                          prefixIcon: Icon(Icons.email_outlined),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        validator: (value) => value?.contains('@') == true
-                            ? null
-                            : 'Enter a valid email',
-                        onSaved: (value) => emailForm = value?.trim() ?? '',
-                      ),
-                      const SizedBox(height: 16),
-                      TextFormField(
-                        decoration: InputDecoration(
-                          labelText: 'Username',
-                          prefixIcon: Icon(Icons.person_outline),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        validator: (value) =>
-                            (value == null || value.trim().isEmpty)
-                                ? 'Enter a username'
-                                : null,
-                        onSaved: (value) => usernameForm = value?.trim() ?? '',
-                      ),
-                      const SizedBox(height: 16),
-                      TextFormField(
-                        decoration: InputDecoration(
-                          labelText: 'Full Name',
-                          prefixIcon: Icon(Icons.badge_outlined),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        validator: (value) =>
-                            (value == null || value.trim().isEmpty)
-                                ? 'Enter your full name'
-                                : null,
-                        onSaved: (value) => fullNameForm = value?.trim() ?? '',
-                      ),
-                      const SizedBox(height: 16),
-                      TextFormField(
-                        obscureText: _obscurePassword,
-                        decoration: InputDecoration(
-                          labelText: 'Password',
-                          prefixIcon: Icon(Icons.lock_outline),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              _obscurePassword
-                                  ? Icons.visibility_off_outlined
-                                  : Icons.visibility_outlined,
-                            ),
-                            onPressed: () => setState(
-                                () => _obscurePassword = !_obscurePassword),
-                          ),
-                        ),
-                        validator: (value) => (value?.length ?? 0) >= 6
-                            ? null
-                            : 'Password min 6 chars',
-                        onSaved: (value) => passwordForm = value ?? '',
-                      ),
-                      const SizedBox(height: 28),
-                      ElevatedButton(
-                        onPressed: _authStore.isLoading ? null : _submit,
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          backgroundColor: Colors.deepOrangeAccent,
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          textStyle: const TextStyle(
-                              fontWeight: FontWeight.bold, fontSize: 18),
-                        ),
-                        child: _authStore.isLoading
-                            ? const SizedBox(
-                                height: 20,
-                                width: 20,
-                                child: CircularProgressIndicator(
-                                    strokeWidth: 2, color: Colors.white),
-                              )
-                            : const Text('Register'),
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          AppText(
-                            'Already have an account?',
-                            variant: TextVariant.bodySmall,
-                          ),
-                          TextButton(
-                            onPressed: () => Navigator.of(context).pop(),
-                            child: AppText(
-                              'Login',
-                              variant: TextVariant.bodyMedium,
-                              color: Colors.deepOrangeAccent,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                      if (_authStore.hasError)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 12.0),
-                          child: AppText(
-                            _authStore.errorMessage ?? '',
-                            variant: TextVariant.bodyMedium,
-                            color: Colors.red,
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                    ],
+      backgroundColor: AppColors.background,
+      // Remove AppBar completely
+      body: SafeArea(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                child: IntrinsicHeight(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                    child: _buildRegisterForm(),
                   ),
                 ),
               ),
-            ),
-          ),
+            );
+          },
         ),
       ),
+    );
+  }
+
+  Widget _buildRegisterForm() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        const SizedBox(height: 24),
+        // Back button at the top left
+        Align(
+          alignment: Alignment.centerLeft,
+          child: IconButton(
+            icon: const Icon(Icons.arrow_back, color: AppColors.neutral),
+            onPressed: () => Navigator.of(context).pop(),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+            iconSize: 24,
+          ),
+        ),
+        const SizedBox(height: 16),
+        // Logo placeholder
+        Image.asset(
+          'assets/icons/ic_app.png',
+          height: 60,
+          width: 60,
+        ),
+        const SizedBox(height: 16),
+        const AppText(
+          'Create an Account',
+          variant: TextVariant.headlineMedium,
+          fontWeight: FontWeight.w500,
+          color: AppColors.neutral,
+        ),
+        const SizedBox(height: 20),
+        const Divider(color: AppColors.neutral, thickness: 1, height: 1),
+        const SizedBox(height: 32),
+
+        FormBuilder<RegisterModel>(
+          validationMode: ValidationMode.onSubmit,
+          fromJson: RegisterModel.fromJson,
+          toJson: (model) => model.toJson(),
+          builder: (context, controller) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Padding(
+                  padding: EdgeInsets.only(left: 4.0, bottom: 8.0),
+                  child: AppText(
+                    'E-Mail *',
+                    variant: TextVariant.bodyMedium,
+                    color: AppColors.neutral,
+                  ),
+                ),
+                FormInputField(
+                  formController: controller,
+                  name: 'email',
+                  rules: [
+                    RequiredRule(message: 'Email is required'),
+                    EmailRule(message: 'Please enter a valid email address'),
+                  ],
+                  keyboardType: TextInputType.emailAddress,
+                  filled: true,
+                  textStyle: TextStyle(color: AppColors.neutral[950]),
+                  borderRadius: 4,
+                ),
+                const SizedBox(height: 24),
+                const Padding(
+                  padding: EdgeInsets.only(left: 4.0, bottom: 8.0),
+                  child: AppText(
+                    'Username *',
+                    variant: TextVariant.bodyMedium,
+                    color: AppColors.neutral,
+                  ),
+                ),
+                FormInputField(
+                  formController: controller,
+                  name: 'username',
+                  rules: [RequiredRule(message: 'Username is required')],
+                  filled: true,
+                  textStyle: TextStyle(color: AppColors.neutral[950]),
+                  borderRadius: 4,
+                ),
+                const SizedBox(height: 24),
+                const Padding(
+                  padding: EdgeInsets.only(left: 4.0, bottom: 8.0),
+                  child: AppText(
+                    'Full Name *',
+                    variant: TextVariant.bodyMedium,
+                    color: AppColors.neutral,
+                  ),
+                ),
+                FormInputField(
+                  formController: controller,
+                  name: 'fullName',
+                  rules: [RequiredRule(message: 'Full name is required')],
+                  filled: true,
+                  textStyle: TextStyle(color: AppColors.neutral[950]),
+                  borderRadius: 4,
+                ),
+                const SizedBox(height: 24),
+                const Padding(
+                  padding: EdgeInsets.only(left: 4.0, bottom: 8.0),
+                  child: AppText(
+                    'Password *',
+                    variant: TextVariant.bodyMedium,
+                    color: AppColors.neutral,
+                  ),
+                ),
+                FormInputField(
+                  formController: controller,
+                  name: 'password',
+                  obscureText: true,
+                  features: [InputFeature.passwordToggle()],
+                  rules: [
+                    RequiredRule(message: 'Password is required'),
+                    MinLengthRule(6,
+                        message: 'Password must be at least 6 characters'),
+                  ],
+                  filled: true,
+                  textStyle: TextStyle(color: AppColors.neutral[950]),
+                  borderRadius: 4,
+                ),
+                const SizedBox(height: 40),
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: Observer(
+                    builder: (_) => Button(
+                      text: 'Register',
+                      variant: ButtonVariant.primary,
+                      size: ButtonSize.normal,
+                      shape: ButtonShape.roundedRectangle,
+                      colors: ButtonColors(
+                        background: AppColors.blue[600],
+                        text: AppColors.neutral[50],
+                      ),
+                      layout: const ButtonLayout(
+                        expanded: true,
+                        height: 50,
+                      ),
+                      loading: ButtonLoadingConfig(
+                        isLoading: _authStore.isLoading,
+                        widget: SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: AppColors.neutral[50],
+                          ),
+                        ),
+                      ),
+                      onPressed: _authStore.isLoading
+                          ? null
+                          : () {
+                              controller.handleSubmit(
+                                (RegisterModel data) async {
+                                  DeviceUtils.hideKeyboard(context);
+                                  try {
+                                    final success = await _authStore.register(
+                                      data.email,
+                                      data.password,
+                                      data.username,
+                                      data.fullName,
+                                    );
+
+                                    if (success && mounted) {
+                                      Navigator.of(context).pop();
+                                    } else {
+                                      // Use generic error message
+                                      _authStore.setErrorMessage(
+                                          'Register Incorrect');
+                                    }
+                                  } catch (e) {
+                                    // Reset loading state
+                                    _authStore.setLoading(false);
+                                    // Use generic error message
+                                    _authStore
+                                        .setErrorMessage('Register Incorrect');
+                                  }
+                                },
+                                onInvalid: (errors) {
+                                  // Keep form validation errors as they are
+                                  _authStore.setErrorMessage(
+                                      'Please fill in all fields correctly');
+                                },
+                              );
+                            },
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Center(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const AppText(
+                        'Already have an account? ',
+                        variant: TextVariant.bodySmall,
+                        color: AppColors.neutral,
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        style: TextButton.styleFrom(
+                          padding: EdgeInsets.zero,
+                          minimumSize: const Size(0, 0),
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                        child: const AppText(
+                          'Login',
+                          variant: TextVariant.bodySmall,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.blue,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+
+        // Error observer
+        Observer(builder: (_) {
+          if (_authStore.errorMessage != null &&
+              _authStore.errorMessage!.isNotEmpty) {
+            return Padding(
+              padding: const EdgeInsets.only(top: 16.0),
+              child: AppText(
+                _authStore.errorMessage!,
+                variant: TextVariant.bodyMedium,
+                color: AppColors.red,
+                textAlign: TextAlign.center,
+              ),
+            );
+          }
+          return const SizedBox.shrink();
+        }),
+        const SizedBox(height: 24),
+      ],
     );
   }
 }
