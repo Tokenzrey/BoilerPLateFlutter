@@ -1719,14 +1719,9 @@ class FormInputFieldState extends State<FormInputField> {
   }
 
   void _onFocusChanged() {
-    debugPrint(
-        '[onFocusChanged] field: ${widget.name}, hasFocus: ${_focusNode.hasFocus}');
     widget.onFocusChange?.call(_focusNode.hasFocus);
 
-    // If using onBlur validation mode, trigger validation when focus is lost
     if (!_focusNode.hasFocus && _fieldController != null) {
-      debugPrint(
-          '[FormInputFieldState._onFocusChanged] field: ${widget.name}, call markAsTouched()');
       _fieldController!.markAsTouched();
     }
   }
@@ -1783,8 +1778,6 @@ class FormInputFieldState extends State<FormInputField> {
         valueListenable: _fieldController?.stateNotifier ??
             ValueNotifier(const FieldState<String>()),
         builder: (context, fieldState, _) {
-          debugPrint(
-              '[FormInputField.ValueListenableBuilder] field: ${widget.name}, error: ${fieldState.error}, isTouched: ${fieldState.isTouched}');
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
