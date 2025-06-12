@@ -26,8 +26,7 @@ class _ComicListItemState extends State<ComicSearchResult> {
   List<TextSpan> _highlightedText(String fullText, String keyword) {
     if (keyword.isEmpty) return [TextSpan(text: fullText)];
 
-    final matches = RegExp(RegExp.escape(keyword), caseSensitive: false)
-        .allMatches(fullText);
+    final matches = RegExp(RegExp.escape(keyword), caseSensitive: false).allMatches(fullText);
     if (matches.isEmpty) return [TextSpan(text: fullText)];
 
     final spans = <TextSpan>[];
@@ -35,8 +34,7 @@ class _ComicListItemState extends State<ComicSearchResult> {
 
     for (final match in matches) {
       if (match.start > lastMatchEnd) {
-        spans
-            .add(TextSpan(text: fullText.substring(lastMatchEnd, match.start)));
+        spans.add(TextSpan(text: fullText.substring(lastMatchEnd, match.start)));
       }
 
       spans.add(TextSpan(
@@ -91,15 +89,10 @@ class _ComicListItemState extends State<ComicSearchResult> {
             TextSpan(
               children: _highlightedText(widget.title, widget.searchKeyword),
             ),
-            style: const TextStyle(
-                fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
+
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black),
           subtitle: Text(
-            joinedAltTitle,
-            style: TextStyle(
-                fontSize: 14, color: Colors.grey.withValues(alpha: 0.7)),
+            style: TextStyle(fontSize: 14, color: Colors.grey.withOpacity(0.7)),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
