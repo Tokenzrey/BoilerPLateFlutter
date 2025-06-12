@@ -1,3 +1,4 @@
+import 'package:boilerplate/constants/app_theme.dart';
 import 'package:boilerplate/core/widgets/search/popover_menu.dart';
 import 'package:boilerplate/core/widgets/search/search_modal.dart';
 import 'package:flutter/material.dart';
@@ -7,20 +8,16 @@ class TopNavbar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final themeColor = isDark ? Colors.white70 : Colors.black87;
+    final darkThemeColor = AppThemeData.darkThemeData.colorScheme.surface;
+    final iconColor = AppThemeData.darkThemeData.colorScheme.onSurface;
     
     return Container(
       padding: EdgeInsets.fromLTRB(4, 0, 4, 4),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
+        color: darkThemeColor,
         borderRadius: BorderRadius.vertical(
           bottom: Radius.circular(16)
         ),
-        border: Border.all(
-          color: themeColor,
-          width: 0.5,
-        )
       ),
       child: AppBar(
         scrolledUnderElevation: 0.0,
@@ -33,7 +30,7 @@ class TopNavbar extends StatelessWidget implements PreferredSizeWidget {
         backgroundColor: Colors.transparent,
         actions: [
           IconButton(
-            icon: Icon(Icons.search, color: themeColor),
+            icon: Icon(Icons.search, color: iconColor),
             onPressed: () {
               showDialog(
                 context: context,
