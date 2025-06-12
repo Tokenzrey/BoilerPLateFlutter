@@ -5,7 +5,6 @@ import 'package:boilerplate/presentation/pages/auth/login/login.dart';
 import 'package:boilerplate/presentation/pages/sandbox/sandbox_page.dart';
 import 'package:boilerplate/presentation/pages/showcase/pagination.dart';
 import 'package:boilerplate/presentation/pages/users/profile/profile.dart';
-import 'package:boilerplate/presentation/pages/users/profile_detail/profile_detail.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -15,7 +14,6 @@ class RoutePaths {
   static const String home = '/home';
   static const String sandbox = '/sandbox';
   static const String profile = '/profile';
-  static const String profileDetails = '/profile/:id';
   static const String unauthorized = '/unauthorized';
   static const String showcasePagination = '/sc-pagination';
 }
@@ -86,6 +84,11 @@ class RoutesConfig {
       name: 'showcase-pagination',
       builder: (context, params) => const PaginationShowcasePage(),
     ),
+    RouteConfig(
+        path: RoutePaths.profile,
+        name: 'profile',
+        builder: (context, params) => const ProfileScreen(),
+    )
   ];
 
   static final List<RouteConfig> authenticatedRoutes = [
@@ -95,20 +98,12 @@ class RoutesConfig {
       builder: (context, params) => const HomeScreen(),
       requiresAuth: true,
     ),
-    RouteConfig(
-      path: RoutePaths.profile,
-      name: 'profile',
-      builder: (context, params) => const ProfileScreen(),
-      requiresAuth: true,
-    ),
-    RouteConfig(
-      path: RoutePaths.profileDetails,
-      name: 'profileDetails',
-      builder: (context, params) => ProfileDetailsScreen(
-        userId: params.pathParams['id'] ?? '',
-      ),
-      requiresAuth: true,
-    ),
+    // RouteConfig(
+    //   path: RoutePaths.profile,
+    //   name: 'profile',
+    //   builder: (context, params) => const ProfileScreen(),
+    //   requiresAuth: true,
+    // ),
   ];
 
   static List<RouteConfig> get allRoutes => [
