@@ -7,7 +7,7 @@ import 'package:boilerplate/core/widgets/components/forms/label_text.dart';
 import 'package:boilerplate/core/widgets/components/overlay/popover.dart';
 import 'package:boilerplate/core/widgets/components/overlay/overlay.dart';
 import 'package:boilerplate/core/widgets/components/forms/input.dart';
-import 'package:boilerplate/core/widgets/components/buttons/button.dart';
+import 'package:boilerplate/core/widgets/components/display/button.dart';
 import 'package:boilerplate/core/widgets/components/forms/chip.dart';
 
 /// Styling options for the SelectField trigger

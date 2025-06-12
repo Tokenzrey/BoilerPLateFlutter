@@ -1,7 +1,7 @@
 import 'package:boilerplate/constants/colors.dart';
 import 'package:boilerplate/core/widgets/components/image.dart';
 import 'package:boilerplate/core/widgets/components/typography.dart';
-import 'package:boilerplate/core/widgets/components/buttons/button.dart';
+import 'package:boilerplate/core/widgets/components/display/button.dart';
 import 'package:flutter/material.dart';
 import 'dart:math';
 
