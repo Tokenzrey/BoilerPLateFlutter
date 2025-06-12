@@ -648,14 +648,14 @@ class PaginationTheme {
 
     return PaginationTheme(
       activeColor: primaryColor,
-      activeBackgroundColor: primaryColor.withOpacity(0.1),
+      activeBackgroundColor: primaryColor.withValues(alpha: 0.1),
       textColor: theme.colorScheme.onSurface,
       disabledColor: theme.disabledColor,
       borderColor: theme.dividerColor,
-      iconColor: theme.colorScheme.onSurface.withOpacity(0.8),
+      iconColor: theme.colorScheme.onSurface.withValues(alpha: 0.8),
       ghostBackgroundColor: Colors.transparent,
       ghostHoverColor: theme.hoverColor,
-      filledHoverColor: primaryColor.withOpacity(0.8),
+      filledHoverColor: primaryColor.withValues(alpha: 0.8),
       filledActiveTextColor: theme.colorScheme.onPrimary,
       textStyle: theme.textTheme.bodyMedium ?? const TextStyle(),
       buttonBorderRadius: BorderRadius.circular(4),
@@ -717,7 +717,7 @@ class PaginationTheme {
 
     return PaginationTheme(
       activeColor: primaryColor,
-      activeBackgroundColor: primaryColor.withOpacity(0.2),
+      activeBackgroundColor: primaryColor.withValues(alpha: 0.2),
       textColor: Colors.white70,
       disabledColor: Colors.white30,
       borderColor: Colors.white24,
@@ -739,13 +739,13 @@ class PaginationTheme {
   }) {
     return PaginationTheme(
       activeColor: primaryColor,
-      activeBackgroundColor: primaryColor.withOpacity(0.1),
+      activeBackgroundColor: primaryColor.withValues(alpha: 0.1),
       textColor: textColor,
-      disabledColor: textColor.withOpacity(0.4),
-      borderColor: textColor.withOpacity(0.2),
+      disabledColor: textColor.withValues(alpha: 0.4),
+      borderColor: textColor.withValues(alpha: 0.2),
       iconColor: textColor,
       ghostBackgroundColor: Colors.transparent,
-      ghostHoverColor: textColor.withOpacity(0.05),
+      ghostHoverColor: textColor.withValues(alpha: 0.05),
       textStyle: TextStyle(color: textColor),
       buttonBorderRadius: borderRadius ?? BorderRadius.circular(4),
     );
@@ -906,26 +906,26 @@ class _PaginationButtonState extends State<PaginationButton> {
     switch (widget.type) {
       case PaginationButtonType.filled:
         if (isDisabled) {
-          return widget.theme.activeBackgroundColor.withOpacity(0.5);
+          return widget.theme.activeBackgroundColor.withValues(alpha: 0.5);
         } else if (_isPressed) {
           return widget.theme.activeColor;
         } else if (_isHovered) {
           return widget.theme.filledHoverColor ??
-              widget.theme.activeBackgroundColor.withOpacity(0.8);
+              widget.theme.activeBackgroundColor.withValues(alpha: 0.8);
         } else {
           return widget.theme.activeBackgroundColor;
         }
 
       case PaginationButtonType.outline:
         if (_isHovered) {
-          return widget.theme.activeBackgroundColor.withOpacity(0.2);
+          return widget.theme.activeBackgroundColor.withValues(alpha: 0.2);
         } else {
-          return widget.theme.activeBackgroundColor.withOpacity(0.1);
+          return widget.theme.activeBackgroundColor.withValues(alpha: 0.1);
         }
 
       case PaginationButtonType.ghost:
         if (_isPressed) {
-          return widget.theme.ghostHoverColor.withOpacity(0.8);
+          return widget.theme.ghostHoverColor.withValues(alpha: 0.8);
         } else if (_isHovered) {
           return widget.theme.ghostHoverColor;
         } else {
@@ -959,7 +959,7 @@ class _PaginationButtonState extends State<PaginationButton> {
       case PaginationButtonType.ghost:
         return _isHovered || _isPressed
             ? Border.all(
-                color: widget.theme.borderColor.withOpacity(0.3),
+                color: widget.theme.borderColor.withValues(alpha: 0.3),
                 width: borderWidth,
               )
             : null;
