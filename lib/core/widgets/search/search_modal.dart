@@ -1,3 +1,4 @@
+import 'package:boilerplate/constants/app_theme.dart';
 import 'package:boilerplate/utils/routes/routes.dart';
 import 'package:flutter/material.dart';
 import 'package:boilerplate/core/widgets/card/comic_search_result_item.dart';
@@ -9,7 +10,7 @@ class SearchModal extends StatefulWidget {
   const SearchModal({
     super.key,
     this.positionX = 0.0,
-    this.positionY = 0.0,
+    this.positionY = 5.0,
   });
 
   @override
@@ -80,7 +81,7 @@ class _SearchModalState extends State<SearchModal> {
         left: widget.positionX,
         top: widget.positionY,
       ),
-      backgroundColor: Theme.of(context).colorScheme.surface,
+      backgroundColor: AppThemeData.darkThemeData.colorScheme.onSurface,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Container(
         constraints: BoxConstraints(maxHeight: 500, maxWidth: 350),
