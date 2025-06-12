@@ -32,13 +32,10 @@ class _ProfilecomickState extends State<Profilecomick> {
 
   @override
   Widget build(BuildContext context) {
-    List<Widget> tabs = [
-      profileTabs(),
-      settingTabs()
-    ];
+    List<Widget> tabs = [profileTabs(), settingTabs()];
 
     return Scaffold(
-       // TODO: nambahin appbar
+      // TODO: nambahin appbar
       appBar: EmptyAppBar(),
       body: SingleChildScrollView(
         child: Container(
@@ -56,32 +53,28 @@ class _ProfilecomickState extends State<Profilecomick> {
                         cur = 0;
                       }),
                       colors: ButtonColors(background: Colors.transparent),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.person,
-                            color: Colors.white,
-                          ),
-                          SizedBox(width: 8),
-                          AppText("Profile"),
-                        ]
-                      ),
+                      child: Row(children: [
+                        Icon(
+                          Icons.person,
+                          color: Colors.white,
+                        ),
+                        SizedBox(width: 8),
+                        AppText("Profile"),
+                      ]),
                     ),
                     Button(
                       onPressed: () => setState(() {
                         cur = 1;
                       }),
                       colors: ButtonColors(background: Colors.transparent),
-                      child: Row(
-                          children: [
-                            Icon(
-                              Icons.settings,
-                              color: Colors.white,
-                            ),
-                            SizedBox(width: 8),
-                            AppText("Settings")
-                          ]
-                      ),
+                      child: Row(children: [
+                        Icon(
+                          Icons.settings,
+                          color: Colors.white,
+                        ),
+                        SizedBox(width: 8),
+                        AppText("Settings")
+                      ]),
                     ),
                   ],
                 ),
@@ -131,10 +124,11 @@ class _ProfilecomickState extends State<Profilecomick> {
         ),
         Button(
           text: "Save",
-          colors: ButtonColors(background: Colors.blue[900], text: Colors.white),
+          colors:
+              ButtonColors(background: Colors.blue[900], text: Colors.white),
 
           // TODO
-          onPressed: (){},
+          onPressed: () {},
         ),
         const SizedBox(height: 12),
         AppText(
@@ -152,19 +146,17 @@ class _ProfilecomickState extends State<Profilecomick> {
                     isobscure = !isobscure;
                   });
                 },
-                icon: Icon(
-                    isobscure ? Icons.visibility_off : Icons.visibility
-                ),
-              )
-          ),
+                icon: Icon(isobscure ? Icons.visibility_off : Icons.visibility),
+              )),
           controller: passwordController,
           obscureText: isobscure,
         ),
         Button(
           text: "Save",
-          colors: ButtonColors(background: Colors.blue[900], text: Colors.white),
+          colors:
+              ButtonColors(background: Colors.blue[900], text: Colors.white),
           // TODO
-          onPressed: (){},
+          onPressed: () {},
         ),
         const SizedBox(height: 24),
         AppText(
@@ -204,12 +196,12 @@ class _ProfilecomickState extends State<Profilecomick> {
           text: "Yes, delete my account",
           colors: ButtonColors(background: Colors.red[900], text: Colors.white),
           // TODO
-          onPressed: (){},
+          onPressed: () {},
         ),
       ],
     );
   }
-  
+
   Widget settingTabs() {
     return AppText("ini halaman settings");
   }

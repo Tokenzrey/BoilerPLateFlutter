@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:boilerplate/core/widgets/card/comic_search_result_item.dart';
 
-class ComicSearchSandboxPage extends StatelessWidget {
-  const ComicSearchSandboxPage({super.key});
+class ComicSearchSandbox extends StatelessWidget {
+  const ComicSearchSandbox({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -15,7 +15,8 @@ class ComicSearchSandboxPage extends StatelessWidget {
       ),
       ComicSearchResult(
         title: 'The Infinite Mage',
-        imageUrl: 'https://n14.mbxma.org/thumb/W600/ampi/d20/d207b824a6a501f5267eb3aaeb301a6642f279a7_400_600_104898.jpeg',
+        imageUrl:
+            'https://n14.mbxma.org/thumb/W600/ampi/d20/d207b824a6a501f5267eb3aaeb301a6642f279a7_400_600_104898.jpeg',
         altTitle: ['Infinite Wizard', 'Infinite Mage'],
         searchKeyword: 'Mage',
       ),
@@ -24,8 +25,8 @@ class ComicSearchSandboxPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('ComicSearch Preview')),
       body: ListView.builder(
-          itemCount: dummyData.length,
-          itemBuilder: (context, index) => dummyData[index],
+        itemCount: dummyData.length,
+        itemBuilder: (context, index) => dummyData[index],
       ),
     );
   }

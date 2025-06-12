@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:boilerplate/core/widgets/card/comic_card.dart';
 
-class ComicCardSandboxPage extends StatelessWidget {
-  const ComicCardSandboxPage({super.key});
+class ComicCardSandbox extends StatelessWidget {
+  const ComicCardSandbox({super.key});
 
   @override
   Widget build(BuildContext context) {
     final dummyData = [
       ComicCard(
         title: 'The Infinite Mage',
-        imageUrl: 'https://n14.mbxma.org/thumb/W600/ampi/d20/d207b824a6a501f5267eb3aaeb301a6642f279a7_400_600_104898.jpeg',
+        imageUrl:
+            'https://n14.mbxma.org/thumb/W600/ampi/d20/d207b824a6a501f5267eb3aaeb301a6642f279a7_400_600_104898.jpeg',
         chapter: 'Chap 120',
         updated: '15 hours ago',
         scanlator: 'Asurascans',
@@ -22,7 +23,8 @@ class ComicCardSandboxPage extends StatelessWidget {
       ),
       ComicCard(
         title: 'The Infinite Mage',
-        imageUrl: 'https://n14.mbxma.org/thumb/W600/ampi/d20/d207b824a6a501f5267eb3aaeb301a6642f279a7_400_600_104898.jpeg',
+        imageUrl:
+            'https://n14.mbxma.org/thumb/W600/ampi/d20/d207b824a6a501f5267eb3aaeb301a6642f279a7_400_600_104898.jpeg',
         chapter: 'Chap 120',
         updated: '15 hours ago',
         scanlator: 'Asurascans',
@@ -32,7 +34,8 @@ class ComicCardSandboxPage extends StatelessWidget {
       ),
       ComicCard(
         title: 'The Infinite Mage',
-        imageUrl: 'https://n14.mbxma.org/thumb/W600/ampi/d20/d207b824a6a501f5267eb3aaeb301a6642f279a7_400_600_104898.jpeg',
+        imageUrl:
+            'https://n14.mbxma.org/thumb/W600/ampi/d20/d207b824a6a501f5267eb3aaeb301a6642f279a7_400_600_104898.jpeg',
         chapter: 'Chap 120',
         updated: '15 hours ago',
         scanlator: 'Asurascans',
@@ -42,7 +45,8 @@ class ComicCardSandboxPage extends StatelessWidget {
       ),
       ComicCard(
         title: 'The Infinite Mage aaaaaaaaaaaaaaaa',
-        imageUrl: 'https://n14.mbxma.org/thumb/W600/ampi/d20/d207b824a6a501f5267eb3aaeb301a6642f279a7_400_600_104898.jpeg',
+        imageUrl:
+            'https://n14.mbxma.org/thumb/W600/ampi/d20/d207b824a6a501f5267eb3aaeb301a6642f279a7_400_600_104898.jpeg',
         chapter: 'Chap 120',
         updated: '15 hours ago',
         scanlator: 'Asurascans',
@@ -52,7 +56,8 @@ class ComicCardSandboxPage extends StatelessWidget {
       ),
       ComicCard(
         title: 'The Infinite Mage',
-        imageUrl: 'https://n14.mbxma.org/thumb/W600/ampi/d20/d207b824a6a501f5267eb3aaeb301a6642f279a7_400_600_104898.jpeg',
+        imageUrl:
+            'https://n14.mbxma.org/thumb/W600/ampi/d20/d207b824a6a501f5267eb3aaeb301a6642f279a7_400_600_104898.jpeg',
         chapter: 'Chap 120',
         updated: '15 hours ago',
         scanlator: 'Asurascans',
@@ -62,7 +67,8 @@ class ComicCardSandboxPage extends StatelessWidget {
       ),
       ComicCard(
         title: 'The Infinite Mage',
-        imageUrl: 'https://n14.mbxma.org/thumb/W600/ampi/d20/d207b824a6a501f5267eb3aaeb301a6642f279a7_400_600_104898.jpeg',
+        imageUrl:
+            'https://n14.mbxma.org/thumb/W600/ampi/d20/d207b824a6a501f5267eb3aaeb301a6642f279a7_400_600_104898.jpeg',
         chapter: 'Chap 120',
         updated: '15 hours ago',
         scanlator: 'Asurascans',
@@ -72,7 +78,8 @@ class ComicCardSandboxPage extends StatelessWidget {
       ),
       ComicCard(
         title: 'The Infinite Mage',
-        imageUrl: 'https://n14.mbxma.org/thumb/W600/ampi/d20/d207b824a6a501f5267eb3aaeb301a6642f279a7_400_600_104898.jpeg',
+        imageUrl:
+            'https://n14.mbxma.org/thumb/W600/ampi/d20/d207b824a6a501f5267eb3aaeb301a6642f279a7_400_600_104898.jpeg',
         chapter: 'Chap 120',
         updated: '15 hours ago',
         scanlator: 'Asurascans',
