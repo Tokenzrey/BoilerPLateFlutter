@@ -3,9 +3,9 @@ import 'package:boilerplate/core/widgets/components/forms/app_form.dart';
 import 'package:boilerplate/core/widgets/components/forms/input.dart';
 import 'package:boilerplate/core/widgets/components/forms/checkbox_widget.dart';
 import 'package:boilerplate/core/widgets/components/forms/chip.dart';
-import 'package:boilerplate/core/widgets/components/forms/radio_button_widget.dart';
+import 'package:boilerplate/core/widgets/components/forms/radio_button.dart';
 import 'package:boilerplate/core/widgets/components/forms/select.dart';
-import 'package:boilerplate/core/widgets/components/forms/switch_input_widget.dart';
+import 'package:boilerplate/core/widgets/components/forms/switch.dart';
 import 'package:boilerplate/core/widgets/components/typography.dart';
 import 'package:boilerplate/constants/colors.dart';
 

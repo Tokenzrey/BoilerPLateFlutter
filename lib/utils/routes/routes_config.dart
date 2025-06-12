@@ -16,8 +16,6 @@ class RoutePaths {
   static const String profile = '/profile';
   static const String profileDetails = '/profile/:id';
   static const String unauthorized = '/unauthorized';
-  // static const String adminDashboard = '/admin/dashboard';
-  // static const String adminUsers = '/admin/users';
 }
 
 class RouteParams {
@@ -105,25 +103,6 @@ class RoutesConfig {
       requiresAuth: true,
     ),
   ];
-
-  // static final List<RouteConfig> adminRoutes = [
-  //   RouteConfig(
-  //     path: RoutePaths.adminDashboard,
-  //     name: 'adminDashboard',
-  //     builder: (context, params) => const AdminDashboardScreen(),
-  //     requiresAuth: true,
-  //     requiresAdmin: true,
-  //     allowedRoles: ['admin'],
-  //   ),
-  //   RouteConfig(
-  //     path: RoutePaths.adminUsers,
-  //     name: 'adminUsers',
-  //     builder: (context, params) => const AdminUsersScreen(),
-  //     requiresAuth: true,
-  //     requiresAdmin: true,
-  //     allowedRoles: ['admin'],
-  //   ),
-  // ];
 
   static List<RouteConfig> get allRoutes => [
         ...publicRoutes,

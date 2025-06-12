@@ -4,7 +4,7 @@ import 'package:boilerplate/constants/colors.dart';
 import 'package:boilerplate/core/widgets/components/typography.dart';
 import 'package:boilerplate/core/widgets/components/forms/app_form.dart';
 import 'package:boilerplate/core/widgets/components/forms/input.dart';
-import 'package:boilerplate/core/widgets/components/buttons/button.dart';
+import 'package:boilerplate/core/widgets/components/display/button.dart';
 import 'package:boilerplate/presentation/store/auth_firebase/auth_store.dart';
 import 'package:boilerplate/utils/device/device_utils.dart';
 import 'package:flutter/material.dart';
