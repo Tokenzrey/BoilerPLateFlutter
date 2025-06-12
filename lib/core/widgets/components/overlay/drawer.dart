@@ -1,1628 +1,341 @@
 import 'dart:async';
-import 'dart:math';
 
-import 'package:boilerplate/core/widgets/animation_base.dart';
-import 'package:boilerplate/core/widgets/components/layout/outlined_container.dart';
-import 'package:boilerplate/core/widgets/components/overlay/dialog.dart';
-import 'package:boilerplate/core/widgets/components/overlay/overlay.dart';
-import 'package:boilerplate/core/widgets/components/overlay/popover.dart';
-import 'package:boilerplate/core/widgets/utils.dart';
-import 'package:data_widget/data_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 
-typedef DrawerBuilder = Widget Function(BuildContext context, Size extraSize,
-    Size size, EdgeInsets padding, int stackIndex);
+import 'overlay.dart';
+import 'popover.dart';
 
-DrawerOverlayCompleter<T?> openDrawerOverlay<T>({
-  required BuildContext context,
-  required WidgetBuilder builder,
-  required OverlayPosition position,
-  bool expands = false,
-  bool draggable = true,
-  bool barrierDismissible = true,
-  WidgetBuilder? backdropBuilder,
-  bool useSafeArea = true,
-  bool showDragHandle = true,
-  BorderRadiusGeometry? borderRadius,
-  Size? dragHandleSize,
-  bool transformBackdrop = true,
-  double? surfaceOpacity,
-  double? surfaceBlur,
-  Color? barrierColor,
-  AnimationController? animationController,
-  bool autoOpen = true,
-  BoxConstraints? constraints,
-  AlignmentGeometry? alignment,
-}) {
-  return openRawDrawer<T>(
-    context: context,
-    barrierDismissible: barrierDismissible,
-    backdropBuilder: backdropBuilder,
-    useSafeArea: useSafeArea,
-    transformBackdrop: transformBackdrop,
-    animationController: animationController,
-    autoOpen: autoOpen,
-    constraints: constraints,
-    alignment: alignment,
-    builder: (context, extraSize, size, padding, stackIndex) {
-      return DrawerWrapper(
-        position: position,
-        expands: expands,
-        draggable: draggable,
-        extraSize: extraSize,
-        size: size,
-        showDragHandle: showDragHandle,
-        dragHandleSize: dragHandleSize,
-        padding: padding,
-        borderRadius: borderRadius,
-        surfaceOpacity: surfaceOpacity,
-        surfaceBlur: surfaceBlur,
-        barrierColor: barrierColor,
-        stackIndex: stackIndex,
-        child: Builder(builder: (context) {
-          return builder(context);
-        }),
-      );
-    },
-    position: position,
-  );
-}
+/// A handler for drawer and sheet overlays within the OverlayManager system.
+/// Register this handler with OverlayManagerLayer to enable drawer and sheet functionality.
+class DrawerOverlayHandler extends OverlayHandler {
+  /// Active drawers managed by this handler
+  final List<DrawerEntry> _activeDrawers = [];
 
-DrawerOverlayCompleter<T?> openSheetOverlay<T>({
-  required BuildContext context,
-  required WidgetBuilder builder,
-  required OverlayPosition position,
-  bool barrierDismissible = true,
-  bool transformBackdrop = false,
-  WidgetBuilder? backdropBuilder,
-  Color? barrierColor,
-  bool draggable = false,
-  AnimationController? animationController,
-  bool autoOpen = true,
-  BoxConstraints? constraints,
-  AlignmentGeometry? alignment,
-}) {
-  return openRawDrawer<T>(
-    context: context,
-    transformBackdrop: transformBackdrop,
-    barrierDismissible: barrierDismissible,
-    useSafeArea: false, // handled by the sheet itself
-    animationController: animationController,
-    backdropBuilder: backdropBuilder,
-    autoOpen: autoOpen,
-    constraints: constraints,
-    alignment: alignment,
-    builder: (context, extraSize, size, padding, stackIndex) {
-      return SheetWrapper(
-        position: position,
-        expands: true,
-        draggable: draggable,
-        extraSize: extraSize,
-        size: size,
-        padding: padding,
-        barrierColor: barrierColor,
-        stackIndex: stackIndex,
-        child: Builder(builder: (context) {
-          return builder(context);
-        }),
-      );
-    },
-    position: position,
-  );
-}
+  /// Notifier for the number of active drawers
+  final ValueNotifier<int> _drawerCountNotifier = ValueNotifier(0);
 
-Future<T?> openDrawer<T>({
-  required BuildContext context,
-  required WidgetBuilder builder,
-  required OverlayPosition position,
-  bool expands = false,
-  bool draggable = true,
-  bool barrierDismissible = true,
-  WidgetBuilder? backdropBuilder,
-  bool useSafeArea = true,
-  bool showDragHandle = true,
-  BorderRadiusGeometry? borderRadius,
-  Size? dragHandleSize,
-  bool transformBackdrop = true,
-  double? surfaceOpacity,
-  double? surfaceBlur,
-  Color? barrierColor,
-  AnimationController? animationController,
-  BoxConstraints? constraints,
-  AlignmentGeometry? alignment,
-}) {
-  return openDrawerOverlay<T>(
-    context: context,
-    builder: builder,
-    position: position,
-    expands: expands,
-    draggable: draggable,
-    barrierDismissible: barrierDismissible,
-    backdropBuilder: backdropBuilder,
-    useSafeArea: useSafeArea,
-    showDragHandle: showDragHandle,
-    borderRadius: borderRadius,
-    dragHandleSize: dragHandleSize,
-    transformBackdrop: transformBackdrop,
-    surfaceOpacity: surfaceOpacity,
-    surfaceBlur: surfaceBlur,
-    barrierColor: barrierColor,
-    animationController: animationController,
-    constraints: constraints,
-    alignment: alignment,
-  ).future;
-}
+  /// Tracks whether initialization has been completed
+  bool _isInitialized = false;
 
-Future<T?> openSheet<T>({
-  required BuildContext context,
-  required WidgetBuilder builder,
-  required OverlayPosition position,
-  bool barrierDismissible = true,
-  bool transformBackdrop = false,
-  Color? barrierColor,
-  bool draggable = false,
-  AnimationController? animationController,
-  WidgetBuilder? backdropBuilder,
-  BoxConstraints? constraints,
-  AlignmentGeometry? alignment,
-}) {
-  return openSheetOverlay<T>(
-    context: context,
-    builder: builder,
-    position: position,
-    barrierDismissible: barrierDismissible,
-    transformBackdrop: transformBackdrop,
-    barrierColor: barrierColor,
-    draggable: draggable,
-    animationController: animationController,
-    backdropBuilder: backdropBuilder,
-    constraints: constraints,
-    alignment: alignment,
-  ).future;
-}
+  /// Creates a drawer overlay handler
+  DrawerOverlayHandler();
 
-class DrawerWrapper extends StatefulWidget {
-  final OverlayPosition position;
-  final Widget child;
-  final bool expands;
-  final bool draggable;
-  final Size extraSize;
-  final Size size;
-  final bool showDragHandle;
-  final BorderRadiusGeometry? borderRadius;
-  final Size? dragHandleSize;
-  final EdgeInsets padding;
-  final double? surfaceOpacity;
-  final double? surfaceBlur;
-  final Color? barrierColor;
-  final int stackIndex;
-  final double? gapBeforeDragger;
-  final double? gapAfterDragger;
-  final AnimationController? animationController;
-  final BoxConstraints? constraints;
-  final AlignmentGeometry? alignment;
+  /// Get the number of active drawers
+  int get drawerCount => _activeDrawers.length;
 
-  const DrawerWrapper({
-    super.key,
-    required this.position,
-    required this.child,
-    this.expands = false,
-    this.draggable = true,
-    this.extraSize = Size.zero,
-    required this.size,
-    this.showDragHandle = true,
-    this.borderRadius,
-    this.dragHandleSize,
-    this.padding = EdgeInsets.zero,
-    this.surfaceOpacity,
-    this.surfaceBlur,
-    this.barrierColor,
-    this.gapBeforeDragger,
-    this.gapAfterDragger,
-    required this.stackIndex,
-    this.animationController,
-    this.constraints,
-    this.alignment,
-  });
+  /// Get notifier for drawer count changes
+  ValueNotifier<int> get drawerCountNotifier => _drawerCountNotifier;
 
   @override
-  State<DrawerWrapper> createState() => _DrawerWrapperState();
-}
-
-class _DrawerWrapperState extends State<DrawerWrapper>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late ControlledAnimation _extraOffset;
-
-  OverlayPosition get resolvedPosition {
-    if (widget.position == OverlayPosition.start) {
-      return Directionality.of(context) == TextDirection.ltr
-          ? OverlayPosition.left
-          : OverlayPosition.right;
-    }
-    if (widget.position == OverlayPosition.end) {
-      return Directionality.of(context) == TextDirection.ltr
-          ? OverlayPosition.right
-          : OverlayPosition.left;
-    }
-    return widget.position;
+  void initWithContext(BuildContext context) {
+    _isInitialized = true;
   }
 
-  @override
-  void initState() {
-    super.initState();
-    _controller = widget.animationController ??
-        AnimationController(
-          vsync: this,
-          duration: const Duration(milliseconds: 350),
-        );
-    _extraOffset = ControlledAnimation(_controller);
-  }
+  /// Shows a drawer with the specified configuration
+  DrawerCompleter<T> showDrawer<T>({
+    required BuildContext context,
+    required WidgetBuilder builder,
+    DrawerPosition position = DrawerPosition.left,
+    bool modal = true,
+    bool barrierDismissible = true,
+    bool draggable = true,
+    bool useSafeArea = true,
+    bool showDragHandle = true,
+    BorderRadius? borderRadius,
+    Size? dragHandleSize,
+    BoxDecoration? decoration,
+    double? width,
+    double? height,
+    double? elevation,
+    Color? backgroundColor,
+    Color? barrierColor,
+    EdgeInsets? padding,
+    BoxConstraints? constraints,
+    DrawerAnimation? animation,
+    DrawerController? controller,
+    VoidCallback? onOpen,
+    VoidCallback? onClose,
+    bool Function()? onWillClose,
+    bool resizable = false,
+    double minResizeWidth = 200,
+    double maxResizeWidth = 600,
+    double minResizeHeight = 100,
+    double maxResizeHeight = 800,
+    Widget Function(BuildContext, Widget)? headerBuilder,
+    Widget Function(BuildContext, Widget)? footerBuilder,
+  }) {
+    assert(_isInitialized,
+        "DrawerOverlayHandler must be initialized with OverlayManagerLayer");
 
-  double? get expandingHeight {
-    switch (resolvedPosition) {
-      case OverlayPosition.left:
-      case OverlayPosition.right:
-        return double.infinity;
-      default:
-        return null;
-    }
-  }
-
-  double? get expandingWidth {
-    switch (resolvedPosition) {
-      case OverlayPosition.top:
-      case OverlayPosition.bottom:
-        return double.infinity;
-      default:
-        return null;
-    }
-  }
-
-  Widget buildDraggableBar(ThemeData theme) {
-    switch (resolvedPosition) {
-      case OverlayPosition.left:
-      case OverlayPosition.right:
-        return Container(
-          width: widget.dragHandleSize?.width ?? 6,
-          height: widget.dragHandleSize?.height ?? 100,
-          decoration: BoxDecoration(
-            color: theme.colorScheme.outlineVariant,
-            borderRadius: BorderRadius.circular(24),
-          ),
-        );
-      case OverlayPosition.top:
-      case OverlayPosition.bottom:
-        return Container(
-          width: widget.dragHandleSize?.width ?? 100,
-          height: widget.dragHandleSize?.height ?? 6,
-          decoration: BoxDecoration(
-            color: theme.colorScheme.outlineVariant,
-            borderRadius: BorderRadius.circular(24),
-          ),
-        );
-      default:
-        throw UnimplementedError('Unknown position');
-    }
-  }
-
-  Size getSize(BuildContext context) {
-    final RenderBox? renderBox = context.findRenderObject() as RenderBox?;
-    return renderBox?.hasSize ?? false
-        ? renderBox?.size ?? widget.size
-        : widget.size;
-  }
-
-  Widget buildDraggable(BuildContext context, ControlledAnimation? controlled,
-      Widget child, ThemeData theme) {
-    switch (resolvedPosition) {
-      case OverlayPosition.left:
-        return GestureDetector(
-          behavior: HitTestBehavior.translucent,
-          onHorizontalDragUpdate: (details) {
-            if (controlled == null) {
-              return;
-            }
-            final size = getSize(context);
-            final increment = details.primaryDelta! / size.width;
-            double newValue = controlled.value + increment;
-            if (newValue < 0) {
-              newValue = 0;
-            }
-            if (newValue > 1) {
-              _extraOffset.value +=
-                  details.primaryDelta! / max(_extraOffset.value, 1);
-              newValue = 1;
-            }
-            controlled.value = newValue;
-          },
-          onHorizontalDragEnd: (details) {
-            if (controlled == null) {
-              return;
-            }
-            _extraOffset.forward(0, Curves.easeOut);
-            if (controlled.value + _extraOffset.value < 0.5) {
-              controlled.forward(0, Curves.easeOut).then((value) {
-                closeDrawer(context);
-              });
-            } else {
-              controlled.forward(1, Curves.easeOut);
-            }
-          },
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              AnimatedBuilder(
-                  animation: _extraOffset,
-                  builder: (context, child) {
-                    return Gap(
-                        widget.extraSize.width + _extraOffset.value.max(0));
-                  }),
-              Flexible(
-                child: AnimatedBuilder(
-                  builder: (context, child) {
-                    return Transform.scale(
-                        scaleX:
-                            1 + _extraOffset.value / getSize(context).width / 4,
-                        alignment: AlignmentDirectional.centerEnd,
-                        child: child);
-                  },
-                  animation: _extraOffset,
-                  child: child,
-                ),
-              ),
-              if (widget.showDragHandle) ...[
-                Gap(widget.gapAfterDragger ?? 16),
-                buildDraggableBar(theme),
-                Gap(widget.gapBeforeDragger ?? 12),
-              ],
-            ],
-          ),
-        );
-      case OverlayPosition.right:
-        return GestureDetector(
-          behavior: HitTestBehavior.translucent,
-          onHorizontalDragUpdate: (details) {
-            if (controlled == null) {
-              return;
-            }
-            final size = getSize(context);
-            final increment = details.primaryDelta! / size.width;
-            double newValue = controlled.value - increment;
-            if (newValue < 0) {
-              newValue = 0;
-            }
-            if (newValue > 1) {
-              _extraOffset.value +=
-                  -details.primaryDelta! / max(_extraOffset.value, 1);
-              newValue = 1;
-            }
-            controlled.value = newValue;
-          },
-          onHorizontalDragEnd: (details) {
-            if (controlled == null) {
-              return;
-            }
-            _extraOffset.forward(0, Curves.easeOut);
-            if (controlled.value + _extraOffset.value < 0.5) {
-              controlled.forward(0, Curves.easeOut).then((value) {
-                closeDrawer(context);
-              });
-            } else {
-              controlled.forward(1, Curves.easeOut);
-            }
-          },
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (widget.showDragHandle) ...[
-                Gap(widget.gapBeforeDragger ?? 12),
-                buildDraggableBar(theme),
-                Gap(widget.gapAfterDragger ?? 16),
-              ],
-              Flexible(
-                child: AnimatedBuilder(
-                  builder: (context, child) {
-                    return Transform.scale(
-                        scaleX:
-                            1 + _extraOffset.value / getSize(context).width / 4,
-                        alignment: AlignmentDirectional.centerStart,
-                        child: child);
-                  },
-                  animation: _extraOffset,
-                  child: child,
-                ),
-              ),
-              AnimatedBuilder(
-                  animation: _extraOffset,
-                  builder: (context, child) {
-                    return Gap(
-                        widget.extraSize.width + _extraOffset.value.max(0));
-                  }),
-            ],
-          ),
-        );
-      case OverlayPosition.top:
-        return GestureDetector(
-          behavior: HitTestBehavior.translucent,
-          onVerticalDragUpdate: (details) {
-            if (controlled == null) {
-              return;
-            }
-            final size = getSize(context);
-            final increment = details.primaryDelta! / size.height;
-            double newValue = controlled.value + increment;
-            if (newValue < 0) {
-              newValue = 0;
-            }
-            if (newValue > 1) {
-              _extraOffset.value +=
-                  details.primaryDelta! / max(_extraOffset.value, 1);
-              newValue = 1;
-            }
-            controlled.value = newValue;
-          },
-          onVerticalDragEnd: (details) {
-            if (controlled == null) {
-              return;
-            }
-            _extraOffset.forward(0, Curves.easeOut);
-            if (controlled.value + _extraOffset.value < 0.5) {
-              controlled.forward(0, Curves.easeOut).then((value) {
-                closeDrawer(context);
-              });
-            } else {
-              controlled.forward(1, Curves.easeOut);
-            }
-          },
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              AnimatedBuilder(
-                  animation: _extraOffset,
-                  builder: (context, child) {
-                    return Gap(
-                        widget.extraSize.height + _extraOffset.value.max(0));
-                  }),
-              Flexible(
-                child: AnimatedBuilder(
-                  builder: (context, child) {
-                    return Transform.scale(
-                        scaleY: 1 +
-                            _extraOffset.value / getSize(context).height / 4,
-                        alignment: Alignment.bottomCenter,
-                        child: child);
-                  },
-                  animation: _extraOffset,
-                  child: child,
-                ),
-              ),
-              if (widget.showDragHandle) ...[
-                Gap(widget.gapAfterDragger ?? 16),
-                buildDraggableBar(theme),
-                Gap(widget.gapBeforeDragger ?? 12),
-              ],
-            ],
-          ),
-        );
-      case OverlayPosition.bottom:
-        return GestureDetector(
-          behavior: HitTestBehavior.translucent,
-          onVerticalDragUpdate: (details) {
-            if (controlled == null) {
-              return;
-            }
-            final size = getSize(context);
-            final increment = details.primaryDelta! / size.height;
-            double newValue = controlled.value - increment;
-            if (newValue < 0) {
-              newValue = 0;
-            }
-            if (newValue > 1) {
-              _extraOffset.value +=
-                  -details.primaryDelta! / max(_extraOffset.value, 1);
-              newValue = 1;
-            }
-            controlled.value = newValue;
-          },
-          onVerticalDragEnd: (details) {
-            if (controlled == null) {
-              return;
-            }
-            _extraOffset.forward(0, Curves.easeOut);
-            if (controlled.value + _extraOffset.value < 0.5) {
-              controlled.forward(0, Curves.easeOut).then((value) {
-                closeDrawer(context);
-              });
-            } else {
-              controlled.forward(1, Curves.easeOut);
-            }
-          },
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (widget.showDragHandle) ...[
-                Gap(widget.gapBeforeDragger ?? 12),
-                buildDraggableBar(theme),
-                Gap(widget.gapAfterDragger ?? 16),
-              ],
-              Flexible(
-                child: AnimatedBuilder(
-                  builder: (context, child) {
-                    return Transform.scale(
-                        scaleY: 1 +
-                            _extraOffset.value / getSize(context).height / 4,
-                        alignment: Alignment.topCenter,
-                        child: child);
-                  },
-                  animation: _extraOffset,
-                  child: child,
-                ),
-              ),
-              AnimatedBuilder(
-                  animation: _extraOffset,
-                  builder: (context, child) {
-                    return Gap(
-                        widget.extraSize.height + _extraOffset.value.max(0));
-                  }),
-            ],
-          ),
-        );
-      default:
-        throw UnimplementedError('Unknown position');
-    }
-  }
-
-  @override
-  void didUpdateWidget(covariant DrawerWrapper oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.animationController != oldWidget.animationController) {
-      if (oldWidget.animationController == null) {
-        _controller.dispose();
-      }
-      _controller = widget.animationController ??
-          AnimationController(
-            vsync: this,
-            duration: const Duration(milliseconds: 350),
-          );
-    }
-  }
-
-  @override
-  void dispose() {
-    if (widget.animationController == null) {
-      _controller.dispose();
-    }
-    super.dispose();
-  }
-
-  Border getBorder(ThemeData theme) {
-    switch (resolvedPosition) {
-      case OverlayPosition.left:
-        // top, right, bottom
-        return Border(
-          right: BorderSide(color: theme.colorScheme.outline),
-          top: BorderSide(color: theme.colorScheme.outline),
-          bottom: BorderSide(color: theme.colorScheme.outline),
-        );
-      case OverlayPosition.right:
-        // top, left, bottom
-        return Border(
-          left: BorderSide(color: theme.colorScheme.outline),
-          top: BorderSide(color: theme.colorScheme.outline),
-          bottom: BorderSide(color: theme.colorScheme.outline),
-        );
-      case OverlayPosition.top:
-        // left, right, bottom
-        return Border(
-          left: BorderSide(color: theme.colorScheme.outline),
-          right: BorderSide(color: theme.colorScheme.outline),
-          bottom: BorderSide(color: theme.colorScheme.outline),
-        );
-      case OverlayPosition.bottom:
-        // left, right, top
-        return Border(
-          left: BorderSide(color: theme.colorScheme.outline),
-          right: BorderSide(color: theme.colorScheme.outline),
-          top: BorderSide(color: theme.colorScheme.outline),
-        );
-      default:
-        throw UnimplementedError('Unknown position');
-    }
-  }
-
-  BorderRadiusGeometry getBorderRadius(double radius) {
-    switch (resolvedPosition) {
-      case OverlayPosition.left:
-        return BorderRadius.only(
-          topRight: Radius.circular(radius),
-          bottomRight: Radius.circular(radius),
-        );
-      case OverlayPosition.right:
-        return BorderRadius.only(
-          topLeft: Radius.circular(radius),
-          bottomLeft: Radius.circular(radius),
-        );
-      case OverlayPosition.top:
-        return BorderRadius.only(
-          bottomLeft: Radius.circular(radius),
-          bottomRight: Radius.circular(radius),
-        );
-      case OverlayPosition.bottom:
-        return BorderRadius.only(
-          topLeft: Radius.circular(radius),
-          topRight: Radius.circular(radius),
-        );
-      default:
-        throw UnimplementedError('Unknown position');
-    }
-  }
-
-  BoxDecoration getDecoration(ThemeData theme) {
-    var border = getBorder(theme);
-    // according to the design, the border radius is 10
-    // seems to be a fixed value
-    var borderRadius = widget.borderRadius ?? getBorderRadius(24);
-    var backgroundColor = theme.colorScheme.surface;
-    var surfaceOpacity = widget.surfaceOpacity ?? 0.14;
-    if (surfaceOpacity < 1) {
-      if (widget.stackIndex == 0) {
-        // the top sheet should have a higher opacity to prevent
-        // visual bleeding from the main content
-        surfaceOpacity = surfaceOpacity * 1.25;
-      }
-      backgroundColor = backgroundColor.scaleAlpha(surfaceOpacity);
-    }
-    return BoxDecoration(
+    // Create config from parameters
+    final config = DrawerConfig(
+      position: position,
+      modal: modal,
+      barrierDismissible: barrierDismissible,
+      draggable: draggable,
+      useSafeArea: useSafeArea,
+      showDragHandle: showDragHandle,
       borderRadius: borderRadius,
-      color: backgroundColor,
-      border: border,
+      dragHandleSize: dragHandleSize,
+      decoration: decoration,
+      width: width,
+      height: height,
+      elevation: elevation,
+      backgroundColor: backgroundColor,
+      barrierColor: barrierColor,
+      padding: padding,
+      constraints: constraints,
+      animation: animation,
+      resizable: resizable,
+      minResizeWidth: minResizeWidth,
+      maxResizeWidth: maxResizeWidth,
+      minResizeHeight: minResizeHeight,
+      maxResizeHeight: maxResizeHeight,
+      headerBuilder: headerBuilder,
+      footerBuilder: footerBuilder,
+    );
+
+    return _showDrawer<T>(
+      context: context,
+      builder: builder,
+      config: config,
+      controller: controller,
+      onOpen: onOpen,
+      onClose: onClose,
+      onWillClose: onWillClose,
     );
   }
 
-  Widget buildChild(BuildContext context) {
-    return widget.child;
-  }
+  /// Shows a sheet with the specified configuration
+  DrawerCompleter<T> showSheet<T>({
+    required BuildContext context,
+    required WidgetBuilder builder,
+    DrawerPosition position = DrawerPosition.bottom,
+    bool modal = true,
+    bool barrierDismissible = true,
+    bool draggable = false,
+    bool useSafeArea = true,
+    BorderRadius? borderRadius = const BorderRadius.all(Radius.zero),
+    BoxDecoration? decoration,
+    Color? backgroundColor,
+    Color? barrierColor,
+    EdgeInsets? padding,
+    BoxConstraints? constraints,
+    DrawerAnimation? animation,
+    SheetController? controller,
+    List<double>? snapPoints,
+    int? initialSnapIndex,
+    double? minHeight,
+    double? maxHeight,
+    VoidCallback? onOpen,
+    VoidCallback? onClose,
+    bool Function()? onWillClose,
+    ValueChanged<int>? onSnapPointChanged,
+    bool isDismissible = true,
+    bool showDragHandle = false,
+    bool hideKeyboard = true,
+    Widget Function(BuildContext, Widget)? headerBuilder,
+  }) {
+    assert(_isInitialized,
+        "DrawerOverlayHandler must be initialized with OverlayManagerLayer");
 
-  EdgeInsets buildPadding(BuildContext context) {
-    return widget.padding;
-  }
-
-  EdgeInsets buildMargin(BuildContext context) {
-    return EdgeInsets.zero;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final data = Data.maybeOf<_MountedOverlayEntryData>(context);
-    final animation = data?.state._controlledAnimation;
-    final theme = Theme.of(context);
-    var surfaceBlur = widget.surfaceBlur ?? 0.5;
-    var surfaceOpacity = widget.surfaceOpacity ?? 0.14;
-    var borderRadius = widget.borderRadius ?? getBorderRadius(24);
-    Widget container = Container(
-      width: widget.expands ? expandingWidth : null,
-      height: widget.expands ? expandingHeight : null,
-      decoration: getDecoration(theme),
-      padding: buildPadding(context),
-      margin: buildMargin(context),
-      child: widget.draggable
-          ? buildDraggable(context, animation, buildChild(context), theme)
-          : buildChild(context),
-    );
-
-    if (widget.constraints != null) {
-      container = ConstrainedBox(
-        constraints: widget.constraints!,
-        child: container,
-      );
-    }
-
-    if (widget.alignment != null) {
-      container = Align(
-        alignment: widget.alignment!,
-        child: container,
-      );
-    }
-
-    if (surfaceBlur > 0) {
-      container = SurfaceBlur(
-        surfaceBlur: surfaceBlur,
-        borderRadius: getBorderRadius(24),
-        child: container,
-      );
-    }
-    var barrierColor = widget.barrierColor ?? Colors.black.scaleAlpha(0.8);
-    if (animation != null) {
-      if (widget.stackIndex != 0) {
-        // weaken the barrier color for the upper sheets
-        barrierColor = barrierColor.scaleAlpha(0.75);
+    // Validate snap points
+    if (snapPoints != null) {
+      assert(snapPoints.isNotEmpty, "Snap points list cannot be empty");
+      for (final point in snapPoints) {
+        assert(point >= 0.0 && point <= 1.0,
+            "Snap points must be between 0.0 and 1.0");
       }
-      container = ModalBackdrop(
-        surfaceClip: ModalBackdrop.shouldClipSurface(surfaceOpacity),
-        borderRadius: borderRadius,
-        barrierColor: barrierColor,
-        fadeAnimation: animation,
-        padding: buildMargin(context),
-        child: container,
-      );
+      assert(
+          initialSnapIndex == null ||
+              (initialSnapIndex >= 0 && initialSnapIndex < snapPoints.length),
+          "Initial snap index out of bounds");
     }
-    return container;
-  }
-}
 
-Future<void> closeSheet(BuildContext context) {
-  // sheet is just a drawer with no backdrop transformation
-  return closeDrawer(context);
-}
+    final effectiveSnapPoints =
+        (snapPoints == null || snapPoints.isEmpty) ? [0.5, 1.0] : snapPoints;
 
-class SheetWrapper extends DrawerWrapper {
-  const SheetWrapper({
-    super.key,
-    required super.position,
-    required super.child,
-    required super.size,
-    required super.stackIndex,
-    super.draggable = false,
-    super.expands = false,
-    super.extraSize = Size.zero,
-    super.padding,
-    super.surfaceBlur,
-    super.surfaceOpacity,
-    super.barrierColor,
-    super.gapBeforeDragger,
-    super.gapAfterDragger,
-    super.constraints,
-    super.alignment,
-  });
-
-  @override
-  State<DrawerWrapper> createState() => _SheetWrapperState();
-}
-
-class _SheetWrapperState extends _DrawerWrapperState {
-  @override
-  Border getBorder(ThemeData theme) {
-    switch (resolvedPosition) {
-      case OverlayPosition.left:
-        return Border(right: BorderSide(color: theme.colorScheme.outline));
-      case OverlayPosition.right:
-        return Border(left: BorderSide(color: theme.colorScheme.outline));
-      case OverlayPosition.top:
-        return Border(bottom: BorderSide(color: theme.colorScheme.outline));
-      case OverlayPosition.bottom:
-        return Border(top: BorderSide(color: theme.colorScheme.outline));
-      default:
-        throw UnimplementedError('Unknown position');
-    }
-  }
-
-  @override
-  EdgeInsets buildMargin(BuildContext context) {
-    var mediaPadding = MediaQuery.paddingOf(context);
-    double marginTop = 0;
-    double marginBottom = 0;
-    double marginLeft = 0;
-    double marginRight = 0;
-    switch (resolvedPosition) {
-      case OverlayPosition.left:
-        marginRight = mediaPadding.right;
-        break;
-      case OverlayPosition.right:
-        marginLeft = mediaPadding.left;
-        break;
-      case OverlayPosition.top:
-        marginBottom = mediaPadding.bottom;
-        break;
-      case OverlayPosition.bottom:
-        marginTop = mediaPadding.top;
-        break;
-      default:
-        throw UnimplementedError('Unknown position');
-    }
-    return super.buildMargin(context) +
-        EdgeInsets.only(
-          top: marginTop,
-          bottom: marginBottom,
-          left: marginLeft,
-          right: marginRight,
-        );
-  }
-
-  @override
-  Widget buildChild(BuildContext context) {
-    var mediaPadding = MediaQuery.paddingOf(context);
-    double paddingTop = 0;
-    double paddingBottom = 0;
-    double paddingLeft = 0;
-    double paddingRight = 0;
-    switch (resolvedPosition) {
-      case OverlayPosition.left:
-        paddingTop = mediaPadding.top;
-        paddingBottom = mediaPadding.bottom;
-        paddingLeft = mediaPadding.left;
-        break;
-      case OverlayPosition.right:
-        paddingTop = mediaPadding.top;
-        paddingBottom = mediaPadding.bottom;
-        paddingRight = mediaPadding.right;
-        break;
-      case OverlayPosition.top:
-        paddingLeft = mediaPadding.left;
-        paddingRight = mediaPadding.right;
-        paddingTop = mediaPadding.top;
-        break;
-      case OverlayPosition.bottom:
-        paddingLeft = mediaPadding.left;
-        paddingRight = mediaPadding.right;
-        paddingBottom = mediaPadding.bottom;
-        break;
-      default:
-        throw UnimplementedError('Unknown position');
-    }
-    return Padding(
-      padding: EdgeInsets.only(
-        top: paddingTop,
-        bottom: paddingBottom,
-        left: paddingLeft,
-        right: paddingRight,
-      ),
-      child: super.buildChild(context),
+    // Create config from parameters
+    final config = SheetConfig(
+      position: position,
+      modal: modal,
+      barrierDismissible: barrierDismissible,
+      draggable: draggable,
+      useSafeArea: useSafeArea,
+      borderRadius: borderRadius,
+      decoration: decoration,
+      backgroundColor: backgroundColor,
+      barrierColor: barrierColor,
+      padding: padding,
+      constraints: constraints,
+      animation: animation,
+      snapPoints: effectiveSnapPoints,
+      initialSnapIndex: initialSnapIndex ?? 0,
+      minHeight: minHeight,
+      maxHeight: maxHeight,
+      isDismissible: isDismissible,
+      showDragHandle: showDragHandle,
+      hideKeyboard: hideKeyboard,
+      headerBuilder: headerBuilder,
     );
-  }
 
-  @override
-  BorderRadiusGeometry getBorderRadius(double radius) {
-    return BorderRadius.zero;
-  }
+    final sheetController = controller ?? SheetController();
 
-  @override
-  BoxDecoration getDecoration(ThemeData theme) {
-    var backgroundColor = theme.colorScheme.surface;
-    var surfaceOpacity = widget.surfaceOpacity ?? 0.14;
-    if (surfaceOpacity < 1) {
-      if (widget.stackIndex == 0) {
-        // the top sheet should have a higher opacity to prevent
-        // visual bleeding from the main content
-        surfaceOpacity = surfaceOpacity * 1.25;
-      }
-      backgroundColor = backgroundColor.scaleAlpha(surfaceOpacity);
-    }
-    return BoxDecoration(
-      color: backgroundColor,
-      border: getBorder(theme),
-    );
-  }
-}
-
-enum OverlayPosition {
-  left,
-  right,
-  top,
-  bottom,
-  start,
-  end,
-}
-
-const kBackdropScaleDown = 0.95;
-
-class BackdropTransformData {
-  final Size sizeDifference;
-
-  BackdropTransformData(this.sizeDifference);
-}
-
-class _DrawerOverlayWrapper extends StatefulWidget {
-  final Widget child;
-  final Completer completer;
-  const _DrawerOverlayWrapper({
-    required this.child,
-    required this.completer,
-  });
-
-  @override
-  State<_DrawerOverlayWrapper> createState() => _DrawerOverlayWrapperState();
-}
-
-class _DrawerOverlayWrapperState extends State<_DrawerOverlayWrapper>
-    with OverlayHandlerStateMixin {
-  @override
-  Widget build(BuildContext context) {
-    return Data<OverlayHandlerStateMixin>.inherit(
-      data: this,
-      child: widget.child,
-    );
-  }
-
-  @override
-  Future<void> close([bool immediate = false]) {
-    if (immediate) {
-      widget.completer.complete();
-      return widget.completer.future;
-    }
-    return closeDrawer(context);
-  }
-
-  @override
-  void closeLater() {
-    if (mounted) {
-      WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-        if (mounted) {
-          closeDrawer(context);
-        } else {
-          widget.completer.complete();
-        }
-      });
-    }
-  }
-
-  @override
-  Future<void> closeWithResult<X>([X? value]) {
-    return closeDrawer(context, value);
-  }
-}
-
-DrawerOverlayCompleter<T?> openRawDrawer<T>({
-  Key? key,
-  required BuildContext context,
-  required DrawerBuilder builder,
-  required OverlayPosition position,
-  bool transformBackdrop = true,
-  bool useRootDrawerOverlay = true,
-  bool modal = true,
-  Color? barrierColor,
-  bool barrierDismissible = true,
-  WidgetBuilder? backdropBuilder,
-  bool useSafeArea = true,
-  AnimationController? animationController,
-  bool autoOpen = true,
-  BoxConstraints? constraints,
-  AlignmentGeometry? alignment,
-}) {
-  DrawerLayerData? parentLayer =
-      DrawerOverlay.maybeFind(context, useRootDrawerOverlay);
-  CapturedThemes? themes;
-  CapturedData? data;
-  if (parentLayer != null) {
-    themes =
-        InheritedTheme.capture(from: context, to: parentLayer.overlay.context);
-    data = Data.capture(from: context, to: parentLayer.overlay.context);
-  } else {
-    parentLayer =
-        DrawerOverlay.maybeFindMessenger(context, useRootDrawerOverlay);
-  }
-  assert(parentLayer != null, 'No DrawerOverlay found in the widget tree');
-  final completer = Completer<T?>();
-  final entry = DrawerOverlayEntry(
-    animationController: animationController,
-    autoOpen: autoOpen,
-    builder: (context, extraSize, size, padding, stackIndex) {
-      return _DrawerOverlayWrapper(
-        completer: completer,
-        child: Builder(builder: (context) {
-          return builder(context, extraSize, size, padding, stackIndex);
-        }),
-      );
-    },
-    modal: modal,
-    data: data,
-    barrierDismissible: barrierDismissible,
-    useSafeArea: useSafeArea,
-    constraints: constraints,
-    alignment: alignment,
-    backdropBuilder: transformBackdrop
-        ? (context, child, animation, stackIndex) {
-            final existingData = Data.maybeOf<BackdropTransformData>(context);
-            return LayoutBuilder(builder: (context, constraints) {
-              return stackIndex == 0
-                  ? AnimatedBuilder(
-                      animation: animation,
-                      builder: (context, child) {
-                        Size size = constraints.biggest;
-                        double scale =
-                            1 - (1 - kBackdropScaleDown) * animation.value;
-                        Size sizeAfterScale = Size(
-                          size.width * scale,
-                          size.height * scale,
-                        );
-                        var extraSize = Size(
-                          size.width -
-                              sizeAfterScale.width / kBackdropScaleDown,
-                          size.height -
-                              sizeAfterScale.height / kBackdropScaleDown,
-                        );
-                        if (existingData != null) {
-                          extraSize = Size(
-                            extraSize.width +
-                                existingData.sizeDifference.width /
-                                    kBackdropScaleDown,
-                            extraSize.height +
-                                existingData.sizeDifference.height /
-                                    kBackdropScaleDown,
-                          );
-                        }
-                        return Data.inherit(
-                          data: BackdropTransformData(extraSize),
-                          child: Transform.scale(
-                            scale: scale,
-                            child: ClipRRect(
-                              borderRadius:
-                                  BorderRadius.circular(24 * animation.value),
-                              child: child,
-                            ),
-                          ),
-                        );
-                      },
-                      child: child,
-                    )
-                  : AnimatedBuilder(
-                      animation: animation,
-                      builder: (context, child) {
-                        Size size = constraints.biggest;
-                        double scale =
-                            1 - (1 - kBackdropScaleDown) * animation.value;
-                        Size sizeAfterScale = Size(
-                          size.width * scale,
-                          size.height * scale,
-                        );
-                        var extraSize = Size(
-                          size.width - sizeAfterScale.width,
-                          size.height - sizeAfterScale.height,
-                        );
-                        if (existingData != null) {
-                          extraSize = Size(
-                            extraSize.width +
-                                existingData.sizeDifference.width /
-                                    kBackdropScaleDown,
-                            extraSize.height +
-                                existingData.sizeDifference.height /
-                                    kBackdropScaleDown,
-                          );
-                        }
-                        return Data.inherit(
-                          data: BackdropTransformData(extraSize),
-                          child: Transform.scale(
-                            scale: scale,
-                            child: child,
-                          ),
-                        );
-                      },
-                      child: child,
-                    );
-            });
-          }
-        : (context, child, animation, stackIndex) => child,
-    barrierBuilder: (context, child, animation, stackIndex) {
-      if (stackIndex > 0) {
-        if (!transformBackdrop) {
-          return null;
-        }
-      }
-      return Positioned(
-        top: -9999,
-        left: -9999,
-        right: -9999,
-        bottom: -9999,
-        child: FadeTransition(
-          opacity: animation,
-          child: AnimatedBuilder(
-            animation: animation,
-            builder: (context, child) {
-              return IgnorePointer(
-                ignoring: animation.status != AnimationStatus.completed,
-                child: child!,
-              );
-            },
-            child: GestureDetector(
-              behavior: HitTestBehavior.translucent,
-              onTap: barrierDismissible ? () => closeDrawer(context) : null,
-              child: Container(
-                child: backdropBuilder?.call(context),
-              ),
-            ),
-          ),
-        ),
-      );
-    },
-    themes: themes,
-    completer: completer,
-    position: position,
-  );
-  final overlay = parentLayer!.overlay;
-  overlay.addEntry(entry);
-  completer.future.whenComplete(() {
-    overlay.removeEntry(entry);
-  });
-  return DrawerOverlayCompleter<T?>(entry);
-}
-
-class _MountedOverlayEntryData {
-  final DrawerEntryWidgetState state;
-
-  _MountedOverlayEntryData(this.state);
-}
-
-Future<void> closeDrawer<T>(BuildContext context, [T? result]) {
-  final data = Data.maybeOf<_MountedOverlayEntryData>(context);
-  assert(data != null, 'No DrawerEntryWidget found in the widget tree');
-  return data!.state.close(result);
-}
-
-class DrawerLayerData {
-  final DrawerOverlayState overlay;
-  final DrawerLayerData? parent;
-
-  const DrawerLayerData(this.overlay, this.parent);
-
-  Size? computeSize() {
-    return overlay.computeSize();
-  }
-
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-    return other is DrawerLayerData &&
-        other.overlay == overlay &&
-        other.parent == parent;
-  }
-
-  @override
-  int get hashCode {
-    return overlay.hashCode ^ parent.hashCode;
-  }
-}
-
-class DrawerOverlay extends StatefulWidget {
-  final Widget child;
-
-  const DrawerOverlay({super.key, required this.child});
-
-  @override
-  State<DrawerOverlay> createState() => DrawerOverlayState();
-
-  static DrawerLayerData? maybeFind(BuildContext context, [bool root = false]) {
-    var data = Data.maybeFind<DrawerLayerData>(context);
-    if (root) {
-      while (data?.parent != null) {
-        data = data!.parent;
-      }
-    }
-    return data;
-  }
-
-  static DrawerLayerData? maybeFindMessenger(BuildContext context,
-      [bool root = false]) {
-    var data = Data.maybeFindMessenger<DrawerLayerData>(context);
-    if (root) {
-      while (data?.parent != null) {
-        data = data!.parent;
-      }
-    }
-    return data;
-  }
-}
-
-class DrawerOverlayState extends State<DrawerOverlay> {
-  final List<DrawerOverlayEntry> _entries = [];
-  final GlobalKey backdropKey = GlobalKey();
-
-  void addEntry(DrawerOverlayEntry entry) {
-    setState(() {
-      _entries.add(entry);
-    });
-  }
-
-  Size computeSize() {
-    Size? size = context.size;
-    assert(size != null, 'DrawerOverlay is not ready');
-    return size!;
-  }
-
-  void removeEntry(DrawerOverlayEntry entry) {
-    setState(() {
-      _entries.remove(entry);
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final parentLayer = Data.maybeOf<DrawerLayerData>(context);
-    Widget child = KeyedSubtree(
-      key: backdropKey,
-      child: widget.child,
-    );
-    int index = 0;
-    for (final entry in _entries) {
-      child = DrawerEntryWidget(
-        key: entry.key, // to make the overlay state persistent
-        builder: entry.builder,
-        backdrop: child,
-        barrierBuilder: entry.barrierBuilder,
-        modal: entry.modal,
-        themes: entry.themes,
-        completer: entry.completer,
-        position: entry.position,
-        backdropBuilder: entry.backdropBuilder,
-        animationController: entry.animationController,
-        stackIndex: index++,
-        totalStack: _entries.length,
-        data: entry.data,
-        useSafeArea: entry.useSafeArea,
-        autoOpen: entry.autoOpen,
-      );
-    }
-    return PopScope(
-      // prevent from popping when there is an overlay
-      // instead, the overlay should be closed first
-      // once everything is closed, then this can be popped
-      canPop: _entries.isEmpty,
-      onPopInvokedWithResult: (didPop, result) {
-        if (_entries.isNotEmpty) {
-          var last = _entries.last;
-          if (last.barrierDismissible) {
-            var state = last.key.currentState;
-            if (state != null) {
-              state.close(result);
-            } else {
-              last.completer.complete(result);
-            }
-          }
-        }
+    return _showDrawer<T>(
+      context: context,
+      builder: builder,
+      config: config,
+      controller: sheetController._asDrawerController(),
+      onOpen: () {
+        onOpen?.call();
+        sheetController._notifyOpen();
       },
-      child: ForwardableData(
-        data: DrawerLayerData(this, parentLayer),
-        child: child,
-      ),
+      onClose: () {
+        onClose?.call();
+        sheetController._notifyClose();
+      },
+      onWillClose: onWillClose,
+      isSheet: true,
+      onSnapPointChanged: (index) {
+        sheetController._notifySnap(index);
+        onSnapPointChanged?.call(index);
+      },
     );
   }
-}
 
-class DrawerEntryWidget<T> extends StatefulWidget {
-  final DrawerBuilder builder;
-  final Widget backdrop;
-  final BackdropBuilder backdropBuilder;
-  final BarrierBuilder barrierBuilder;
-  final bool modal;
-  final CapturedThemes? themes;
-  final CapturedData? data;
-  final Completer<T> completer;
-  final OverlayPosition position;
-  final int stackIndex;
-  final int totalStack;
-  final bool useSafeArea;
-  final AnimationController? animationController;
-  final bool autoOpen;
+  /// Internal method to show a drawer or sheet
+  DrawerCompleter<T> _showDrawer<T>({
+    required BuildContext context,
+    required WidgetBuilder builder,
+    required DrawerConfig config,
+    DrawerController? controller,
+    VoidCallback? onOpen,
+    VoidCallback? onClose,
+    bool Function()? onWillClose,
+    bool isSheet = false,
+    ValueChanged<int>? onSnapPointChanged,
+  }) {
+    closeAllDrawers();
+    final completer = Completer<T?>();
+    final id =
+        'drawer_${DateTime.now().millisecondsSinceEpoch}_${_activeDrawers.length}';
 
-  const DrawerEntryWidget({
-    super.key,
-    required this.builder,
-    required this.backdrop,
-    required this.backdropBuilder,
-    required this.barrierBuilder,
-    required this.modal,
-    required this.themes,
-    required this.completer,
-    required this.position,
-    required this.stackIndex,
-    required this.totalStack,
-    required this.data,
-    required this.useSafeArea,
-    required this.animationController,
-    required this.autoOpen,
-  });
+    // Create drawer controller if not provided
+    final effectiveController = controller ?? DrawerController();
 
-  @override
-  State<DrawerEntryWidget<T>> createState() => DrawerEntryWidgetState<T>();
-}
+    // Use late variable to break circular reference
+    late DrawerEntry<T> newEntry;
 
-class DrawerEntryWidgetState<T> extends State<DrawerEntryWidget<T>>
-    with SingleTickerProviderStateMixin {
-  late ValueNotifier<double> additionalOffset = ValueNotifier(0);
-  late AnimationController _controller;
-  late ControlledAnimation _controlledAnimation;
-  final FocusScopeNode _focusScopeNode = FocusScopeNode();
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = widget.animationController ??
-        AnimationController(
-            vsync: this, duration: const Duration(milliseconds: 350));
-
-    _controlledAnimation = ControlledAnimation(_controller);
-    if (widget.animationController == null && widget.autoOpen) {
-      _controlledAnimation.forward(1, Curves.easeOut);
-    }
-    // discard any focus that was previously set
-    FocusManager.instance.primaryFocus?.unfocus();
-  }
-
-  @override
-  void dispose() {
-    if (widget.animationController == null) {
-      _controller.dispose();
-    }
-    super.dispose();
-  }
-
-  @override
-  void didUpdateWidget(covariant DrawerEntryWidget<T> oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.animationController != oldWidget.animationController) {
-      if (oldWidget.animationController == null) {
-        _controller.dispose();
-      }
-      _controller = widget.animationController ??
-          AnimationController(
-            vsync: this,
-            duration: const Duration(milliseconds: 350),
-          );
-    }
-  }
-
-  Future<void> close([T? result]) {
-    return _controlledAnimation.forward(0, Curves.easeOutCubic).then((value) {
-      widget.completer.complete(result);
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    AlignmentGeometry alignment;
-    Offset startFractionalOffset;
-    bool padTop = widget.useSafeArea && widget.position != OverlayPosition.top;
-    bool padBottom =
-        widget.useSafeArea && widget.position != OverlayPosition.bottom;
-    bool padLeft =
-        widget.useSafeArea && widget.position != OverlayPosition.left;
-    bool padRight =
-        widget.useSafeArea && widget.position != OverlayPosition.right;
-    switch (widget.position) {
-      case OverlayPosition.left:
-        alignment = AlignmentDirectional.centerStart;
-        startFractionalOffset = const Offset(-1, 0);
-        break;
-      case OverlayPosition.right:
-        alignment = AlignmentDirectional.centerEnd;
-        startFractionalOffset = const Offset(1, 0);
-        break;
-      case OverlayPosition.top:
-        alignment = Alignment.topCenter;
-        startFractionalOffset = const Offset(0, -1);
-        break;
-      case OverlayPosition.bottom:
-        alignment = Alignment.bottomCenter;
-        startFractionalOffset = const Offset(0, 1);
-        break;
-      default:
-        throw UnimplementedError('Unknown position');
-    }
-    return FocusScope(
-      node: _focusScopeNode,
-      child: CapturedWrapper(
-        themes: widget.themes,
-        data: widget.data,
-        child: Data.inherit(
-          data: _MountedOverlayEntryData(this),
-          child: Builder(builder: (context) {
-            Widget barrier = (widget.modal
-                    ? widget.barrierBuilder(context, widget.backdrop,
-                        _controlledAnimation, widget.stackIndex)
-                    : null) ??
-                Positioned(
-                  top: -9999,
-                  left: -9999,
-                  right: -9999,
-                  bottom: -9999,
-                  child: GestureDetector(
-                    onTap: () {
-                      close();
-                    },
-                  ),
+    // Create the entry instance
+    newEntry = DrawerEntry<T>(
+        id: id,
+        completer: completer,
+        controller: effectiveController,
+        config: config,
+        onWillClose: () {
+          // Allow custom will-close handler to override
+          if (onWillClose != null) {
+            return onWillClose();
+          }
+          return true;
+        },
+        onRemove: () {
+          _activeDrawers.removeWhere((d) => d.id == id);
+          _drawerCountNotifier.value = _activeDrawers.length;
+          onClose?.call();
+        },
+        builder: (context) {
+          final drawerContent = isSheet
+              ? _SheetContent(
+                  config: config as SheetConfig,
+                  controller: effectiveController,
+                  onSnapPointChanged: onSnapPointChanged,
+                  child: builder(context),
+                )
+              : _DrawerContent(
+                  config: config,
+                  controller: effectiveController,
+                  child: builder(context),
                 );
-            final extraSize =
-                Data.maybeOf<BackdropTransformData>(context)?.sizeDifference;
-            Size additionalSize;
-            Offset additionalOffset;
-            bool insetTop =
-                widget.useSafeArea && widget.position == OverlayPosition.top;
-            bool insetBottom =
-                widget.useSafeArea && widget.position == OverlayPosition.bottom;
-            bool insetLeft =
-                widget.useSafeArea && widget.position == OverlayPosition.left;
-            bool insetRight =
-                widget.useSafeArea && widget.position == OverlayPosition.right;
-            MediaQueryData mediaQueryData = MediaQuery.of(context);
-            EdgeInsets padding =
-                mediaQueryData.padding + mediaQueryData.viewInsets;
-            if (extraSize == null) {
-              additionalSize = Size.zero;
-              additionalOffset = Offset.zero;
-            } else {
-              switch (widget.position) {
-                case OverlayPosition.left:
-                  additionalSize = Size(extraSize.width / 2, 0);
-                  additionalOffset = Offset(-additionalSize.width, 0);
-                  break;
-                case OverlayPosition.right:
-                  additionalSize = Size(extraSize.width / 2, 0);
-                  additionalOffset = Offset(additionalSize.width, 0);
-                  break;
-                case OverlayPosition.top:
-                  additionalSize = Size(0, extraSize.height / 2);
-                  additionalOffset = Offset(0, -additionalSize.height);
-                  break;
-                case OverlayPosition.bottom:
-                  additionalSize = Size(0, extraSize.height / 2);
-                  additionalOffset = Offset(0, additionalSize.height);
-                  break;
-                default:
-                  throw UnimplementedError('Unknown position');
-              }
-            }
-            return Stack(
-              clipBehavior: Clip.none,
-              fit: StackFit.passthrough,
-              children: [
-                IgnorePointer(
-                  child: widget.backdropBuilder(context, widget.backdrop,
-                      _controlledAnimation, widget.stackIndex),
-                ),
-                barrier,
-                Positioned.fill(
-                  child: LayoutBuilder(builder: (context, constraints) {
-                    return MediaQuery(
-                      data: widget.useSafeArea
-                          ? mediaQueryData.removePadding(
-                              removeTop: true,
-                              removeBottom: true,
-                              removeLeft: true,
-                              removeRight: true,
-                            )
-                          : mediaQueryData,
-                      child: Padding(
-                        padding: EdgeInsets.only(
-                          top: padTop ? padding.top : 0,
-                          bottom: padBottom ? padding.bottom : 0,
-                          left: padLeft ? padding.left : 0,
-                          right: padRight ? padding.right : 0,
-                        ),
-                        child: Align(
-                          alignment: alignment,
-                          child: AnimatedBuilder(
-                            animation: _controlledAnimation,
-                            builder: (context, child) {
-                              return FractionalTranslation(
-                                translation: startFractionalOffset *
-                                    (1 - _controlledAnimation.value),
-                                child: child,
-                              );
-                            },
-                            child: Transform.translate(
-                              offset: additionalOffset / kBackdropScaleDown,
-                              child: widget.builder(
-                                  context,
-                                  additionalSize,
-                                  constraints.biggest,
-                                  EdgeInsets.only(
-                                    top: insetTop ? padding.top : 0,
-                                    bottom: insetBottom ? padding.bottom : 0,
-                                    left: insetLeft ? padding.left : 0,
-                                    right: insetRight ? padding.right : 0,
-                                  ),
-                                  widget.stackIndex),
-                            ),
-                          ),
-                        ),
-                      ),
-                    );
-                  }),
-                ),
-              ],
-            );
-          }),
-        ),
-      ),
+
+          return _DrawerOverlay(
+            entry: newEntry,
+            config: config,
+            child: drawerContent,
+          );
+        });
+
+    // Link controller to entry
+    effectiveController._entry = newEntry;
+
+    // Add to active drawers
+    _activeDrawers.add(newEntry);
+    _drawerCountNotifier.value = _activeDrawers.length;
+
+    // Hide keyboard if requested for sheet
+    if (isSheet && config is SheetConfig && config.hideKeyboard) {
+      FocusScope.of(context).unfocus();
+    }
+
+    // Notify open callback
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!newEntry.completer.isCompleted) {
+        onOpen?.call();
+        effectiveController._notifyOpen();
+      }
+    });
+
+    return DrawerCompleter<T>(newEntry);
+  }
+
+  /// Close a specific drawer by its ID
+  void closeDrawerById(String id, [dynamic result]) {
+    final drawer = _activeDrawers.cast<DrawerEntry?>().firstWhere(
+          (d) => d!.id == id,
+          orElse: () => null,
+        );
+    if (drawer != null) {
+      drawer.close(result);
+    }
+  }
+
+  /// Close all drawers
+  void closeAllDrawers([dynamic result]) {
+    // Create a copy to avoid modification during iteration
+    final drawers = List.from(_activeDrawers);
+    for (final drawer in drawers) {
+      drawer.close(result);
+    }
+  }
+
+  /// Close the most recently opened drawer
+  void closeLastDrawer([dynamic result]) {
+    if (_activeDrawers.isNotEmpty) {
+      _activeDrawers.last.close(result);
+    }
+  }
+
+  @override
+  Widget buildOverlayContent(BuildContext context) {
+    return ValueListenableBuilder<int>(
+      valueListenable: _drawerCountNotifier,
+      builder: (context, count, child) {
+        if (count == 0) return const SizedBox();
+
+        final entries = _activeDrawers.map((drawer) {
+          return OverlayEntry(builder: (ctx) => drawer.builder(ctx));
+        }).toList();
+
+        return Material(
+          type: MaterialType.transparency,
+          child: Overlay(
+            initialEntries: entries,
+          ),
+        );
+      },
     );
   }
-}
-
-typedef BackdropBuilder = Widget Function(BuildContext context, Widget child,
-    Animation<double> animation, int stackIndex);
-
-typedef BarrierBuilder = Widget? Function(BuildContext context, Widget child,
-    Animation<double> animation, int stackIndex);
-
-class DrawerOverlayEntry<T> {
-  final GlobalKey<DrawerEntryWidgetState<T>> key = GlobalKey();
-  final BackdropBuilder backdropBuilder;
-  final DrawerBuilder builder;
-  final bool modal;
-  final BarrierBuilder barrierBuilder;
-  final CapturedThemes? themes;
-  final CapturedData? data;
-  final Completer<T> completer;
-  final OverlayPosition position;
-  final bool barrierDismissible;
-  final bool useSafeArea;
-  final AnimationController? animationController;
-  final bool autoOpen;
-  final BoxConstraints? constraints;
-  final AlignmentGeometry? alignment;
-
-  DrawerOverlayEntry({
-    required this.builder,
-    required this.backdropBuilder,
-    required this.modal,
-    required this.barrierBuilder,
-    required this.themes,
-    required this.completer,
-    required this.position,
-    required this.data,
-    required this.barrierDismissible,
-    required this.useSafeArea,
-    required this.animationController,
-    required this.autoOpen,
-    required this.constraints,
-    required this.alignment,
-  });
-}
-
-class DrawerOverlayCompleter<T> extends OverlayCompleter<T> {
-  final DrawerOverlayEntry<T> _entry;
-
-  DrawerOverlayCompleter(this._entry);
-
-  @override
-  Future<void> get animationFuture => _entry.completer.future;
-
-  @override
-  void dispose() {
-    _entry.completer.complete();
-  }
-
-  AnimationController? get animationController =>
-      _entry.animationController ?? _entry.key.currentState?._controller;
-
-  @override
-  Future<T> get future => _entry.completer.future;
-
-  @override
-  bool get isAnimationCompleted => _entry.completer.isCompleted;
-
-  @override
-  bool get isCompleted => _entry.completer.isCompleted;
-
-  @override
-  void remove() {
-    _entry.completer.complete();
-  }
-}
-
-class SheetOverlayHandler extends OverlayHandler {
-  static bool isSheetOverlay(BuildContext context) {
-    return Model.maybeOf<bool>(context, #shadcn_flutter_sheet_overlay) == true;
-  }
-
-  final OverlayPosition position;
-  final Color? barrierColor;
-
-  const SheetOverlayHandler({
-    this.position = OverlayPosition.bottom,
-    this.barrierColor,
-  });
-
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-    return other is SheetOverlayHandler &&
-        other.position == position &&
-        other.barrierColor == barrierColor;
-  }
-
-  @override
-  int get hashCode => Object.hash(position, barrierColor);
 
   @override
   OverlayCompleter<T?> show<T>({
@@ -1653,34 +366,1926 @@ class SheetOverlayHandler extends OverlayHandler {
     OverlayBarrier? overlayBarrier,
     LayerLink? layerLink,
     Size? fixedSize,
+    bool? stayVisibleOnScroll,
+    List<PopoverAnimationType>? enterAnimations,
+    List<PopoverAnimationType>? exitAnimations,
+    PopoverAnimationConfig? animationConfig,
+    bool? alwaysFocus,
   }) {
-    return openRawDrawer<T>(
-      context: context,
-      transformBackdrop: false,
-      useSafeArea: true,
-      barrierDismissible: barrierDismissable,
-      builder: (context, extraSize, size, padding, stackIndex) {
-        return MultiModel(
-          data: const [
-            Model(#shadcn_flutter_sheet_overlay, true),
-          ],
-          child: SheetWrapper(
-            position: this.position,
-            gapAfterDragger: 8,
-            expands: true,
-            extraSize: extraSize,
-            size: size,
-            draggable: barrierDismissable,
-            padding: padding,
-            barrierColor: barrierColor,
-            stackIndex: stackIndex,
-            child: Builder(builder: (context) {
-              return builder(context);
-            }),
-          ),
-        );
-      },
-      position: this.position,
+    throw UnimplementedError(
+        'DrawerOverlayHandler does not implement standard overlay show method. '
+        'Use showDrawer() or showSheet() instead.');
+  }
+}
+
+/// Position of the drawer/sheet on the screen
+enum DrawerPosition {
+  /// Left side of the screen
+  left,
+
+  /// Right side of the screen
+  right,
+
+  /// Top of the screen
+  top,
+
+  /// Bottom of the screen
+  bottom,
+
+  /// Start side (depends on text direction)
+  start,
+
+  /// End side (depends on text direction)
+  end,
+}
+
+/// Animation configuration for drawers and sheets
+class DrawerAnimation {
+  /// Duration for opening animation
+  final Duration openDuration;
+
+  /// Duration for closing animation
+  final Duration closeDuration;
+
+  /// Curve for opening animation
+  final Curve openCurve;
+
+  /// Curve for closing animation
+  final Curve closeCurve;
+
+  /// Type of animation
+  final DrawerAnimationType type;
+
+  /// Whether to include a fade effect
+  final bool withFade;
+
+  /// Creates a drawer animation configuration
+  const DrawerAnimation({
+    this.openDuration = const Duration(milliseconds: 300),
+    this.closeDuration = const Duration(milliseconds: 250),
+    this.openCurve = Curves.easeOutQuint,
+    this.closeCurve = Curves.easeInCubic,
+    this.type = DrawerAnimationType.slide,
+    this.withFade = true,
+  });
+
+  /// Default animation for drawers
+  static const DrawerAnimation defaults = DrawerAnimation();
+
+  /// Fast animation preset
+  static const DrawerAnimation fast = DrawerAnimation(
+    openDuration: Duration(milliseconds: 200),
+    closeDuration: Duration(milliseconds: 150),
+  );
+
+  /// Scale animation preset
+  static const DrawerAnimation scale = DrawerAnimation(
+    type: DrawerAnimationType.scale,
+  );
+
+  /// Fade animation preset
+  static const DrawerAnimation fade = DrawerAnimation(
+    type: DrawerAnimationType.fade,
+  );
+}
+
+/// Types of animations for drawers and sheets
+enum DrawerAnimationType {
+  /// Slide in from edge
+  slide,
+
+  /// Scale up/down
+  scale,
+
+  /// Fade in/out
+  fade,
+}
+
+/// Configuration for drawers
+class DrawerConfig {
+  /// Position of the drawer
+  final DrawerPosition position;
+
+  /// Whether drawer blocks interaction with content behind it
+  final bool modal;
+
+  /// Whether tapping outside dismisses the drawer
+  final bool barrierDismissible;
+
+  /// Whether drawer can be dragged to close/open
+  final bool draggable;
+
+  /// Whether to respect safe areas
+  final bool useSafeArea;
+
+  /// Whether to show drag handle
+  final bool showDragHandle;
+
+  /// Border radius of the drawer
+  final BorderRadius? borderRadius;
+
+  /// Size of the drag handle
+  final Size? dragHandleSize;
+
+  /// Custom decoration override
+  final BoxDecoration? decoration;
+
+  /// Fixed width of the drawer
+  final double? width;
+
+  /// Fixed height of the drawer
+  final double? height;
+
+  /// Elevation of the drawer surface
+  final double? elevation;
+
+  /// Background color of the drawer
+  final Color? backgroundColor;
+
+  /// Color of the barrier behind the drawer
+  final Color? barrierColor;
+
+  /// Padding inside the drawer
+  final EdgeInsets? padding;
+
+  /// Constraints for the drawer size
+  final BoxConstraints? constraints;
+
+  /// Animation configuration
+  final DrawerAnimation? animation;
+
+  /// Whether drawer can be resized
+  final bool resizable;
+
+  /// Minimum width when resizing
+  final double minResizeWidth;
+
+  /// Maximum width when resizing
+  final double maxResizeWidth;
+
+  /// Minimum height when resizing
+  final double minResizeHeight;
+
+  /// Maximum height when resizing
+  final double maxResizeHeight;
+
+  /// Optional builder for header content
+  final Widget Function(BuildContext, Widget)? headerBuilder;
+
+  /// Optional builder for footer content
+  final Widget Function(BuildContext, Widget)? footerBuilder;
+
+  /// Creates a drawer configuration
+  const DrawerConfig({
+    this.position = DrawerPosition.left,
+    this.modal = true,
+    this.barrierDismissible = true,
+    this.draggable = true,
+    this.useSafeArea = true,
+    this.showDragHandle = true,
+    this.borderRadius,
+    this.dragHandleSize,
+    this.decoration,
+    this.width,
+    this.height,
+    this.elevation,
+    this.backgroundColor,
+    this.barrierColor,
+    this.padding,
+    this.constraints,
+    this.animation,
+    this.resizable = true,
+    this.minResizeWidth = 200,
+    this.maxResizeWidth = 600,
+    this.minResizeHeight = 100,
+    this.maxResizeHeight = 800,
+    this.headerBuilder,
+    this.footerBuilder,
+  });
+
+  /// Create a copy with some properties changed
+  DrawerConfig copyWith({
+    DrawerPosition? position,
+    bool? modal,
+    bool? barrierDismissible,
+    bool? draggable,
+    bool? useSafeArea,
+    bool? showDragHandle,
+    BorderRadius? borderRadius,
+    Size? dragHandleSize,
+    BoxDecoration? decoration,
+    double? width,
+    double? height,
+    double? elevation,
+    Color? backgroundColor,
+    Color? barrierColor,
+    EdgeInsets? padding,
+    BoxConstraints? constraints,
+    DrawerAnimation? animation,
+    bool? resizable,
+    double? minResizeWidth,
+    double? maxResizeWidth,
+    double? minResizeHeight,
+    double? maxResizeHeight,
+    Widget Function(BuildContext, Widget)? headerBuilder,
+    Widget Function(BuildContext, Widget)? footerBuilder,
+  }) {
+    return DrawerConfig(
+      position: position ?? this.position,
+      modal: modal ?? this.modal,
+      barrierDismissible: barrierDismissible ?? this.barrierDismissible,
+      draggable: draggable ?? this.draggable,
+      useSafeArea: useSafeArea ?? this.useSafeArea,
+      showDragHandle: showDragHandle ?? this.showDragHandle,
+      borderRadius: borderRadius ?? this.borderRadius,
+      dragHandleSize: dragHandleSize ?? this.dragHandleSize,
+      decoration: decoration ?? this.decoration,
+      width: width ?? this.width,
+      height: height ?? this.height,
+      elevation: elevation ?? this.elevation,
+      backgroundColor: backgroundColor ?? this.backgroundColor,
+      barrierColor: barrierColor ?? this.barrierColor,
+      padding: padding ?? this.padding,
+      constraints: constraints ?? this.constraints,
+      animation: animation ?? this.animation,
+      resizable: resizable ?? this.resizable,
+      minResizeWidth: minResizeWidth ?? this.minResizeWidth,
+      maxResizeWidth: maxResizeWidth ?? this.maxResizeWidth,
+      minResizeHeight: minResizeHeight ?? this.minResizeHeight,
+      maxResizeHeight: maxResizeHeight ?? this.maxResizeHeight,
+      headerBuilder: headerBuilder ?? this.headerBuilder,
+      footerBuilder: footerBuilder ?? this.footerBuilder,
     );
   }
+}
+
+/// Configuration for sheets
+class SheetConfig extends DrawerConfig {
+  /// Snap points as fractions of screen height
+  final List<double> snapPoints;
+
+  /// Initial snap point index
+  final int initialSnapIndex;
+
+  /// Minimum height of the sheet
+  final double? minHeight;
+
+  /// Maximum height of the sheet
+  final double? maxHeight;
+
+  /// Whether the sheet can be dismissed
+  final bool isDismissible;
+
+  /// Whether to hide keyboard when sheet opens
+  final bool hideKeyboard;
+
+  /// Creates a sheet configuration
+  const SheetConfig({
+    super.position = DrawerPosition.bottom,
+    super.modal = true,
+    super.barrierDismissible = true,
+    super.draggable = false,
+    super.useSafeArea = true,
+    super.borderRadius,
+    super.decoration,
+    super.backgroundColor,
+    super.barrierColor,
+    super.padding,
+    super.constraints,
+    super.animation,
+    super.headerBuilder,
+    this.snapPoints = const [0.5, 1.0],
+    this.initialSnapIndex = 0,
+    this.minHeight,
+    this.maxHeight,
+    this.isDismissible = true,
+    super.showDragHandle = false,
+    this.hideKeyboard = true,
+  });
+
+  @override
+  SheetConfig copyWith({
+    DrawerPosition? position,
+    bool? modal,
+    bool? barrierDismissible,
+    bool? draggable,
+    bool? useSafeArea,
+    bool? showDragHandle,
+    BorderRadius? borderRadius,
+    Size? dragHandleSize,
+    BoxDecoration? decoration,
+    double? width,
+    double? height,
+    double? elevation,
+    Color? backgroundColor,
+    Color? barrierColor,
+    EdgeInsets? padding,
+    BoxConstraints? constraints,
+    DrawerAnimation? animation,
+    bool? resizable,
+    double? minResizeWidth,
+    double? maxResizeWidth,
+    double? minResizeHeight,
+    double? maxResizeHeight,
+    Widget Function(BuildContext, Widget)? headerBuilder,
+    Widget Function(BuildContext, Widget)? footerBuilder,
+    List<double>? snapPoints,
+    int? initialSnapIndex,
+    double? minHeight,
+    double? maxHeight,
+    bool? isDismissible,
+    bool? hideKeyboard,
+  }) {
+    return SheetConfig(
+      position: position ?? this.position,
+      modal: modal ?? this.modal,
+      barrierDismissible: barrierDismissible ?? this.barrierDismissible,
+      draggable: draggable ?? this.draggable,
+      useSafeArea: useSafeArea ?? this.useSafeArea,
+      showDragHandle: showDragHandle ?? this.showDragHandle,
+      borderRadius: borderRadius ?? this.borderRadius,
+      decoration: decoration ?? this.decoration,
+      backgroundColor: backgroundColor ?? this.backgroundColor,
+      barrierColor: barrierColor ?? this.barrierColor,
+      padding: padding ?? this.padding,
+      constraints: constraints ?? this.constraints,
+      animation: animation ?? this.animation,
+      headerBuilder: headerBuilder ?? this.headerBuilder,
+      snapPoints: snapPoints ?? this.snapPoints,
+      initialSnapIndex: initialSnapIndex ?? this.initialSnapIndex,
+      minHeight: minHeight ?? this.minHeight,
+      maxHeight: maxHeight ?? this.maxHeight,
+      isDismissible: isDismissible ?? this.isDismissible,
+      hideKeyboard: hideKeyboard ?? this.hideKeyboard,
+    );
+  }
+}
+
+/// Controller for programmatically managing a drawer
+class DrawerController {
+  /// Callbacks for drawer state changes
+  final List<VoidCallback> _openCallbacks = [];
+  final List<VoidCallback> _closeCallbacks = [];
+
+  /// Whether the drawer is open
+  bool _isOpen = false;
+
+  /// Internal drawer entry
+  DrawerEntry? _entry;
+
+  /// Creates a drawer controller
+  DrawerController();
+
+  /// Whether the drawer is currently open
+  bool get isOpen => _isOpen;
+
+  /// Register a callback for when drawer opens
+  void addOpenCallback(VoidCallback callback) {
+    _openCallbacks.add(callback);
+  }
+
+  /// Register a callback for when drawer closes
+  void addCloseCallback(VoidCallback callback) {
+    _closeCallbacks.add(callback);
+  }
+
+  /// Remove an open callback
+  void removeOpenCallback(VoidCallback callback) {
+    _openCallbacks.remove(callback);
+  }
+
+  /// Remove a close callback
+  void removeCloseCallback(VoidCallback callback) {
+    _closeCallbacks.remove(callback);
+  }
+
+  /// Close the drawer
+  void close([dynamic result]) {
+    _entry?.close(result);
+  }
+
+  /// Notify that drawer has opened
+  void _notifyOpen() {
+    _isOpen = true;
+    for (final callback in List.from(_openCallbacks)) {
+      if (_openCallbacks.contains(callback)) {
+        callback();
+      }
+    }
+  }
+
+  /// Notify that drawer has closed
+  void _notifyClose() {
+    _isOpen = false;
+    for (final callback in List.from(_closeCallbacks)) {
+      if (_closeCallbacks.contains(callback)) {
+        callback();
+      }
+    }
+  }
+
+  bool get isDisposed => _entry == null;
+
+  void dispose() {
+    _openCallbacks.clear();
+    _closeCallbacks.clear();
+    _entry = null;
+  }
+}
+
+/// Controller for programmatically managing a sheet
+class SheetController extends DrawerController {
+  /// Current snap point index
+  int _currentSnapIndex = 0;
+
+  /// Callbacks for snap point changes
+  final List<ValueChanged<int>> _snapCallbacks = [];
+
+  /// Creates a sheet controller
+  SheetController() : super();
+
+  /// Current snap point index
+  int get currentSnapIndex => _currentSnapIndex;
+
+  /// Register a callback for snap point changes
+  void addSnapCallback(ValueChanged<int> callback) {
+    _snapCallbacks.add(callback);
+  }
+
+  /// Remove a snap point callback
+  void removeSnapCallback(ValueChanged<int> callback) {
+    _snapCallbacks.remove(callback);
+  }
+
+  /// Snap to the specified index
+  void snapTo(int index) {
+    // Implementation added to _SheetContentState class
+    final entry = _entry;
+    if (entry != null) {
+      try {
+        // Find SheetContent widget and access state
+        final context = entry._context;
+        if (context != null) {
+          final state = context.findAncestorStateOfType<_SheetContentState>();
+          state?._snapToIndex(index);
+        }
+      } catch (e) {
+        // Silently ignore if state can't be found
+      }
+    }
+  }
+
+  /// Notify that snap point has changed
+  void _notifySnap(int index) {
+    _currentSnapIndex = index;
+    for (final callback in List.from(_snapCallbacks)) {
+      if (_snapCallbacks.contains(callback)) {
+        callback(index);
+      }
+    }
+  }
+
+  /// Create a DrawerController that delegates to this SheetController
+  DrawerController _asDrawerController() {
+    final controller = DrawerController();
+
+    // Add forwarding methods
+    controller.addOpenCallback(() {
+      _notifyOpen();
+    });
+
+    controller.addCloseCallback(() {
+      _notifyClose();
+    });
+
+    return controller;
+  }
+
+  @override
+  void dispose() {
+    _snapCallbacks.clear();
+    super.dispose();
+  }
+}
+
+/// Entry for a drawer in the overlay system
+class DrawerEntry<T> {
+  /// Unique identifier
+  final String id;
+
+  /// Completer for future result
+  final Completer<T?> completer;
+
+  /// Controller for programmatic control
+  final DrawerController controller;
+
+  /// Configuration
+  final DrawerConfig config;
+
+  /// Callback when drawer should close
+  final VoidCallback onRemove;
+
+  /// Callback to decide if drawer can close
+  final bool Function() onWillClose;
+
+  /// Builder function for drawer content
+  final Widget Function(BuildContext) builder;
+
+  /// Context for this drawer entry
+  BuildContext? _context;
+
+  /// Creates a drawer entry
+  DrawerEntry({
+    required this.id,
+    required this.completer,
+    required this.controller,
+    required this.config,
+    required this.onRemove,
+    required this.builder,
+    required this.onWillClose,
+  });
+
+  /// Whether the drawer has completed
+  bool get isCompleted => completer.isCompleted;
+
+  /// Safe dispose for DrawerEntry to avoid double close
+  void close([T? result]) {
+    if (completer.isCompleted) return;
+    if (!onWillClose()) return;
+
+    try {
+      completer.complete(result);
+    } catch (_) {}
+    onRemove();
+    controller._notifyClose();
+    controller.dispose();
+  }
+
+  Future<void> closeAsync([T? result]) async {
+    if (completer.isCompleted) return;
+    final canClose = (onWillClose.call());
+    if (!canClose) return;
+    try {
+      completer.complete(result);
+    } catch (_) {}
+    onRemove();
+    controller._notifyClose();
+    controller.dispose();
+  }
+}
+
+/// Completer for drawer operations
+class DrawerCompleter<T> implements OverlayCompleter<T> {
+  final DrawerEntry<T> _entry;
+
+  /// Creates a drawer completer
+  DrawerCompleter(this._entry);
+
+  @override
+  void dispose() {
+    if (!_entry.completer.isCompleted) {
+      _entry.close();
+    }
+  }
+
+  @override
+  Future<T?> get future => _entry.completer.future;
+
+  @override
+  Future<void> get animationFuture => _entry.completer.future;
+
+  @override
+  bool get isCompleted => _entry.completer.isCompleted;
+
+  @override
+  bool get isAnimationCompleted => _entry.completer.isCompleted;
+
+  @override
+  void remove() {
+    _entry.close();
+  }
+}
+
+/// Main overlay widget for a drawer
+class _DrawerOverlay extends StatefulWidget {
+  final DrawerEntry entry;
+  final DrawerConfig config;
+  final Widget child;
+
+  const _DrawerOverlay({
+    required this.entry,
+    required this.config,
+    required this.child,
+  });
+
+  @override
+  _DrawerOverlayState createState() => _DrawerOverlayState();
+}
+
+class _DrawerOverlayState extends State<_DrawerOverlay>
+    with TickerProviderStateMixin {
+  late AnimationController _animationController;
+  late Animation<double> _animation;
+  late AnimationController _dragOffsetController;
+  late Animation<double> _dragOffsetAnimation;
+  final FocusScopeNode _focusNode = FocusScopeNode();
+  bool _closing = false;
+
+  // Drag‐to‐close state
+  double _dragOffset = 0.0;
+  bool _isDragging = false;
+  late double _drawerExtent;
+  late DrawerPosition _position;
+
+  @override
+  void initState() {
+    super.initState();
+    final animation = widget.config.animation ?? DrawerAnimation.defaults;
+    _animationController = AnimationController(
+      vsync: this,
+      duration: animation.openDuration,
+      reverseDuration: animation.closeDuration,
+    );
+    _animation = CurvedAnimation(
+      parent: _animationController,
+      curve: animation.openCurve,
+      reverseCurve: animation.closeCurve,
+    );
+    _animationController.forward();
+
+    _dragOffsetController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 200),
+    )..addListener(() {
+        setState(() {
+          _dragOffset = _dragOffsetAnimation.value;
+        });
+      });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _focusNode.requestFocus();
+    });
+  }
+
+  @override
+  void didUpdateWidget(covariant _DrawerOverlay oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final oldAnim = oldWidget.config.animation ?? DrawerAnimation.defaults;
+    final newAnim = widget.config.animation ?? DrawerAnimation.defaults;
+    if (oldAnim.openDuration != newAnim.openDuration ||
+        oldAnim.closeDuration != newAnim.closeDuration) {
+      _animationController
+        ..duration = newAnim.openDuration
+        ..reverseDuration = newAnim.closeDuration;
+    }
+    if (oldAnim.openCurve != newAnim.openCurve ||
+        oldAnim.closeCurve != newAnim.closeCurve) {
+      _animation = CurvedAnimation(
+        parent: _animationController,
+        curve: newAnim.openCurve,
+        reverseCurve: newAnim.closeCurve,
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    _dragOffsetController.dispose();
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  void close([dynamic result]) {
+    if (_closing) return;
+    _closing = true;
+    if (!_animationController.isDismissed) {
+      _animationController.reverse().then((_) {
+        if (mounted && !widget.entry.isCompleted) {
+          widget.entry.close(result);
+        }
+      });
+    } else {
+      widget.entry.close(result);
+    }
+  }
+
+  void _handleBackdropTap() {
+    if (widget.config.barrierDismissible) close();
+  }
+
+  DrawerPosition _getResolvedPosition(BuildContext ctx) {
+    final pos = widget.config.position;
+    if (pos == DrawerPosition.start || pos == DrawerPosition.end) {
+      final isLtr = Directionality.of(ctx) == TextDirection.ltr;
+      return (pos == DrawerPosition.start)
+          ? (isLtr ? DrawerPosition.left : DrawerPosition.right)
+          : (isLtr ? DrawerPosition.right : DrawerPosition.left);
+    }
+    return pos;
+  }
+
+  Alignment _getAlignment(DrawerPosition pos) {
+    switch (pos) {
+      case DrawerPosition.left:
+        return Alignment.centerLeft;
+      case DrawerPosition.right:
+        return Alignment.centerRight;
+      case DrawerPosition.top:
+        return Alignment.topCenter;
+      case DrawerPosition.bottom:
+        return Alignment.bottomCenter;
+      default:
+        return Alignment.center;
+    }
+  }
+
+  Offset _getStartOffset(DrawerPosition pos) {
+    switch (pos) {
+      case DrawerPosition.left:
+        return const Offset(-1, 0);
+      case DrawerPosition.right:
+        return const Offset(1, 0);
+      case DrawerPosition.top:
+        return const Offset(0, -1);
+      case DrawerPosition.bottom:
+        return const Offset(0, 1);
+      default:
+        return Offset.zero;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    _position = _getResolvedPosition(context);
+    final anim = widget.config.animation ?? DrawerAnimation.defaults;
+    widget.entry._context = context;
+
+    final backdrop = widget.config.modal
+        ? Positioned.fill(
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: _handleBackdropTap,
+              child: FadeTransition(
+                opacity: _animation,
+                child: Container(
+                  color: widget.config.barrierColor ??
+                      Colors.black.withValues(alpha: 0.5),
+                ),
+              ),
+            ),
+          )
+        : const SizedBox();
+
+    final drawerWithHandle =
+        _buildAnimatedDrawerContentWithHandle(_position, anim);
+
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop && widget.config.barrierDismissible && !_closing) close();
+      },
+      child: FocusScope(
+        node: _focusNode,
+        child: Stack(fit: StackFit.passthrough, children: [
+          backdrop,
+          drawerWithHandle,
+        ]),
+      ),
+    );
+  }
+
+  Widget _buildAnimatedDrawerContentWithHandle(
+      DrawerPosition pos, DrawerAnimation anim) {
+    return Positioned.fill(
+      child: SafeArea(
+        left: widget.config.useSafeArea && pos == DrawerPosition.left,
+        right: widget.config.useSafeArea && pos == DrawerPosition.right,
+        top: widget.config.useSafeArea && pos == DrawerPosition.top,
+        bottom: widget.config.useSafeArea && pos == DrawerPosition.bottom,
+        child: AnimatedBuilder(
+          animation: _animation,
+          builder: (_, child) {
+            final slide = SlideTransition(
+              position: Tween<Offset>(
+                begin: _getStartOffset(pos),
+                end: Offset.zero,
+              ).animate(_animation),
+              child: FadeTransition(
+                opacity: widget.config.animation?.withFade == true
+                    ? _animation
+                    : const AlwaysStoppedAnimation(1),
+                child: child,
+              ),
+            );
+            return Align(
+              alignment: _getAlignment(pos),
+              child: Transform.translate(
+                offset:
+                    pos == DrawerPosition.left || pos == DrawerPosition.right
+                        ? Offset(_dragOffset, 0)
+                        : Offset(0, _dragOffset),
+                child: slide,
+              ),
+            );
+          },
+          child: Padding(
+            padding: MediaQuery.viewInsetsOf(context),
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                widget.child,
+                if (widget.config.draggable && widget.config.showDragHandle)
+                  _buildHandle(pos),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHandle(DrawerPosition position) {
+    final size = MediaQuery.of(context).size;
+    switch (position) {
+      case DrawerPosition.left:
+        return Positioned(
+          right: -12,
+          top: size.height / 2 - 20,
+          child: _handleWidget(horizontal: true),
+        );
+      case DrawerPosition.right:
+        return Positioned(
+          left: -12,
+          top: size.height / 2 - 20,
+          child: _handleWidget(horizontal: true),
+        );
+      case DrawerPosition.top:
+        return Positioned(
+          bottom: -12,
+          left: size.width / 2 - 20,
+          child: _handleWidget(horizontal: false),
+        );
+      case DrawerPosition.bottom:
+        return Positioned(
+          top: -12,
+          left: size.width / 2 - 20,
+          child: _handleWidget(horizontal: false),
+        );
+      default:
+        return const SizedBox.shrink();
+    }
+  }
+
+  Widget _handleWidget({required bool horizontal}) {
+    return GestureDetector(
+      onHorizontalDragStart: horizontal ? _onDragStart : null,
+      onHorizontalDragUpdate: horizontal ? _onDragUpdate : null,
+      onHorizontalDragEnd: horizontal ? _onDragEnd : null,
+      onVerticalDragStart: !horizontal ? _onDragStart : null,
+      onVerticalDragUpdate: !horizontal ? _onDragUpdate : null,
+      onVerticalDragEnd: !horizontal ? _onDragEnd : null,
+      child: Container(
+        width: horizontal ? 30 : 60,
+        height: horizontal ? 60 : 24,
+        decoration: BoxDecoration(
+          color: Colors.grey.shade400,
+          borderRadius: BorderRadius.circular(8),
+        ),
+      ),
+    );
+  }
+
+  void _onDragStart(DragStartDetails _) {
+    _isDragging = true;
+    _drawerExtent = _calculateExtent(context);
+    if (_dragOffsetController.isAnimating) {
+      _dragOffsetController.stop();
+    }
+  }
+
+  void _onDragUpdate(DragUpdateDetails d) {
+    if (!_isDragging) return;
+    final delta =
+        (_position == DrawerPosition.left || _position == DrawerPosition.right)
+            ? d.delta.dx
+            : d.delta.dy;
+
+    setState(() {
+      switch (_position) {
+        case DrawerPosition.left:
+          if (delta < 0 || (_dragOffset < 0 && delta > 0)) {
+            _dragOffset = (_dragOffset + delta).clamp(-_drawerExtent, 0.0);
+          }
+          break;
+        case DrawerPosition.right:
+          if (delta > 0 || (_dragOffset > 0 && delta < 0)) {
+            _dragOffset = (_dragOffset + delta).clamp(0.0, _drawerExtent);
+          }
+          break;
+        case DrawerPosition.top:
+          if (delta < 0 || (_dragOffset < 0 && delta > 0)) {
+            _dragOffset = (_dragOffset + delta).clamp(-_drawerExtent, 0.0);
+          }
+          break;
+        case DrawerPosition.bottom:
+          if (delta > 0 || (_dragOffset > 0 && delta < 0)) {
+            _dragOffset = (_dragOffset + delta).clamp(0.0, _drawerExtent);
+          }
+          break;
+        default:
+      }
+    });
+  }
+
+  void _onDragEnd(DragEndDetails d) {
+    _isDragging = false;
+    final threshold = _drawerExtent * 0.15;
+    bool shouldClose = false;
+
+    switch (_position) {
+      case DrawerPosition.left:
+        shouldClose = _dragOffset < -threshold;
+        break;
+      case DrawerPosition.right:
+        shouldClose = _dragOffset > threshold;
+        break;
+      case DrawerPosition.top:
+        shouldClose = _dragOffset < -threshold;
+        break;
+      case DrawerPosition.bottom:
+        shouldClose = _dragOffset > threshold;
+        break;
+      default:
+    }
+
+    if (shouldClose) {
+      close();
+    } else {
+      _dragOffsetAnimation = Tween<double>(
+        begin: _dragOffset,
+        end: 0.0,
+      ).animate(CurvedAnimation(
+        parent: _dragOffsetController,
+        curve: Curves.easeOut,
+      ));
+      _dragOffsetController.forward(from: 0.0);
+    }
+  }
+
+  double _calculateExtent(BuildContext ctx) {
+    final size = MediaQuery.of(ctx).size;
+    return (_position == DrawerPosition.left ||
+            _position == DrawerPosition.right)
+        ? widget.config.width ?? size.width * 0.85
+        : widget.config.height ?? size.height * 0.5;
+  }
+}
+
+/// Content widget for drawers
+class _DrawerContent extends StatefulWidget {
+  final DrawerConfig config;
+  final DrawerController controller;
+  final Widget child;
+
+  const _DrawerContent({
+    required this.config,
+    required this.controller,
+    required this.child,
+  });
+
+  @override
+  _DrawerContentState createState() => _DrawerContentState();
+}
+
+class _DrawerContentState extends State<_DrawerContent> {
+  double _currentWidth = 0;
+  double _currentHeight = 0;
+  bool _resizing = false;
+
+  @override
+  void didUpdateWidget(_DrawerContent oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    // Check if fixed width or height changed
+    if (widget.config.width != oldWidget.config.width ||
+        widget.config.height != oldWidget.config.height) {
+      setState(() {
+        _currentWidth = 0; // Reset to use new width
+        _currentHeight = 0; // Reset to use new height
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final resolvedPosition = _resolvePosition(context);
+
+    // Apply constraints based on position
+    BoxConstraints constraints = const BoxConstraints();
+
+    // Apply width/height based on position
+    if (resolvedPosition == DrawerPosition.left ||
+        resolvedPosition == DrawerPosition.right) {
+      if (widget.config.width != null) {
+        constraints = constraints.copyWith(
+          minWidth: widget.config.width,
+          maxWidth: widget.config.width,
+        );
+      } else if (_currentWidth > 0) {
+        constraints = constraints.copyWith(
+          minWidth: _currentWidth,
+          maxWidth: _currentWidth,
+        );
+      } else {
+        constraints = constraints.copyWith(
+          minWidth: 0,
+          maxWidth: MediaQuery.of(context).size.width * 0.85,
+        );
+      }
+
+      // Full height by default
+      constraints = constraints.copyWith(
+        minHeight: 0,
+        maxHeight: double.infinity,
+      );
+    } else {
+      if (widget.config.height != null) {
+        constraints = constraints.copyWith(
+          minHeight: widget.config.height,
+          maxHeight: widget.config.height,
+        );
+      } else if (_currentHeight > 0) {
+        constraints = constraints.copyWith(
+          minHeight: _currentHeight,
+          maxHeight: _currentHeight,
+        );
+      } else {
+        constraints = constraints.copyWith(
+          minHeight: 0,
+          maxHeight: MediaQuery.of(context).size.height * 0.85,
+        );
+      }
+
+      // Full width by default
+      constraints = constraints.copyWith(
+        minWidth: 0,
+        maxWidth: double.infinity,
+      );
+    }
+
+    // If widget has constraints, use those
+    if (widget.config.constraints != null) {
+      constraints = constraints.copyWith(
+        minWidth: widget.config.constraints!.minWidth,
+        maxWidth: widget.config.constraints!.maxWidth,
+        minHeight: widget.config.constraints!.minHeight,
+        maxHeight: widget.config.constraints!.maxHeight,
+      );
+    }
+
+    // Create decoration
+    final decoration = widget.config.decoration ??
+        BoxDecoration(
+          color: widget.config.backgroundColor ?? theme.colorScheme.surface,
+          borderRadius: widget.config.borderRadius ??
+              _getDefaultBorderRadius(resolvedPosition),
+          boxShadow: widget.config.elevation != null
+              ? [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.1),
+                    blurRadius: widget.config.elevation! * 2,
+                    spreadRadius: widget.config.elevation! / 2,
+                  )
+                ]
+              : null,
+        );
+
+    // Create the content with possible header/footer
+    Widget content = widget.child;
+
+    // Apply header if provided
+    if (widget.config.headerBuilder != null) {
+      content = widget.config.headerBuilder!(context, content);
+    }
+
+    // Apply footer if provided
+    if (widget.config.footerBuilder != null) {
+      content = widget.config.footerBuilder!(context, content);
+    }
+
+    // Apply padding
+    if (widget.config.padding != null) {
+      content = Padding(
+        padding: widget.config.padding!,
+        child: content,
+      );
+    }
+
+    // Build the drawer with proper layout based on position
+    Widget drawer;
+
+    if (resolvedPosition == DrawerPosition.left ||
+        resolvedPosition == DrawerPosition.right) {
+      drawer = Row(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (resolvedPosition == DrawerPosition.right &&
+              widget.config.resizable)
+            _buildHorizontalResizeHandle(theme, resolvedPosition),
+          Flexible(child: content),
+          if (resolvedPosition == DrawerPosition.left &&
+              widget.config.resizable)
+            _buildHorizontalResizeHandle(theme, resolvedPosition),
+        ],
+      );
+    } else {
+      drawer = Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (resolvedPosition == DrawerPosition.bottom &&
+              widget.config.resizable)
+            _buildVerticalResizeHandle(theme, resolvedPosition),
+          Flexible(child: content),
+          if (resolvedPosition == DrawerPosition.top && widget.config.resizable)
+            _buildVerticalResizeHandle(theme, resolvedPosition),
+        ],
+      );
+    }
+
+    // Apply constraints and decoration
+    return Container(
+      constraints: constraints,
+      decoration: decoration,
+      child: drawer,
+    );
+  }
+
+  /// Resolve position based on text direction
+  DrawerPosition _resolvePosition(BuildContext context) {
+    switch (widget.config.position) {
+      case DrawerPosition.start:
+        return Directionality.of(context) == TextDirection.ltr
+            ? DrawerPosition.left
+            : DrawerPosition.right;
+      case DrawerPosition.end:
+        return Directionality.of(context) == TextDirection.ltr
+            ? DrawerPosition.right
+            : DrawerPosition.left;
+      default:
+        return widget.config.position;
+    }
+  }
+
+  /// Get default border radius based on position
+  BorderRadius _getDefaultBorderRadius(DrawerPosition position) {
+    switch (position) {
+      case DrawerPosition.left:
+        return const BorderRadius.only(
+          topRight: Radius.circular(16),
+          bottomRight: Radius.circular(16),
+        );
+      case DrawerPosition.right:
+        return const BorderRadius.only(
+          topLeft: Radius.circular(16),
+          bottomLeft: Radius.circular(16),
+        );
+      case DrawerPosition.top:
+        return const BorderRadius.only(
+          bottomLeft: Radius.circular(16),
+          bottomRight: Radius.circular(16),
+        );
+      case DrawerPosition.bottom:
+        return const BorderRadius.only(
+          topLeft: Radius.circular(16),
+          topRight: Radius.circular(16),
+        );
+      default:
+        return BorderRadius.circular(16);
+    }
+  }
+
+  /// Build horizontal resize handle
+  Widget _buildHorizontalResizeHandle(
+      ThemeData theme, DrawerPosition position) {
+    return GestureDetector(
+      onHorizontalDragStart: _handleResizeStart,
+      onHorizontalDragUpdate: (details) => _handleResize(details, position),
+      onHorizontalDragEnd: _handleResizeEnd,
+      child: MouseRegion(
+        cursor: SystemMouseCursors.resizeLeftRight,
+        child: Container(
+          width: 20,
+          color: Colors.transparent,
+          alignment: Alignment.center,
+          child: Container(
+            width: 3,
+            height: 40,
+            decoration: BoxDecoration(
+              color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
+              borderRadius: BorderRadius.circular(1.5),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Build vertical resize handle
+  Widget _buildVerticalResizeHandle(ThemeData theme, DrawerPosition position) {
+    return GestureDetector(
+      onVerticalDragStart: _handleResizeStart,
+      onVerticalDragUpdate: (details) => _handleResize(details, position),
+      onVerticalDragEnd: _handleResizeEnd,
+      child: MouseRegion(
+        cursor: SystemMouseCursors.resizeUpDown,
+        child: Container(
+          height: 20,
+          color: Colors.transparent,
+          alignment: Alignment.center,
+          child: Container(
+            height: 3,
+            width: 40,
+            decoration: BoxDecoration(
+              color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
+              borderRadius: BorderRadius.circular(1.5),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Handle resize start
+  void _handleResizeStart(DragStartDetails details) {
+    final size = (context.findRenderObject() as RenderBox?)?.size;
+    if (size == null) return;
+
+    setState(() {
+      _resizing = true;
+      final resolvedPosition = _resolvePosition(context);
+      if (resolvedPosition == DrawerPosition.left ||
+          resolvedPosition == DrawerPosition.right) {
+        _currentWidth = size.width;
+      } else {
+        _currentHeight = size.height;
+      }
+    });
+  }
+
+  /// Handle resize update
+  void _handleResize(DragUpdateDetails details, DrawerPosition position) {
+    if (!widget.config.resizable || !_resizing) return;
+
+    setState(() {
+      switch (position) {
+        case DrawerPosition.left:
+          _currentWidth += details.delta.dx;
+          _currentWidth = _currentWidth.clamp(
+            widget.config.minResizeWidth,
+            widget.config.maxResizeWidth,
+          );
+          break;
+
+        case DrawerPosition.right:
+          _currentWidth -= details.delta.dx;
+          _currentWidth = _currentWidth.clamp(
+            widget.config.minResizeWidth,
+            widget.config.maxResizeWidth,
+          );
+          break;
+
+        case DrawerPosition.top:
+          _currentHeight += details.delta.dy;
+          _currentHeight = _currentHeight.clamp(
+            widget.config.minResizeHeight,
+            widget.config.maxResizeHeight,
+          );
+          break;
+
+        case DrawerPosition.bottom:
+          _currentHeight -= details.delta.dy;
+          _currentHeight = _currentHeight.clamp(
+            widget.config.minResizeHeight,
+            widget.config.maxResizeHeight,
+          );
+          break;
+
+        default:
+          break;
+      }
+    });
+  }
+
+  /// Handle resize end
+  void _handleResizeEnd(DragEndDetails details) {
+    setState(() {
+      _resizing = false;
+    });
+  }
+}
+
+/// Content widget for sheets
+class _SheetContent extends StatefulWidget {
+  final SheetConfig config;
+  final DrawerController controller;
+  final Widget child;
+  final ValueChanged<int>? onSnapPointChanged;
+
+  const _SheetContent({
+    required this.config,
+    required this.controller,
+    required this.child,
+    this.onSnapPointChanged,
+  });
+
+  @override
+  _SheetContentState createState() => _SheetContentState();
+}
+
+class _SheetContentState extends State<_SheetContent>
+    with SingleTickerProviderStateMixin {
+  late double _currentHeight;
+  late int _currentSnapIndex;
+  late AnimationController _snapAnimationController;
+  late Animation<double> _snapAnimation;
+  double? _dragStartHeight;
+  bool _initialHeightMeasured = false;
+  bool _isDragging = false;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Initialize snap index safely
+    _currentSnapIndex = widget.config.initialSnapIndex
+        .clamp(0, widget.config.snapPoints.length - 1);
+
+    // Initialize animation controller
+    _snapAnimationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
+
+    _snapAnimation = CurvedAnimation(
+      parent: _snapAnimationController,
+      curve: Curves.easeOutCubic,
+    );
+
+    // Set initial height (will be set in first build)
+    _currentHeight = 0;
+
+    // Link to sheet controller if available
+    if (widget.controller is SheetController) {
+      final sheetController = widget.controller as SheetController;
+      sheetController._currentSnapIndex = _currentSnapIndex;
+    }
+
+    // Schedule measurement after first frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _measureInitialHeight();
+      }
+    });
+  }
+
+  @override
+  void didUpdateWidget(_SheetContent oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.config.snapPoints != oldWidget.config.snapPoints ||
+        widget.config.initialSnapIndex != oldWidget.config.initialSnapIndex) {
+      _currentSnapIndex = widget.config.initialSnapIndex
+          .clamp(0, widget.config.snapPoints.length - 1);
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _measureInitialHeight();
+        }
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _snapAnimation.removeListener(_heightListener);
+    _snapAnimationController.dispose();
+    super.dispose();
+  }
+
+  void _heightListener() {
+    if (mounted) setState(() => _currentHeight = _snapAnimation.value);
+  }
+
+  /// Measure the initial height of the sheet
+  void _measureInitialHeight() {
+    final screenHeight = MediaQuery.of(context).size.height;
+
+    // Use snap point for initial height
+    _currentHeight = widget.config.snapPoints[_currentSnapIndex] * screenHeight;
+    _initialHeightMeasured = true;
+
+    // Force rebuild to use measured height
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  /// Snap to specified index
+  void _snapToIndex(int index) {
+    if (!mounted) return;
+    final validIndex = index.clamp(0, widget.config.snapPoints.length - 1);
+    if (validIndex == _currentSnapIndex) return;
+
+    final screenHeight = MediaQuery.of(context).size.height;
+    final targetHeight = widget.config.snapPoints[validIndex] * screenHeight;
+
+    setState(() {
+      _currentSnapIndex = validIndex;
+      if (widget.controller is SheetController) {
+        (widget.controller as SheetController)._notifySnap(validIndex);
+      }
+    });
+
+    widget.onSnapPointChanged?.call(validIndex);
+    _animateToHeight(targetHeight);
+  }
+
+  /// Animate to target height
+  void _animateToHeight(double targetHeight) {
+    _snapAnimationController.reset();
+
+    _snapAnimation.removeListener(_heightListener);
+    _snapAnimation = Tween<double>(
+      begin: _currentHeight,
+      end: targetHeight,
+    ).animate(CurvedAnimation(
+      parent: _snapAnimationController,
+      curve: Curves.easeOutCubic,
+    ));
+    _snapAnimation.addListener(_heightListener);
+
+    _snapAnimationController.forward();
+  }
+
+  /// Handle drag start
+  void _handleDragStart(DragStartDetails details) {
+    if (_isDragging) return;
+
+    _isDragging = true;
+    _dragStartHeight = _currentHeight;
+    _snapAnimationController.stop();
+  }
+
+  /// Handle drag update
+  void _handleDragUpdate(DragUpdateDetails details) {
+    if (!mounted || _dragStartHeight == null || !_isDragging) return;
+
+    setState(() {
+      // Adjust height with resistance
+      final screenHeight = MediaQuery.of(context).size.height;
+      final maxHeight = widget.config.maxHeight ?? screenHeight * 0.9;
+      final minHeight = widget.config.minHeight ?? screenHeight * 0.2;
+
+      // Apply drag with resistance at edges
+      double newHeight = _dragStartHeight! - details.delta.dy;
+
+      if (newHeight > maxHeight) {
+        // Apply resistance at top
+        newHeight = maxHeight + (newHeight - maxHeight) * 0.2;
+      } else if (newHeight < minHeight) {
+        // Apply resistance at bottom
+        newHeight = minHeight - (minHeight - newHeight) * 0.2;
+      }
+
+      _currentHeight = newHeight;
+    });
+  }
+
+  /// Handle drag end
+  void _handleDragEnd(DragEndDetails details) {
+    if (!mounted || !_isDragging) return;
+
+    _isDragging = false;
+    _dragStartHeight = null;
+
+    final velocity = details.velocity.pixelsPerSecond.dy;
+    final screenHeight = MediaQuery.of(context).size.height;
+
+    // Dismiss if velocity is high enough and dismissible
+    if (velocity > 1000 && widget.config.isDismissible) {
+      widget.onSnapPointChanged?.call(-1);
+      widget.controller.close();
+      return;
+    }
+
+    // Find closest snap point
+    int closestIndex = 0;
+    double closestDistance = double.infinity;
+
+    for (int i = 0; i < widget.config.snapPoints.length; i++) {
+      final snapHeight = widget.config.snapPoints[i] * screenHeight;
+      final distance = (_currentHeight - snapHeight).abs();
+
+      if (distance < closestDistance) {
+        closestDistance = distance;
+        closestIndex = i;
+      }
+    }
+
+    // Consider velocity for snap decision
+    if (velocity.abs() > 500) {
+      if (velocity > 0 && closestIndex > 0) {
+        // Snap to lower point
+        closestIndex--;
+      } else if (velocity < 0 &&
+          closestIndex < widget.config.snapPoints.length - 1) {
+        // Snap to higher point
+        closestIndex++;
+      }
+    }
+
+    _snapToIndex(closestIndex);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final resolvedPosition = _resolvePosition(context);
+    final screenHeight = MediaQuery.of(context).size.height;
+    final screenWidth = MediaQuery.of(context).size.width;
+
+    // Initialize current height if not set and set flag
+    if (!_initialHeightMeasured) {
+      _currentHeight =
+          widget.config.snapPoints[_currentSnapIndex] * screenHeight;
+    }
+
+    // Create decoration
+    final decoration = widget.config.decoration ??
+        BoxDecoration(
+          color: widget.config.backgroundColor ?? theme.colorScheme.surface,
+          borderRadius: widget.config.borderRadius ??
+              _getDefaultBorderRadius(resolvedPosition),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.1),
+              blurRadius: 8,
+              spreadRadius: 2,
+            )
+          ],
+        );
+
+    // Create sheet content with header
+    Widget content = widget.child;
+
+    // Apply header if provided
+    if (widget.config.headerBuilder != null) {
+      content = widget.config.headerBuilder!(context, content);
+    }
+
+    // Apply padding
+    if (widget.config.padding != null) {
+      content = Padding(
+        padding: widget.config.padding!,
+        child: content,
+      );
+    }
+
+    // Build drag handle if needed
+    Widget? dragHandle;
+    if (widget.config.showDragHandle) {
+      dragHandle = Center(
+        child: Container(
+          width: 40,
+          height: 4,
+          decoration: BoxDecoration(
+            color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+      );
+    }
+
+    // Build the sheet based on position
+    Widget sheet;
+    switch (resolvedPosition) {
+      case DrawerPosition.bottom:
+        sheet = SizedBox(
+          width: screenWidth,
+          height: _currentHeight,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (dragHandle != null) ...[
+                const Gap(12),
+                dragHandle,
+                const Gap(8),
+              ],
+              Expanded(child: content),
+            ],
+          ),
+        );
+        break;
+
+      case DrawerPosition.top:
+        sheet = SizedBox(
+          width: screenWidth,
+          height: _currentHeight,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(child: content),
+              if (dragHandle != null) ...[
+                const Gap(8),
+                dragHandle,
+                const Gap(12),
+              ],
+            ],
+          ),
+        );
+        break;
+
+      case DrawerPosition.left:
+        sheet = SizedBox(
+          width: _currentHeight, // Use height for width in this orientation
+          height: screenHeight,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(child: content),
+              if (dragHandle != null) ...[
+                const Gap(8),
+                RotatedBox(
+                  quarterTurns: 1,
+                  child: dragHandle,
+                ),
+                const Gap(12),
+              ],
+            ],
+          ),
+        );
+        break;
+
+      case DrawerPosition.right:
+        sheet = SizedBox(
+          width: _currentHeight, // Use height for width in this orientation
+          height: screenHeight,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (dragHandle != null) ...[
+                const Gap(12),
+                RotatedBox(
+                  quarterTurns: 1,
+                  child: dragHandle,
+                ),
+                const Gap(8),
+              ],
+              Expanded(child: content),
+            ],
+          ),
+        );
+        break;
+
+      default:
+        sheet = const SizedBox.shrink();
+    }
+
+    // Apply gesture detector for dragging if enabled
+    if (widget.config.draggable) {
+      sheet = GestureDetector(
+        onVerticalDragStart: resolvedPosition == DrawerPosition.top ||
+                resolvedPosition == DrawerPosition.bottom
+            ? _handleDragStart
+            : null,
+        onVerticalDragUpdate: resolvedPosition == DrawerPosition.top ||
+                resolvedPosition == DrawerPosition.bottom
+            ? _handleDragUpdate
+            : null,
+        onVerticalDragEnd: resolvedPosition == DrawerPosition.top ||
+                resolvedPosition == DrawerPosition.bottom
+            ? _handleDragEnd
+            : null,
+        onHorizontalDragStart: resolvedPosition == DrawerPosition.left ||
+                resolvedPosition == DrawerPosition.right
+            ? _handleDragStart
+            : null,
+        onHorizontalDragUpdate: resolvedPosition == DrawerPosition.left ||
+                resolvedPosition == DrawerPosition.right
+            ? _handleDragUpdate
+            : null,
+        onHorizontalDragEnd: resolvedPosition == DrawerPosition.left ||
+                resolvedPosition == DrawerPosition.right
+            ? _handleDragEnd
+            : null,
+        child: sheet,
+      );
+    }
+
+    // Apply decoration
+    return Container(
+      decoration: decoration,
+      clipBehavior: Clip.antiAlias,
+      child: sheet,
+    );
+  }
+
+  /// Resolve position based on text direction
+  DrawerPosition _resolvePosition(BuildContext context) {
+    switch (widget.config.position) {
+      case DrawerPosition.start:
+        return Directionality.of(context) == TextDirection.ltr
+            ? DrawerPosition.left
+            : DrawerPosition.right;
+      case DrawerPosition.end:
+        return Directionality.of(context) == TextDirection.ltr
+            ? DrawerPosition.right
+            : DrawerPosition.left;
+      default:
+        return widget.config.position;
+    }
+  }
+
+  /// Get default border radius based on position
+  BorderRadius _getDefaultBorderRadius(DrawerPosition position) {
+    switch (position) {
+      case DrawerPosition.left:
+        return const BorderRadius.only(
+          topRight: Radius.circular(16),
+          bottomRight: Radius.circular(16),
+        );
+      case DrawerPosition.right:
+        return const BorderRadius.only(
+          topLeft: Radius.circular(16),
+          bottomLeft: Radius.circular(16),
+        );
+      case DrawerPosition.top:
+        return const BorderRadius.only(
+          bottomLeft: Radius.circular(16),
+          bottomRight: Radius.circular(16),
+        );
+      case DrawerPosition.bottom:
+        return const BorderRadius.only(
+          topLeft: Radius.circular(16),
+          topRight: Radius.circular(16),
+        );
+      default:
+        return BorderRadius.circular(16);
+    }
+  }
+}
+
+/// Helper functions for closing drawers/sheets from any context
+Future<void> closeDrawer<T>(BuildContext context, [T? result]) async {
+  final manager = OverlayManager.maybeOf(context);
+  if (manager != null) {
+    final handler = manager.drawerHandler;
+    handler.closeLastDrawer(result);
+    return;
+  }
+  return Future.value();
+}
+
+Future<void> closeSheet<T>(BuildContext context, [T? result]) async {
+  return closeDrawer(context, result);
+}
+
+/// Shows a drawer with the specified configuration
+DrawerCompleter<T> showDrawer<T>({
+  required BuildContext context,
+  required WidgetBuilder builder,
+  DrawerPosition position = DrawerPosition.left,
+  bool modal = true,
+  bool barrierDismissible = true,
+  bool draggable = true,
+  bool useSafeArea = true,
+  bool showDragHandle = true,
+  BorderRadius? borderRadius,
+  Size? dragHandleSize,
+  BoxDecoration? decoration,
+  double? width,
+  double? height,
+  double? elevation,
+  Color? backgroundColor,
+  Color? barrierColor,
+  EdgeInsets? padding,
+  BoxConstraints? constraints,
+  DrawerAnimation? animation,
+  DrawerController? controller,
+  VoidCallback? onOpen,
+  VoidCallback? onClose,
+  bool Function()? onWillClose,
+  bool resizable = false,
+  double minResizeWidth = 200,
+  double maxResizeWidth = 600,
+  double minResizeHeight = 100,
+  double maxResizeHeight = 800,
+  Widget Function(BuildContext, Widget)? headerBuilder,
+  Widget Function(BuildContext, Widget)? footerBuilder,
+}) {
+  final manager = OverlayManager.of(context);
+  final handler = manager.drawerHandler;
+  return handler.showDrawer(
+    context: context,
+    builder: builder,
+    position: position,
+    modal: modal,
+    barrierDismissible: barrierDismissible,
+    draggable: draggable,
+    useSafeArea: useSafeArea,
+    showDragHandle: showDragHandle,
+    borderRadius: borderRadius,
+    dragHandleSize: dragHandleSize,
+    decoration: decoration,
+    width: width,
+    height: height,
+    elevation: elevation,
+    backgroundColor: backgroundColor,
+    barrierColor: barrierColor,
+    padding: padding,
+    constraints: constraints,
+    animation: animation,
+    controller: controller,
+    onOpen: onOpen,
+    onClose: onClose,
+    onWillClose: onWillClose,
+    resizable: resizable,
+    minResizeWidth: minResizeWidth,
+    maxResizeWidth: maxResizeWidth,
+    minResizeHeight: minResizeHeight,
+    maxResizeHeight: maxResizeHeight,
+    headerBuilder: headerBuilder,
+    footerBuilder: footerBuilder,
+  );
+}
+
+/// Shows a sheet with the specified configuration
+DrawerOverlayHandler showSheet<T>({
+  required BuildContext context,
+  required WidgetBuilder builder,
+  DrawerPosition position = DrawerPosition.bottom,
+  bool modal = true,
+  bool barrierDismissible = true,
+  bool draggable = true,
+  bool useSafeArea = true,
+  BorderRadius? borderRadius = const BorderRadius.all(Radius.zero),
+  BoxDecoration? decoration,
+  Color? backgroundColor,
+  Color? barrierColor,
+  EdgeInsets? padding,
+  BoxConstraints? constraints,
+  DrawerAnimation? animation,
+  SheetController? controller,
+  List<double>? snapPoints,
+  int? initialSnapIndex,
+  double? minHeight,
+  double? maxHeight,
+  VoidCallback? onOpen,
+  VoidCallback? onClose,
+  bool Function()? onWillClose,
+  ValueChanged<int>? onSnapPointChanged,
+  bool isDismissible = true,
+  bool showDragHandle = false,
+  bool hideKeyboard = true,
+  Widget Function(BuildContext, Widget)? headerBuilder,
+}) {
+  final manager = OverlayManager.of(context);
+  final handler = manager.drawerHandler;
+  return handler
+    ..showSheet(
+      context: context,
+      builder: builder,
+      position: position,
+      modal: modal,
+      barrierDismissible: barrierDismissible,
+      draggable: draggable,
+      useSafeArea: useSafeArea,
+      borderRadius: borderRadius,
+      decoration: decoration,
+      backgroundColor: backgroundColor,
+      barrierColor: barrierColor,
+      padding: padding,
+      constraints: constraints,
+      animation: animation,
+      controller: controller,
+      snapPoints: snapPoints,
+      initialSnapIndex: initialSnapIndex,
+      minHeight: minHeight,
+      maxHeight: maxHeight,
+      onOpen: onOpen,
+      onClose: onClose,
+      onWillClose: onWillClose,
+      onSnapPointChanged: onSnapPointChanged,
+      isDismissible: isDismissible,
+      showDragHandle: showDragHandle,
+      hideKeyboard: hideKeyboard,
+      headerBuilder: headerBuilder,
+    );
 }
