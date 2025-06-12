@@ -61,22 +61,22 @@ class _BottomNavbarState extends State<BottomNavbar> {
           child: BottomNavigationBar(
             elevation: 0,
             currentIndex: NavbarItem.values.indexOf(_selectedItem),
-            selectedItemColor: Colors.amber[800],
+            selectedItemColor: Colors.blueAccent,
             unselectedItemColor: iconColor,
             backgroundColor: Colors.transparent,
             type: BottomNavigationBarType.fixed,
             onTap: _onItemTapped,
             items: [
               BottomNavigationBarItem(
-                icon: Icon(Icons.home, color: iconColor),
+                icon: Icon(Icons.home),
                 label: 'Home',
               ),
               BottomNavigationBarItem(
-                icon: Icon(Icons.book, color: iconColor),
+                icon: Icon(Icons.book),
                 label: 'My List',
               ),
               BottomNavigationBarItem(
-                icon: Icon(Icons.search, color: iconColor),
+                icon: Icon(Icons.search),
                 label: 'Search',
               ),
             ]
