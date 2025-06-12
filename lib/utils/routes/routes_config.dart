@@ -3,7 +3,6 @@ import 'package:boilerplate/presentation/pages/auth/unauthorized/unauthorized.da
 import 'package:boilerplate/presentation/pages/home/home.dart';
 import 'package:boilerplate/presentation/pages/auth/login/login.dart';
 import 'package:boilerplate/presentation/pages/sandbox/sandbox_page.dart';
-import 'package:boilerplate/presentation/pages/users/profile/profile.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -14,6 +13,8 @@ class RoutePaths {
   static const String sandbox = '/sandbox';
   static const String profile = '/profile';
   static const String unauthorized = '/unauthorized';
+  // static const String adminDashboard = '/admin/dashboard';
+  // static const String adminUsers = '/admin/users';
 }
 
 class RouteParams {
