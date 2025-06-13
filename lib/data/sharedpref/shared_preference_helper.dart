@@ -85,4 +85,61 @@ class SharedPreferenceHelper {
   Future<void> changeLanguage(String language) {
     return _sharedPreference.setString(Preferences.currentLanguage, language);
   }
+
+  // Clear all network cache entries
+  Future<bool> clearNetworkCache() async {
+    final keyPrefix = 'network_cache_';
+    final keys = _sharedPreference.getKeys();
+    bool allSuccess = true;
+
+    for (final key in keys) {
+      if (key.startsWith(keyPrefix)) {
+        final success = await _sharedPreference.remove(key);
+        if (!success) allSuccess = false;
+      }
+    }
+
+    return allSuccess;
+  }
+
+  // Cache:------------------------------------------------------
+  // Get cache usage statistics
+  Future<Map<String, dynamic>> getNetworkCacheStats() async {
+    final keyPrefix = 'network_cache_';
+    final keys = _sharedPreference
+        .getKeys()
+        .where((key) => key.startsWith(keyPrefix))
+        .toList();
+
+    int totalSize = 0;
+    DateTime? oldestEntry;
+    DateTime? newestEntry;
+
+    for (final key in keys) {
+      final value = _sharedPreference.getString(key);
+      if (value != null) {
+        totalSize += value.length;
+
+        try {
+          final json = jsonDecode(value) as Map<String, dynamic>;
+          final createdAt = DateTime.parse(json['createdAt'] as String);
+
+          if (oldestEntry == null || createdAt.isBefore(oldestEntry)) {
+            oldestEntry = createdAt;
+          }
+
+          if (newestEntry == null || createdAt.isAfter(newestEntry)) {
+            newestEntry = createdAt;
+          }
+        } catch (_) {}
+      }
+    }
+
+    return {
+      'entryCount': keys.length,
+      'totalSizeBytes': totalSize,
+      'oldestEntry': oldestEntry?.toIso8601String(),
+      'newestEntry': newestEntry?.toIso8601String(),
+    };
+  }
 }

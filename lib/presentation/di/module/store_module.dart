@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:boilerplate/core/stores/error/error_store.dart';
 import 'package:boilerplate/core/stores/form/form_store.dart';
 import 'package:boilerplate/domain/repository/setting/setting_repository.dart';
+import 'package:boilerplate/domain/usecase/api/top_api_usecase.dart';
 
 // Import dari auth_firebase dengan alias
 import 'package:boilerplate/domain/usecase/auth_firebase/register_usecase.dart';
@@ -22,6 +23,7 @@ import 'package:boilerplate/domain/usecase/auth_firebase/get_current_user_usecas
 // Import dari user dengan alias
 
 import 'package:boilerplate/presentation/store/auth_firebase/auth_store.dart';
+import 'package:boilerplate/presentation/store/home/home_store.dart';
 import 'package:boilerplate/presentation/store/language/language_store.dart';
 import 'package:boilerplate/presentation/store/theme/theme_store.dart';
 
@@ -62,6 +64,11 @@ class StoreModule {
       LanguageStore(
         getIt<SettingRepository>(),
         getIt<ErrorStore>(),
+      ),
+    );
+    getIt.registerSingleton<HomeStore>(
+      HomeStore(
+        getIt<TopApiUseCase>(),
       ),
     );
   }
