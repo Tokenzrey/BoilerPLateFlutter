@@ -20,15 +20,10 @@ import 'package:boilerplate/domain/usecase/auth_firebase/get_current_user_usecas
     as firebase_auth;
 
 // Import dari user dengan alias
-import 'package:boilerplate/domain/usecase/user/is_logged_in_usecase.dart'
-    as user;
-import 'package:boilerplate/domain/usecase/user/login_usecase.dart' as user;
-import 'package:boilerplate/domain/usecase/user/logout_usecase.dart' as user;
 
 import 'package:boilerplate/presentation/store/auth_firebase/auth_store.dart';
 import 'package:boilerplate/presentation/store/language/language_store.dart';
 import 'package:boilerplate/presentation/store/theme/theme_store.dart';
-import 'package:boilerplate/presentation/store/auth/login_store.dart';
 
 import '../../../di/service_locator.dart';
 
@@ -42,16 +37,6 @@ class StoreModule {
     );
 
     // stores:------------------------------------------------------------------
-    getIt.registerSingleton<UserStore>(
-      UserStore(
-        getIt<user.IsLoggedInUseCase>(),
-        getIt<user.LoginUseCase>(),
-        getIt<user.LogoutUseCase>(),
-        getIt<FormErrorStore>(),
-        getIt<ErrorStore>(),
-      ),
-    );
-
     getIt.registerSingleton<AuthStore>(
       AuthStore(
         getIt<RegisterUseCase>(),
@@ -73,7 +58,6 @@ class StoreModule {
         getIt<ErrorStore>(),
       ),
     );
-
     getIt.registerSingleton<LanguageStore>(
       LanguageStore(
         getIt<SettingRepository>(),
