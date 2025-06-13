@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:boilerplate/core/widgets/notification.dart';
 import 'package:boilerplate/di/service_locator.dart';
 import 'package:boilerplate/presentation/pages/my_app.dart';
 import 'package:boilerplate/utils/routes/routes.dart';
@@ -16,11 +15,6 @@ Future<void> main() async {
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   await setPreferredOrientations();
   await ServiceLocator.configureDependencies();
-  await NotificationService().init(
-    onDidReceiveNotificationResponse: (response) {
-      debugPrint('Notification tapped! payload: ${response.payload}');
-    },
-  );
 
   runApp(
     Provider<GoRouter>(
