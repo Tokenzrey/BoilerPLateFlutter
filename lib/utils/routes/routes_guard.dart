@@ -7,7 +7,6 @@ import 'package:mobx/mobx.dart';
 import 'routes_config.dart';
 
 /// RouteGuard terintegrasi MobX AuthStore dan UseCase.
-/// Pastikan AuthStore sudah singleton di getIt.
 class RouteGuard extends StatefulWidget {
   final Widget child;
   final List<String>? allowedRoles;
@@ -72,7 +71,6 @@ class _RouteGuardState extends State<RouteGuard> {
     });
 
     try {
-      // Pastikan status user sudah up-to-date
       await _authStore.loadCurrentUser();
 
       if (!mounted) return;
@@ -106,7 +104,7 @@ class _RouteGuardState extends State<RouteGuard> {
   bool _checkRoleAccess(User? user) {
     if (user == null) return false;
     final allowed = widget.allowedRoles;
-    if (allowed == null || allowed.isEmpty) return true; // Semua role boleh
+    if (allowed == null || allowed.isEmpty) return true;
     return allowed.any((role) => user.roles.contains(role));
   }
 

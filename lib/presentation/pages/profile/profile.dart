@@ -35,7 +35,6 @@ class _ProfilecomickState extends State<Profilecomick> {
     List<Widget> tabs = [profileTabs(), settingTabs()];
 
     return Scaffold(
-      // TODO: nambahin appbar
       appBar: EmptyAppBar(),
       body: SingleChildScrollView(
         child: Container(
@@ -126,8 +125,6 @@ class _ProfilecomickState extends State<Profilecomick> {
           text: "Save",
           colors:
               ButtonColors(background: Colors.blue[900], text: Colors.white),
-
-          // TODO
           onPressed: () {},
         ),
         const SizedBox(height: 12),
@@ -155,7 +152,6 @@ class _ProfilecomickState extends State<Profilecomick> {
           text: "Save",
           colors:
               ButtonColors(background: Colors.blue[900], text: Colors.white),
-          // TODO
           onPressed: () {},
         ),
         const SizedBox(height: 24),
@@ -195,7 +191,6 @@ class _ProfilecomickState extends State<Profilecomick> {
         Button(
           text: "Yes, delete my account",
           colors: ButtonColors(background: Colors.red[900], text: Colors.white),
-          // TODO
           onPressed: () {},
         ),
       ],
