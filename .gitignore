@@ -1,6 +1,5 @@
 # Miscellaneous
 *.class
-*.lock
 *.log
 *.pyc
 *.swp
@@ -9,6 +8,7 @@
 .buildlog/
 .history
 .svn/
+migrate_working_dir/
 
 # IntelliJ related
 *.iml
@@ -16,17 +16,28 @@
 *.iws
 .idea/
 
-# Visual Studio Code related
-.vscode/
+# VS Code related
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+!.vscode/snippets
 
 # Flutter/Dart/Pub related
 **/doc/api/
+**/ios/Flutter/.last_build_id
 .dart_tool/
 .flutter-plugins
+.flutter-plugins-dependencies
 .packages
 .pub-cache/
 .pub/
-build/
+/build/
+pubspec.lock
+
+# Web related
+lib/generated_plugin_registrant.dart
 
 # Android related
 **/android/**/gradle-wrapper.jar
@@ -35,7 +46,7 @@ build/
 **/android/gradlew
 **/android/gradlew.bat
 **/android/local.properties
-**/android/**/GeneratedPluginRegistrant.java
+**/android/**/GeneratedPluginRegistrant.*
 
 # iOS/XCode related
 **/ios/**/*.mode1v3
@@ -60,16 +71,98 @@ build/
 **/ios/Flutter/app.flx
 **/ios/Flutter/app.zip
 **/ios/Flutter/flutter_assets/
+**/ios/Flutter/flutter_export_environment.sh
 **/ios/ServiceDefinitions.json
 **/ios/Runner/GeneratedPluginRegistrant.*
 
-# Exceptions to above rules.
+# macOS related
+**/macos/Flutter/GeneratedPluginRegistrant.*
+**/macos/Flutter/ephemeral/
+**/macos/Pods/
+
+# Windows related
+**/windows/flutter/generated_plugin_registrant.cc
+**/windows/flutter/generated_plugin_registrant.h
+**/windows/flutter/generated_plugins.cmake
+
+# Linux related
+**/linux/flutter/generated_plugin_registrant.cc
+**/linux/flutter/generated_plugin_registrant.h
+**/linux/flutter/generated_plugins.cmake
+
+# Coverage
+coverage/
+*.lcov
+.test_coverage.dart
+coverage_badge.svg
+
+# Symbols
+app.*.symbols
+
+# Obfuscation
+app.*.map.json
+
+# Android Studio
+/android/app/debug
+/android/app/profile
+/android/app/release
+
+# FVM (Flutter Version Management)
+.fvm/flutter_sdk
+
+# Melos
+.melos_tool/
+melos_*.iml
+
+# Secrets, environment variables, keys
+*.env
+.env
+.env.*
+*.env.*
+!.env.example
+*.pem
+*.key
+*.p8
+*.p12
+*.keystore
+*.jks
+key.properties
+google-services.json
+GoogleService-Info.plist
+
+# Generated files
+*.g.dart
+*.freezed.dart
+*.mocks.dart
+*.config.dart
+*.gr.dart
+*.gen.dart
+*.chopper.dart
+
+# Avoid committing generated code for server-client communication
+lib/generated/
+*.swagger.dart
+*.swagger.chopper.dart
+
+# Exceptions to above rules
 !**/ios/**/default.mode1v3
 !**/ios/**/default.mode2v3
 !**/ios/**/default.pbxuser
 !**/ios/**/default.perspectivev3
-!/packages/flutter_tools/test/data/dart_dependencies_test/**/.packages
-.flutter-plugins-dependencies
-ios/Flutter/flutter_export_environment.sh
 
-.vscode/templates
+# Mason
+.mason/
+mason-lock.json
+
+# Firebase related
+.firebase/
+firebase-debug.log
+
+# Temporary files
+*.tmp
+*.bak
+*.backup
+*.old
+
+# Documentation
+doc/
