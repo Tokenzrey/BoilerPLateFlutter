@@ -66,7 +66,7 @@ class RoutesConfig {
     RouteConfig(
       path: RoutePaths.login,
       name: 'login',
-      builder: (context, params) => const SandboxScreen(),
+      builder: (context, params) => const LoginScreen(),
     ),
     RouteConfig(
       path: RoutePaths.register,
