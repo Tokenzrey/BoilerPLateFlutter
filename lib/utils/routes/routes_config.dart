@@ -3,6 +3,7 @@ import 'package:boilerplate/presentation/pages/auth/unauthorized/unauthorized.da
 import 'package:boilerplate/presentation/pages/home/home.dart';
 import 'package:boilerplate/presentation/pages/auth/login/login.dart';
 import 'package:boilerplate/presentation/pages/sandbox/sandbox_page.dart';
+import 'package:boilerplate/presentation/pages/users/profile_settings.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -13,8 +14,6 @@ class RoutePaths {
   static const String sandbox = '/sandbox';
   static const String profile = '/profile';
   static const String unauthorized = '/unauthorized';
-  // static const String adminDashboard = '/admin/dashboard';
-  // static const String adminUsers = '/admin/users';
 }
 
 class RouteParams {
@@ -78,6 +77,11 @@ class RoutesConfig {
       name: 'unauthorized',
       builder: (context, params) => const UnauthorizedScreen(),
     ),
+    RouteConfig(
+      path: RoutePaths.profile,
+      name: 'profile',
+      builder: (context, params) => const ProfileScreen(),
+    )
   ];
 
   static final List<RouteConfig> authenticatedRoutes = [
@@ -87,12 +91,6 @@ class RoutesConfig {
       builder: (context, params) => const HomeScreen(),
       requiresAuth: true,
     ),
-    // RouteConfig(
-    //   path: RoutePaths.profile,
-    //   name: 'profile',
-    //   builder: (context, params) => const ProfileScreen(),
-    //   requiresAuth: true,
-    // ),
   ];
 
   static List<RouteConfig> get allRoutes => [
