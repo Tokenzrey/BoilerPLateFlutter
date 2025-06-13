@@ -1,8 +1,11 @@
 import 'package:boilerplate/presentation/pages/sandbox/animation_sandbox.dart';
 import 'package:boilerplate/presentation/pages/sandbox/breadcrumb_sandbox.dart';
 import 'package:boilerplate/presentation/pages/sandbox/button_sandbox.dart';
+import 'package:boilerplate/presentation/pages/sandbox/check_auth_sandbox.dart';
 import 'package:boilerplate/presentation/pages/sandbox/circular_sandbox.dart';
 import 'package:boilerplate/presentation/pages/sandbox/collapsible_sandbox.dart';
+import 'package:boilerplate/presentation/pages/sandbox/comic_card_sandbox.dart';
+import 'package:boilerplate/presentation/pages/sandbox/notification_sandbox.dart';
 import 'package:boilerplate/presentation/pages/sandbox/pagination_sandbox.dart';
 import 'package:boilerplate/presentation/pages/sandbox/colors_sandbox.dart';
 import 'package:boilerplate/presentation/pages/sandbox/dialog_sandbox.dart';
@@ -48,7 +51,10 @@ class _SandboxScreenState extends State<SandboxScreen> {
     'Circular Progress',
     'Breadcrumb',
     'Collapsible',
-    'Pagination'
+    'Pagination',
+    'Card',
+    'Notification',
+    'Auth'
   ];
 
   @override
@@ -144,6 +150,12 @@ class _SandboxScreenState extends State<SandboxScreen> {
         return const CollapsibleSandbox();
       case 'Pagination':
         return const PaginationSandbox();
+      case 'Card':
+        return const ComicCardSandbox();
+      case 'Notification':
+        return const NotificationSandbox();
+      case 'Auth':
+        return const AuthSandbox();
       default:
         return Center(
           child: Text('Component "$_selectedComponent" not implemented yet'),

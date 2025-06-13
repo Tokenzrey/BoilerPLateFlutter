@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:boilerplate/core/widgets/card/comic_search_result_item.dart';
+import 'package:boilerplate/core/widgets/components/display/comic_search_result_item.dart';
 
 class ComicSearchSandbox extends StatelessWidget {
   const ComicSearchSandbox({super.key});
