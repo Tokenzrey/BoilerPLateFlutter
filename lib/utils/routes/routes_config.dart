@@ -81,7 +81,7 @@ class RoutesConfig {
       path: RoutePaths.profile,
       name: 'profile',
       builder: (context, params) => const ProfileSettingsScreen(),
-    ),
+    )
   ];
 
   static final List<RouteConfig> authenticatedRoutes = [
@@ -91,12 +91,6 @@ class RoutesConfig {
       builder: (context, params) => const HomeScreen(),
       requiresAuth: true,
     ),
-    // RouteConfig(
-    //   path: RoutePaths.profile,
-    //   name: 'profile',
-    //   builder: (context, params) => const ProfileScreen(),
-    //   requiresAuth: true,
-    // ),
   ];
 
   static List<RouteConfig> get allRoutes => [
