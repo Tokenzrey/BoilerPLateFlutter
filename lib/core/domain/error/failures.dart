@@ -24,3 +24,11 @@ class AuthFailure extends Failure {
 class UnexpectedFailure extends Failure {
   const UnexpectedFailure(super.message);
 }
+
+class ApiFailure extends Failure {
+  const ApiFailure(super.message);
+}
+
+class NotImplementedFailure extends Failure {
+  const NotImplementedFailure(super.message);
+}

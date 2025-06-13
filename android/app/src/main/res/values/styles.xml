@@ -11,6 +11,6 @@
     </style>
     <!-- You can name this style whatever you'd like -->
     <style name="NormalTheme" parent="@android:style/Theme.Black.NoTitleBar">
-        <item name="android:windowBackground">@drawable/ic_appicon</item>
+        <item name="android:windowBackground">@drawable/ic_app</item>
     </style>
 </resources>
