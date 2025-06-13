@@ -27,7 +27,8 @@ class AppRouter {
 
   static final router = GoRouter(
     navigatorKey: _rootNavigatorKey,
-    initialLocation: RoutePaths.home,
+    // dev purpose
+    initialLocation: RoutePaths.profile,
     debugLogDiagnostics: true,
     routerNeglect: true,
     refreshListenable: RouteGuard.authStateChanges,
@@ -46,11 +47,6 @@ class AppRouter {
     for (final routeConfig in RoutesConfig.authenticatedRoutes) {
       routes.add(_createRoute(routeConfig, withGuard: true));
     }
-
-    // Add admin routes with stricter guards
-    // for (final routeConfig in RoutesConfig.adminRoutes) {
-    //   routes.add(_createRoute(routeConfig, withGuard: true, adminOnly: true));
-    // }
 
     return routes;
   }

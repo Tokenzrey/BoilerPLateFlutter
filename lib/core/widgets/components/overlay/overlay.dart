@@ -1,475 +1,242 @@
-/// {@template overlay_library}
-/// # Overlay System for Flutter
-///
-/// A powerful and flexible overlay management system for Flutter applications.
-/// This library provides a unified API to show popovers, tooltips, menus, and custom overlays,
-/// making it easy to manage overlay widgets, modal dialogs, popups, and more—
-/// all with advanced alignment, animation, and interaction options.
-///
-/// ## Features
-/// - Unified interface for popovers, tooltips, and menus
-/// - Fine-grained control over positioning, alignment, and constraints
-/// - Modal and non-modal overlays
-/// - Barrier customization (color, radius, dismiss behavior)
-/// - Anchor/follow behavior for dynamic widgets
-/// - Overlay state management and completion futures
-/// - LayerLink and region grouping for advanced use-cases
-///
-/// ## Basic Example
-/// ```dart
-/// // To show a popover overlay:
-/// OverlayManager.of(context).show(
-///   context: context,
-///   builder: (context) => MyPopoverContent(),
-///   alignment: Alignment.topCenter,
-/// );
-/// ```
-///
-/// ## Layer Integration
-/// Wrap your app or part of your widget tree with [OverlayManagerLayer] to provide overlay context:
-/// ```dart
-/// OverlayManagerLayer(
-///   popoverHandler: MyPopoverHandler(),
-///   tooltipHandler: MyTooltipHandler(),
-///   menuHandler: MyMenuHandler(),
-///   child: MyApp(),
-/// )
-/// ```
-/// {@endtemplate}
-library;
-
 import 'package:flutter/material.dart';
 import 'package:data_widget/data_widget.dart';
 import 'popover.dart';
+import 'toast.dart';
+import 'drawer.dart';
 
-/// Closes any open overlay managed by [OverlayHandlerStateMixin] within the widget tree.
-///
-/// This utility will find the nearest [OverlayHandlerStateMixin] in the widget context
-/// and close it, optionally returning a value.
-///
-/// {@template close_overlay_example}
-/// ## Example
-/// ```dart
-/// // Close overlay and return a result
-/// await closeOverlay(context, resultValue);
-/// ```
-/// {@endtemplate}
-Future<void> closeOverlay<T>(BuildContext context, [T? value]) {
-  return Data.maybeFind<OverlayHandlerStateMixin>(context)
-          ?.closeWithResult(value) ??
-      Future.value();
+/// Configuration class for overlay display parameters
+class OverlayConfig<T> {
+  final BuildContext context;
+  final WidgetBuilder builder;
+  final AlignmentGeometry alignment;
+  final Offset? position;
+  final AlignmentGeometry? anchorAlignment;
+  final PopoverConstraint widthConstraint;
+  final PopoverConstraint heightConstraint;
+  final Key? key;
+  final bool rootOverlay;
+  final bool modal;
+  final bool barrierDismissable;
+  final Clip clipBehavior;
+  final Object? regionGroupId;
+  final Offset? offset;
+  final AlignmentGeometry? transitionAlignment;
+  final EdgeInsetsGeometry? margin;
+  final bool follow;
+  final bool consumeOutsideTaps;
+  final ValueChanged<PopoverOverlayWidgetState>? onTickFollow;
+  final bool allowInvertHorizontal;
+  final bool allowInvertVertical;
+  final bool dismissBackdropFocus;
+  final Duration? showDuration;
+  final Duration? dismissDuration;
+  final OverlayBarrier? overlayBarrier;
+  final LayerLink? layerLink;
+  final Size? fixedSize;
+  final Curve showCurve;
+  final Curve dismissCurve;
+  final int zIndex;
+  final bool? stayVisibleOnScroll;
+  final List<PopoverAnimationType>? enterAnimations;
+  final List<PopoverAnimationType>? exitAnimations;
+  final PopoverAnimationConfig? animationConfig;
+  final bool? alwaysFocus;
+
+  const OverlayConfig({
+    required this.context,
+    required this.builder,
+    this.alignment = Alignment.center,
+    this.position,
+    this.anchorAlignment,
+    this.widthConstraint = PopoverConstraint.flexible,
+    this.heightConstraint = PopoverConstraint.flexible,
+    this.key,
+    this.rootOverlay = true,
+    this.modal = true,
+    this.barrierDismissable = true,
+    this.clipBehavior = Clip.none,
+    this.regionGroupId,
+    this.offset,
+    this.transitionAlignment,
+    this.margin,
+    this.follow = true,
+    this.consumeOutsideTaps = true,
+    this.onTickFollow,
+    this.allowInvertHorizontal = true,
+    this.allowInvertVertical = true,
+    this.dismissBackdropFocus = true,
+    this.showDuration,
+    this.dismissDuration,
+    this.overlayBarrier,
+    this.layerLink,
+    this.fixedSize,
+    this.showCurve = Curves.easeOutCubic,
+    this.dismissCurve = Curves.easeInCubic,
+    this.zIndex = 0,
+    this.stayVisibleOnScroll,
+    this.enterAnimations,
+    this.exitAnimations,
+    this.animationConfig,
+    this.alwaysFocus = false,
+  });
+
+  /// Creates a copy of this config with the given fields replaced with new values
+  OverlayConfig<T> copyWith({
+    BuildContext? context,
+    WidgetBuilder? builder,
+    AlignmentGeometry? alignment,
+    Offset? position,
+    AlignmentGeometry? anchorAlignment,
+    PopoverConstraint? widthConstraint,
+    PopoverConstraint? heightConstraint,
+    Key? key,
+    bool? rootOverlay,
+    bool? modal,
+    bool? barrierDismissable,
+    Clip? clipBehavior,
+    Object? regionGroupId,
+    Offset? offset,
+    AlignmentGeometry? transitionAlignment,
+    EdgeInsetsGeometry? margin,
+    bool? follow,
+    bool? consumeOutsideTaps,
+    ValueChanged<PopoverOverlayWidgetState>? onTickFollow,
+    bool? allowInvertHorizontal,
+    bool? allowInvertVertical,
+    bool? dismissBackdropFocus,
+    Duration? showDuration,
+    Duration? dismissDuration,
+    OverlayBarrier? overlayBarrier,
+    LayerLink? layerLink,
+    Size? fixedSize,
+    Curve? showCurve,
+    Curve? dismissCurve,
+    int? zIndex,
+    bool? stayVisibleOnScroll,
+    List<PopoverAnimationType>? enterAnimations,
+    List<PopoverAnimationType>? exitAnimations,
+    PopoverAnimationConfig? animationConfig,
+    bool? alwaysFocus,
+  }) {
+    return OverlayConfig<T>(
+      context: context ?? this.context,
+      builder: builder ?? this.builder,
+      alignment: alignment ?? this.alignment,
+      position: position ?? this.position,
+      anchorAlignment: anchorAlignment ?? this.anchorAlignment,
+      widthConstraint: widthConstraint ?? this.widthConstraint,
+      heightConstraint: heightConstraint ?? this.heightConstraint,
+      key: key ?? this.key,
+      rootOverlay: rootOverlay ?? this.rootOverlay,
+      modal: modal ?? this.modal,
+      barrierDismissable: barrierDismissable ?? this.barrierDismissable,
+      clipBehavior: clipBehavior ?? this.clipBehavior,
+      regionGroupId: regionGroupId ?? this.regionGroupId,
+      offset: offset ?? this.offset,
+      transitionAlignment: transitionAlignment ?? this.transitionAlignment,
+      margin: margin ?? this.margin,
+      follow: follow ?? this.follow,
+      consumeOutsideTaps: consumeOutsideTaps ?? this.consumeOutsideTaps,
+      onTickFollow: onTickFollow ?? this.onTickFollow,
+      allowInvertHorizontal:
+          allowInvertHorizontal ?? this.allowInvertHorizontal,
+      allowInvertVertical: allowInvertVertical ?? this.allowInvertVertical,
+      dismissBackdropFocus: dismissBackdropFocus ?? this.dismissBackdropFocus,
+      showDuration: showDuration ?? this.showDuration,
+      dismissDuration: dismissDuration ?? this.dismissDuration,
+      overlayBarrier: overlayBarrier ?? this.overlayBarrier,
+      layerLink: layerLink ?? this.layerLink,
+      fixedSize: fixedSize ?? this.fixedSize,
+      showCurve: showCurve ?? this.showCurve,
+      dismissCurve: dismissCurve ?? this.dismissCurve,
+      zIndex: zIndex ?? this.zIndex,
+      stayVisibleOnScroll: stayVisibleOnScroll ?? this.stayVisibleOnScroll,
+      enterAnimations: enterAnimations ?? this.enterAnimations,
+      exitAnimations: exitAnimations ?? this.exitAnimations,
+      animationConfig: animationConfig ?? this.animationConfig,
+      alwaysFocus: alwaysFocus ?? this.alwaysFocus,
+    );
+  }
 }
 
-/// {@template overlay_handler_state_mixin}
-/// # OverlayHandlerStateMixin
-///
-/// Mixin for overlay-capable widgets to manage closing, alignment, and constraints.
-///
-/// Provides methods and setters for manipulating overlay positioning, alignment,
-/// margin, and state transitions.
-///
-/// Implement this mixin in your overlay widget's State class for advanced overlay control.
-///
-/// ## Example
-/// ```dart
-/// class MyPopoverState extends State<MyPopoverWidget> with OverlayHandlerStateMixin<MyPopoverWidget> {
-///   // Implement abstract members...
-/// }
-/// ```
-///
-/// ---
-///
-/// ## API Reference & Usage
-///
-/// ### 1. Closing the Overlay
-///
-/// #### close([immediate = false])
-/// Closes the overlay. If [immediate] is true, closes without animation.
-/// ```dart
-/// // Instantly close overlay (no animation)
-/// await close(true);
-///
-/// // Close with animation (default)
-/// await close();
-/// ```
-///
-/// #### closeLater()
-/// Schedules the overlay to close after a short delay (e.g., after animation or user interaction).
-/// ```dart
-/// closeLater();
-/// ```
-///
-/// #### closeWithResult`<`X`>`([X? value])
-/// Closes the overlay and returns a result value (useful for pickers/dialogs).
-/// ```dart
-/// await closeWithResult<String>('picked value');
-/// ```
-///
-/// ---
-///
-/// ### 2. Anchor and Alignment
-///
-/// #### anchorContext = BuildContext
-/// Sets the anchor widget/context for positioning the overlay.
-/// ```dart
-/// anchorContext = myAnchorContext;
-/// ```
-///
-/// #### alignment = AlignmentGeometry
-/// Sets the overlay's own alignment relative to its anchor.
-/// ```dart
-/// alignment = Alignment.bottomCenter;
-/// ```
-///
-/// #### anchorAlignment = AlignmentGeometry
-/// Sets the anchor's alignment point for overlay positioning.
-/// ```dart
-/// anchorAlignment = Alignment.topCenter;
-/// ```
-///
-/// ---
-///
-/// ### 3. Size Constraints
-///
-/// #### widthConstraint = PopoverConstraint
-/// Sets the width constraint for the overlay (min/max/fixed).
-/// ```dart
-/// widthConstraint = PopoverConstraint.fixed(240);
-/// ```
-///
-/// #### heightConstraint = PopoverConstraint
-/// Sets the height constraint for the overlay.
-/// ```dart
-/// heightConstraint = PopoverConstraint.max(400);
-/// ```
-///
-/// ---
-///
-/// ### 4. Margin, Offset, and Following
-///
-/// #### margin = EdgeInsets
-/// Sets the margin around the overlay.
-/// ```dart
-/// margin = EdgeInsets.all(8);
-/// ```
-///
-/// #### offset = Offset?
-/// Adds a custom offset to the overlay position (relative to anchor).
-/// ```dart
-/// offset = Offset(0, 12);
-/// ```
-///
-/// #### follow = bool
-/// If true, overlay follows its anchor during layout changes or scrolling.
-/// ```dart
-/// follow = true;
-/// ```
-///
-/// ---
-///
-/// ### 5. Overflow Handling (Inversion)
-///
-/// #### allowInvertHorizontal = bool
-/// Allows overlay to flip horizontally if not enough space.
-/// ```dart
-/// allowInvertHorizontal = true;
-/// ```
-///
-/// #### allowInvertVertical = bool
-/// Allows overlay to flip vertically when needed.
-/// ```dart
-/// allowInvertVertical = true;
-/// ```
-///
-/// ---
-///
-/// ## Typical Usage Example
-/// ```dart
-/// class MyPopoverState extends State<MyPopoverWidget> with OverlayHandlerStateMixin<MyPopoverWidget> {
-///   @override
-///   void initState() {
-///     super.initState();
-///     anchorContext = widget.anchorContext;
-///     alignment = Alignment.bottomCenter;
-///     anchorAlignment = Alignment.topCenter;
-///     widthConstraint = PopoverConstraint.max(300);
-///     margin = EdgeInsets.symmetric(horizontal: 8, vertical: 4);
-///     follow = true;
-///   }
-///
-///   void closePopover() => close();
-/// }
-/// ```
-/// {@endtemplate}
+/// Closes an overlay from the specified context
+Future<void> closeOverlay<T>(BuildContext context, [T? value]) {
+  // No DrawerHandlerStateMixin: Use OverlayManager
+  final manager = OverlayManager.maybeOf(context);
+  if (manager != null) {
+    return manager.closeLastOverlay();
+  }
+  return Future.value();
+}
+
+/// Mixin for overlay handlers that need to manage state
 mixin OverlayHandlerStateMixin<T extends StatefulWidget> on State<T> {
-  /// Request the overlay to close.
-  ///
-  /// * [immediate]: If true, closes instantly without animation.
-  ///
-  /// ---
-  /// **Usage:**
-  /// ```dart
-  /// await close();           // Close with animation (default)
-  /// await close(true);       // Instantly close overlay (no animation)
-  /// ```
+  /// Close the overlay, optionally immediately without animation
   Future<void> close([bool immediate = false]);
 
-  /// Request the overlay to close after a short delay.
-  ///
-  /// ---
-  /// **Usage:**
-  /// ```dart
-  /// closeLater();
-  /// ```
+  /// Schedule the overlay to close after current operation completes
   void closeLater();
 
-  /// Closes the overlay and optionally returns a value to the caller.
-  ///
-  /// * [value]: Value to return to the overlay's completion future.
-  ///
-  /// ---
-  /// **Usage:**
-  /// ```dart
-  /// await closeWithResult<String>('picked value');
-  /// ```
+  /// Close the overlay with a result value
   Future<void> closeWithResult<X>([X? value]);
 
-  /// Set the anchor context for alignment.
-  ///
-  /// ---
-  /// **Usage:** Set the context of the anchor widget for overlay positioning.
-  /// ```dart
-  /// anchorContext = myAnchorContext;
-  /// ```
-  set anchorContext(BuildContext value) {}
+  /// Update the anchor context for the overlay
+  set anchorContext(BuildContext value);
 
-  /// Set the overlay's main alignment.
-  ///
-  /// ---
-  /// **Usage:** Controls how the overlay aligns relative to its anchor.
-  /// ```dart
-  /// alignment = Alignment.bottomCenter;
-  /// ```
-  set alignment(AlignmentGeometry value) {}
+  /// Update the alignment of the overlay
+  set alignment(AlignmentGeometry value);
 
-  /// Set the anchor's alignment.
-  ///
-  /// ---
-  /// **Usage:** Controls which point on the anchor is used for positioning.
-  /// ```dart
-  /// anchorAlignment = Alignment.topCenter;
-  /// ```
-  set anchorAlignment(AlignmentGeometry value) {}
+  /// Update the anchor alignment of the overlay
+  set anchorAlignment(AlignmentGeometry value);
 
-  /// Set width constraint for the overlay.
-  ///
-  /// ---
-  /// **Usage:** Restrict the overlay's width.
-  /// ```dart
-  /// widthConstraint = PopoverConstraint.max;
-  /// ```
-  set widthConstraint(PopoverConstraint value) {}
+  /// Update the width constraint of the overlay
+  set widthConstraint(PopoverConstraint value);
 
-  /// Set height constraint for the overlay.
-  ///
-  /// ---
-  /// **Usage:** Restrict the overlay's height.
-  /// ```dart
-  /// heightConstraint = PopoverConstraint.fixed(350);
-  /// ```
-  set heightConstraint(PopoverConstraint value) {}
+  /// Update the height constraint of the overlay
+  set heightConstraint(PopoverConstraint value);
 
-  /// Set margin around the overlay.
-  ///
-  /// ---
-  /// **Usage:** Add spacing around the overlay.
-  /// ```dart
-  /// margin = EdgeInsets.all(12);
-  /// ```
-  set margin(EdgeInsets value) {}
+  /// Update the margin of the overlay
+  set margin(EdgeInsetsGeometry value);
 
-  /// Whether the overlay should follow its anchor.
-  ///
-  /// ---
-  /// **Usage:** Overlay follows anchor during scroll or layout changes.
-  /// ```dart
-  /// follow = true;
-  /// ```
-  set follow(bool value) {}
+  /// Update whether the overlay should follow its anchor
+  set follow(bool value);
 
-  /// Set a custom offset for the overlay position.
-  ///
-  /// ---
-  /// **Usage:** Add pixel offset to overlay position.
-  /// ```dart
-  /// offset = Offset(0, 16);
-  /// ```
-  set offset(Offset? value) {}
+  /// Update the offset of the overlay
+  set offset(Offset? value);
 
-  /// Allow horizontal inversion for overflow handling.
-  ///
-  /// ---
-  /// **Usage:** Flip overlay horizontally when overflowing.
-  /// ```dart
-  /// allowInvertHorizontal = true;
-  /// ```
-  set allowInvertHorizontal(bool value) {}
+  /// Update whether the overlay can invert horizontally
+  set allowInvertHorizontal(bool value);
 
-  /// Allow vertical inversion for overflow handling.
-  ///
-  /// ---
-  /// **Usage:** Flip overlay vertically when overflowing.
-  /// ```dart
-  /// allowInvertVertical = true;
-  /// ```
-  set allowInvertVertical(bool value) {}
+  /// Update whether the overlay can invert vertically
+  set allowInvertVertical(bool value);
 }
 
-/// {@template overlay_completer}
-/// # OverlayCompleter
-///
-/// A handle returned by [OverlayHandler.show] or [OverlayManager.show] for managing the lifecycle, result,
-/// and animation state of an overlay entry (such as dialogs, snackbars, toasts, popovers, drawers, etc).
-///
-/// Use this object to:
-/// - **Programmatically close or remove** the overlay at any time
-/// - **Dispose** any resources associated with the overlay
-/// - **Check completion state** (whether the overlay has finished or been dismissed)
-/// - **Await result and animation** via futures
-///
-/// ---
-/// ## Usage Overview
-///
-/// ```dart
-/// // Show an overlay and obtain a completer
-/// final completer = OverlayManager.of(context).show<MyResultType>(
-///   builder: (context) => MyOverlayWidget(),
-/// );
-///
-/// // Await the overlay's result (completes when closed)
-/// final result = await completer.future;
-///
-/// // Remove/dismiss the overlay early
-/// completer.remove();
-///
-/// // Dispose overlay resources (if not auto-disposed)
-/// completer.dispose();
-///
-/// // Check if overlay was already completed (dismissed or closed)
-/// if (completer.isCompleted) { ... }
-///
-/// // Await animation finish (useful for chaining UI transitions)
-/// await completer.animationFuture;
-/// ```
-///
-/// ---
-/// ## API Details
-///
-/// - **remove()**: Immediately removes the overlay from view.
-///   Use when you need to force-close the overlay programmatically (e.g., on timeout, navigation, etc).
-///
-/// - **dispose()**: Releases any resources associated with the overlay.
-///   Call if your overlay manages custom resources or listeners. Usually called automatically.
-///
-/// - **isCompleted**: `true` if the overlay has already been closed and its result delivered.
-///   Useful to prevent double-closing or for safe logic chaining.
-///
-/// - **isAnimationCompleted**: `true` if the exit (hide) animation has finished.
-///   Use to sequence animations or UI transitions after overlay disappears.
-///
-/// - **future**: Completes with the result value (if any) when the overlay is closed or dismissed.
-///   Await to get the return value (similar to how [showDialog] returns a value).
-///
-/// - **animationFuture**: Completes when the overlay's exit animation is done.
-///   Await to chain UI changes after the overlay visually disappears (good for snackbars, toasts, etc).
-///
-/// ---
-/// ## Example: Manual Control
-///
-/// ```dart
-/// final completer = OverlayManager.of(context).show<String>(
-///   builder: (context) => MyDialog(),
-/// );
-///
-/// // Wait for result (user pressed confirm/cancel)
-/// final result = await completer.future;
-///
-/// // Or programmatically remove:
-/// completer.remove();
-///
-/// // Optional: Wait until exit animation completes (before showing new overlay)
-/// await completer.animationFuture;
-/// ```
-///
-/// ---
-/// ## Example: Checking State
-///
-/// ```dart
-/// if (!completer.isCompleted) {
-///   completer.remove(); // Only remove if still open
-/// }
-/// ```
-///
-/// ---
-/// ## Example: Disposing (Advanced)
-///
-/// ```dart
-/// completer.dispose();
-/// ```
-///
-/// ---
-/// {@endtemplate}
+/// Interface for overlay completion handling
 abstract class OverlayCompleter<T> {
-  /// Remove the overlay from the UI immediately.
+  /// Remove the overlay from view
   void remove();
 
-  /// Dispose resources associated with the overlay.
+  /// Dispose the overlay resources
   void dispose();
 
-  /// Whether the overlay's result has been completed.
+  /// Whether the overlay has been completed
   bool get isCompleted;
 
-  /// Whether the overlay's exit animation is completed.
+  /// Whether the overlay animation has completed
   bool get isAnimationCompleted;
 
-  /// A future that completes with the overlay's result value.
+  /// Future that completes when the overlay is closed with a result
   Future<T?> get future;
 
-  /// A future that completes when the overlay's animation completes.
+  /// Future that completes when the overlay animation finishes
   Future<void> get animationFuture;
 }
 
-/// {@template overlay_handler}
-/// # OverlayHandler
-///
-/// Base class for overlay managers. Provides the common API for showing overlays
-/// (popover, tooltip, menu) with configuration for alignment, constraints, barrier, etc.
-///
-/// You can create custom handlers for popovers, tooltips, or menus by implementing this class.
-///
-/// ## Example
-/// ```dart
-/// class MyPopoverHandler extends OverlayHandler { ... }
-/// ```
-/// {@endtemplate}
+/// Base handler for overlays
 abstract class OverlayHandler {
-  /// Const constructor for overlay handler.
   const OverlayHandler();
 
-  /// Shows an overlay (popover, tooltip, menu) with the given configuration.
-  ///
-  /// Returns an [OverlayCompleter] that can be used to await the result or remove the overlay.
-  ///
-  /// {@template overlay_handler_show_example}
-  /// ## Example
-  /// ```dart
-  /// OverlayManager.of(context).show(
-  ///   context: context,
-  ///   builder: (ctx) => MyOverlayContent(),
-  ///   alignment: Alignment.topCenter,
-  /// );
-  /// ```
-  /// {@endtemplate}
+  /// Shows an overlay with the given configuration
   OverlayCompleter<T?> show<T>({
     required BuildContext context,
     required AlignmentGeometry alignment,
@@ -498,96 +265,104 @@ abstract class OverlayHandler {
     OverlayBarrier? overlayBarrier,
     LayerLink? layerLink,
     Size? fixedSize,
+    bool? stayVisibleOnScroll,
+    List<PopoverAnimationType>? enterAnimations,
+    List<PopoverAnimationType>? exitAnimations,
+    PopoverAnimationConfig? animationConfig,
+    bool? alwaysFocus = false,
   });
+
+  /// Shows an overlay using a configuration object
+  OverlayCompleter<T?> showWithConfig<T>(OverlayConfig<T> config) {
+    return show<T>(
+      context: config.context,
+      alignment: config.alignment,
+      builder: config.builder,
+      position: config.position,
+      anchorAlignment: config.anchorAlignment,
+      widthConstraint: config.widthConstraint,
+      heightConstraint: config.heightConstraint,
+      key: config.key,
+      rootOverlay: config.rootOverlay,
+      modal: config.modal,
+      barrierDismissable: config.barrierDismissable,
+      clipBehavior: config.clipBehavior,
+      regionGroupId: config.regionGroupId,
+      offset: config.offset,
+      transitionAlignment: config.transitionAlignment,
+      margin: config.margin,
+      follow: config.follow,
+      consumeOutsideTaps: config.consumeOutsideTaps,
+      onTickFollow: config.onTickFollow,
+      allowInvertHorizontal: config.allowInvertHorizontal,
+      allowInvertVertical: config.allowInvertVertical,
+      dismissBackdropFocus: config.dismissBackdropFocus,
+      showDuration: config.showDuration,
+      dismissDuration: config.dismissDuration,
+      overlayBarrier: config.overlayBarrier,
+      layerLink: config.layerLink,
+      fixedSize: config.fixedSize,
+      stayVisibleOnScroll: config.stayVisibleOnScroll,
+      enterAnimations: config.enterAnimations,
+      exitAnimations: config.exitAnimations,
+      animationConfig: config.animationConfig,
+      alwaysFocus: config.alwaysFocus,
+    );
+  }
+
+  /// Returns a widget that should be rendered in the overlay manager's build method
+  Widget buildOverlayContent(BuildContext context) {
+    return const SizedBox();
+  }
+
+  /// Initializes the handler with a context from the overlay manager
+  void initWithContext(BuildContext context) {}
 }
 
-/// {@template overlay_barrier}
-/// # OverlayBarrier
-///
-/// Defines the barrier/background around an overlay (such as a modal or popover).
-///
-/// Allows customization of visual appearance and touch interaction.
-///
-/// ## Example
-/// ```dart
-/// OverlayBarrier(
-///   padding: EdgeInsets.all(8),
-///   borderRadius: BorderRadius.circular(16),
-///   barrierColor: Colors.black.withOpacity(0.2),
-/// )
-/// ```
-/// {@endtemplate}
+/// Configuration for overlay barriers
 class OverlayBarrier {
-  /// Padding around the overlay barrier.
-  ///
-  /// *Type*: `EdgeInsetsGeometry`
-  ///
-  /// - Default: `EdgeInsets.zero`
-  /// - Example: `padding: EdgeInsets.all(8)`
   final EdgeInsetsGeometry padding;
-
-  /// Border radius for the overlay barrier.
-  ///
-  /// *Type*: `BorderRadiusGeometry`
-  ///
-  /// - Default: `BorderRadius.zero`
-  /// - Example: `borderRadius: BorderRadius.circular(16)`
   final BorderRadiusGeometry borderRadius;
-
-  /// The color of the overlay barrier.
-  ///
-  /// *Type*: `Color?`
-  ///
-  /// - Default: `null` (transparent)
-  /// - Example: `barrierColor: Colors.black54`
   final Color? barrierColor;
+  final VoidCallback? onTap;
 
-  /// Creates an [OverlayBarrier] with the provided configuration.
   const OverlayBarrier({
     this.padding = EdgeInsets.zero,
     this.borderRadius = BorderRadius.zero,
     this.barrierColor,
+    this.onTap,
   });
 }
 
-/// {@template overlay_manager}
-/// # OverlayManager
-///
-/// Central overlay management interface. Use [OverlayManager.of] to access the manager from a widget context.
-///
-/// Provides methods to show popovers, tooltips, and menus with unified configuration.
-///
-/// ## Accessing the Manager
-/// ```dart
-/// // Obtain the overlay manager from context
-/// final overlayManager = OverlayManager.of(context);
-/// ```
-///
-/// ## Showing an Overlay
-/// ```dart
-/// overlayManager.show(
-///   context: context,
-///   builder: (context) => MyPopoverContent(),
-///   alignment: Alignment.bottomLeft,
-/// );
-/// ```
-/// {@endtemplate}
+/// Manager for overlays with specialized show methods
 abstract class OverlayManager implements OverlayHandler {
-  /// Returns the nearest [OverlayManager] in the widget tree.
-  ///
-  /// Throws an assertion error if none is found.
-  ///
-  /// *Example:*
-  /// ```dart
-  /// OverlayManager.of(context).show(...);
-  /// ```
-  static OverlayManager of(BuildContext context) {
-    var manager = Data.maybeOf<OverlayManager>(context);
-    assert(manager != null, 'No OverlayManager found in context');
-    return manager!;
+  /// Get the overlay manager from the widget tree, returns null if not found
+  static OverlayManager? maybeOf(BuildContext context) {
+    return Data.maybeOf<OverlayManager>(context);
   }
 
-  /// {@macro overlay_handler_show_example}
+  /// Get the overlay manager from the widget tree, throws if not found
+  static OverlayManager of(BuildContext context) {
+    var manager = maybeOf(context);
+    if (manager == null) {
+      throw FlutterError('No OverlayManager found in context.\n'
+          'Make sure to wrap your widget tree with OverlayManagerLayer.');
+    }
+    return manager;
+  }
+
+  /// Close the most recently opened overlay
+  Future<void> closeLastOverlay();
+
+  /// Get the toast handler
+  ToastOverlayHandler get toastHandler;
+
+  /// Get the drawer handler for drawer/sheet interactions
+  DrawerOverlayHandler get drawerHandler;
+
+  /// Helper for getting handler by type
+  T? getHandler<T>();
+
   @override
   OverlayCompleter<T?> show<T>({
     required BuildContext context,
@@ -617,129 +392,34 @@ abstract class OverlayManager implements OverlayHandler {
     OverlayBarrier? overlayBarrier,
     LayerLink? layerLink,
     Size? fixedSize,
+    bool? stayVisibleOnScroll,
+    List<PopoverAnimationType>? enterAnimations,
+    List<PopoverAnimationType>? exitAnimations,
+    PopoverAnimationConfig? animationConfig,
+    bool? alwaysFocus = false,
   });
 
-  /// Shows a tooltip overlay.
-  ///
-  /// Same parameters as [show], but intended for tooltip presentation.
-  OverlayCompleter<T?> showTooltip<T>({
-    required BuildContext context,
-    required WidgetBuilder builder,
-    AlignmentGeometry alignment = Alignment.center,
-    Offset? position,
-    AlignmentGeometry? anchorAlignment,
-    PopoverConstraint widthConstraint = PopoverConstraint.flexible,
-    PopoverConstraint heightConstraint = PopoverConstraint.flexible,
-    Key? key,
-    bool rootOverlay = true,
-    bool modal = true,
-    bool barrierDismissable = true,
-    Clip clipBehavior = Clip.none,
-    Object? regionGroupId,
-    Offset? offset,
-    AlignmentGeometry? transitionAlignment,
-    EdgeInsetsGeometry? margin,
-    bool follow = true,
-    bool consumeOutsideTaps = true,
-    ValueChanged<PopoverOverlayWidgetState>? onTickFollow,
-    bool allowInvertHorizontal = true,
-    bool allowInvertVertical = true,
-    bool dismissBackdropFocus = true,
-    Duration? showDuration,
-    Duration? dismissDuration,
-    OverlayBarrier? overlayBarrier,
-    LayerLink? layerLink,
-    Size? fixedSize,
-  });
+  @override
+  OverlayCompleter<T?> showWithConfig<T>(OverlayConfig<T> config);
 
-  /// Shows a menu overlay.
-  ///
-  /// Same parameters as [show], but intended for menus/popups.
-  OverlayCompleter<T?> showMenu<T>({
-    required BuildContext context,
-    required WidgetBuilder builder,
-    AlignmentGeometry alignment = Alignment.center,
-    Offset? position,
-    AlignmentGeometry? anchorAlignment,
-    PopoverConstraint widthConstraint = PopoverConstraint.flexible,
-    PopoverConstraint heightConstraint = PopoverConstraint.flexible,
-    Key? key,
-    bool rootOverlay = true,
-    bool modal = true,
-    bool barrierDismissable = true,
-    Clip clipBehavior = Clip.none,
-    Object? regionGroupId,
-    Offset? offset,
-    AlignmentGeometry? transitionAlignment,
-    EdgeInsetsGeometry? margin,
-    bool follow = true,
-    bool consumeOutsideTaps = true,
-    ValueChanged<PopoverOverlayWidgetState>? onTickFollow,
-    bool allowInvertHorizontal = true,
-    bool allowInvertVertical = true,
-    bool dismissBackdropFocus = true,
-    Duration? showDuration,
-    Duration? dismissDuration,
-    OverlayBarrier? overlayBarrier,
-    LayerLink? layerLink,
-    Size? fixedSize,
-  });
+  /// Shows a menu overlay
+  OverlayCompleter<T?> showMenu<T>(OverlayConfig<T> config);
 }
 
-/// {@template overlay_manager_layer}
-/// # OverlayManagerLayer
-///
-/// The widget to place at the root of your app or any subtree to provide [OverlayManager] context and handlers.
-///
-/// Use this to inject your popover, tooltip, and menu handlers for unified overlay management.
-///
-/// ## Example
-/// ```dart
-/// OverlayManagerLayer(
-///   popoverHandler: MyPopoverHandler(),
-///   tooltipHandler: MyTooltipHandler(),
-///   menuHandler: MyMenuHandler(),
-///   child: MyApp(),
-/// )
-/// ```
-/// {@endtemplate}
+/// Widget that provides overlay management capabilities
 class OverlayManagerLayer extends StatefulWidget {
-  /// Handler for popover overlays.
-  ///
-  /// *Type*: `OverlayHandler`
-  ///
-  /// - Example: `popoverHandler: MyPopoverHandler()`
   final OverlayHandler popoverHandler;
-
-  /// Handler for tooltip overlays.
-  ///
-  /// *Type*: `OverlayHandler`
-  ///
-  /// - Example: `tooltipHandler: MyTooltipHandler()`
-  final OverlayHandler tooltipHandler;
-
-  /// Handler for menu overlays.
-  ///
-  /// *Type*: `OverlayHandler`
-  ///
-  /// - Example: `menuHandler: MyMenuHandler()`
-  final OverlayHandler menuHandler;
-
-  /// The subtree to which this overlay manager applies.
-  ///
-  /// *Type*: `Widget`
-  ///
-  /// - Example: `child: MyApp()`
+  final OverlayHandler? menuHandler;
+  final ToastOverlayHandler toastHandler;
+  final DrawerOverlayHandler drawerHandler;
   final Widget child;
 
-  /// Creates an [OverlayManagerLayer] with the given handlers and child.
-  ///
-  /// {@macro overlay_manager_layer}
   const OverlayManagerLayer({
     super.key,
     required this.popoverHandler,
-    required this.tooltipHandler,
-    required this.menuHandler,
+    this.menuHandler,
+    required this.toastHandler,
+    required this.drawerHandler,
     required this.child,
   });
 
@@ -749,12 +429,77 @@ class OverlayManagerLayer extends StatefulWidget {
 
 class _OverlayManagerLayerState extends State<OverlayManagerLayer>
     implements OverlayManager {
+  final List<OverlayCompleter> _activeOverlays = [];
+  final List<Object> _futureSubscriptions = [];
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Initialize handlers with context
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        widget.toastHandler.initWithContext(context);
+        widget.drawerHandler.initWithContext(context);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    // Close all active overlays when the widget is disposed
+    for (final overlay in _activeOverlays) {
+      overlay.dispose();
+    }
+    _activeOverlays.clear();
+    _futureSubscriptions.clear();
+    super.dispose();
+  }
+
+  void _registerOverlay(OverlayCompleter completer) {
+    _activeOverlays.add(completer);
+
+    // Store the future to prevent potential race conditions
+    late Object subscription;
+    subscription = completer.future.then((_) {
+      if (mounted) {
+        _activeOverlays.remove(completer);
+        _futureSubscriptions.remove(subscription);
+      }
+    });
+    _futureSubscriptions.add(subscription);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Data<OverlayManager>.inherit(
       data: this,
-      child: widget.child,
+      child: Stack(
+        fit: StackFit.passthrough,
+        children: [
+          widget.child,
+          // Toast overlay widget rendering
+          widget.toastHandler.buildOverlayContent(context),
+          // Drawer overlay widget rendering
+          widget.drawerHandler.buildOverlayContent(context),
+        ],
+      ),
     );
+  }
+
+  OverlayCompleter<T?> _doShow<T>(
+      {required OverlayHandler handler, required OverlayConfig<T> config}) {
+    assert(OverlayManager.maybeOf(config.context) != null,
+        'OverlayConfig.context must be within an OverlayManagerLayer');
+
+    try {
+      final completer = handler.showWithConfig<T>(config);
+      _registerOverlay(completer);
+      return completer;
+    } catch (e) {
+      debugPrint('Error showing overlay: $e');
+      rethrow;
+    }
   }
 
   @override
@@ -786,11 +531,16 @@ class _OverlayManagerLayerState extends State<OverlayManagerLayer>
     OverlayBarrier? overlayBarrier,
     LayerLink? layerLink,
     Size? fixedSize,
+    bool? stayVisibleOnScroll,
+    List<PopoverAnimationType>? enterAnimations,
+    List<PopoverAnimationType>? exitAnimations,
+    PopoverAnimationConfig? animationConfig,
+    bool? alwaysFocus = false,
   }) {
-    return widget.popoverHandler.show(
+    final config = OverlayConfig<T>(
       context: context,
-      alignment: alignment,
       builder: builder,
+      alignment: alignment,
       position: position,
       anchorAlignment: anchorAlignment,
       widthConstraint: widthConstraint,
@@ -813,130 +563,83 @@ class _OverlayManagerLayerState extends State<OverlayManagerLayer>
       showDuration: showDuration,
       dismissDuration: dismissDuration,
       overlayBarrier: overlayBarrier,
-      layerLink: layerLink,
       fixedSize: fixedSize,
+      stayVisibleOnScroll: stayVisibleOnScroll,
+      enterAnimations: enterAnimations,
+      exitAnimations: exitAnimations,
+      animationConfig: animationConfig,
+      alwaysFocus: alwaysFocus,
+    );
+
+    return showWithConfig(config);
+  }
+
+  @override
+  OverlayCompleter<T?> showWithConfig<T>(OverlayConfig<T> config) {
+    return _doShow(
+      handler: widget.popoverHandler,
+      config: config,
     );
   }
 
   @override
-  OverlayCompleter<T?> showTooltip<T>({
-    required BuildContext context,
-    required WidgetBuilder builder,
-    AlignmentGeometry alignment = Alignment.center,
-    Offset? position,
-    AlignmentGeometry? anchorAlignment,
-    PopoverConstraint widthConstraint = PopoverConstraint.flexible,
-    PopoverConstraint heightConstraint = PopoverConstraint.flexible,
-    Key? key,
-    bool rootOverlay = true,
-    bool modal = true,
-    bool barrierDismissable = true,
-    Clip clipBehavior = Clip.none,
-    Object? regionGroupId,
-    Offset? offset,
-    AlignmentGeometry? transitionAlignment,
-    EdgeInsetsGeometry? margin,
-    bool follow = true,
-    bool consumeOutsideTaps = true,
-    ValueChanged<PopoverOverlayWidgetState>? onTickFollow,
-    bool allowInvertHorizontal = true,
-    bool allowInvertVertical = true,
-    bool dismissBackdropFocus = true,
-    Duration? showDuration,
-    Duration? dismissDuration,
-    OverlayBarrier? overlayBarrier,
-    LayerLink? layerLink,
-    Size? fixedSize,
-  }) {
-    return widget.tooltipHandler.show(
-      context: context,
-      alignment: alignment,
-      builder: builder,
-      position: position,
-      anchorAlignment: anchorAlignment,
-      widthConstraint: widthConstraint,
-      heightConstraint: heightConstraint,
-      key: key,
-      rootOverlay: rootOverlay,
-      modal: modal,
-      barrierDismissable: barrierDismissable,
-      clipBehavior: clipBehavior,
-      regionGroupId: regionGroupId,
-      offset: offset,
-      transitionAlignment: transitionAlignment,
-      margin: margin,
-      follow: follow,
-      consumeOutsideTaps: consumeOutsideTaps,
-      onTickFollow: onTickFollow,
-      allowInvertHorizontal: allowInvertHorizontal,
-      allowInvertVertical: allowInvertVertical,
-      dismissBackdropFocus: dismissBackdropFocus,
-      showDuration: showDuration,
-      dismissDuration: dismissDuration,
-      overlayBarrier: overlayBarrier,
-      layerLink: layerLink,
-      fixedSize: fixedSize,
+  OverlayCompleter<T?> showMenu<T>(OverlayConfig<T> config) {
+    if (widget.menuHandler == null) {
+      debugPrint(
+          'Warning: No menuHandler provided, falling back to popoverHandler');
+    }
+
+    return _doShow(
+      handler: widget.menuHandler ?? widget.popoverHandler,
+      config: config,
     );
   }
 
   @override
-  OverlayCompleter<T?> showMenu<T>({
-    required BuildContext context,
-    required WidgetBuilder builder,
-    AlignmentGeometry alignment = Alignment.center,
-    Offset? position,
-    AlignmentGeometry? anchorAlignment,
-    PopoverConstraint widthConstraint = PopoverConstraint.flexible,
-    PopoverConstraint heightConstraint = PopoverConstraint.flexible,
-    Key? key,
-    bool rootOverlay = true,
-    bool modal = true,
-    bool barrierDismissable = true,
-    Clip clipBehavior = Clip.none,
-    Object? regionGroupId,
-    Offset? offset,
-    AlignmentGeometry? transitionAlignment,
-    EdgeInsetsGeometry? margin,
-    bool follow = true,
-    bool consumeOutsideTaps = true,
-    ValueChanged<PopoverOverlayWidgetState>? onTickFollow,
-    bool allowInvertHorizontal = true,
-    bool allowInvertVertical = true,
-    bool dismissBackdropFocus = true,
-    Duration? showDuration,
-    Duration? dismissDuration,
-    OverlayBarrier? overlayBarrier,
-    LayerLink? layerLink,
-    Size? fixedSize,
-  }) {
-    return widget.menuHandler.show(
-      context: context,
-      alignment: alignment,
-      builder: builder,
-      position: position,
-      anchorAlignment: anchorAlignment,
-      widthConstraint: widthConstraint,
-      heightConstraint: heightConstraint,
-      key: key,
-      rootOverlay: rootOverlay,
-      modal: modal,
-      barrierDismissable: barrierDismissable,
-      clipBehavior: clipBehavior,
-      regionGroupId: regionGroupId,
-      offset: offset,
-      transitionAlignment: transitionAlignment,
-      margin: margin,
-      follow: follow,
-      consumeOutsideTaps: consumeOutsideTaps,
-      onTickFollow: onTickFollow,
-      allowInvertHorizontal: allowInvertHorizontal,
-      allowInvertVertical: allowInvertVertical,
-      dismissBackdropFocus: dismissBackdropFocus,
-      showDuration: showDuration,
-      dismissDuration: dismissDuration,
-      overlayBarrier: overlayBarrier,
-      layerLink: layerLink,
-      fixedSize: fixedSize,
-    );
+  Future<void> closeLastOverlay() {
+    if (_activeOverlays.isNotEmpty) {
+      final lastOverlay = _activeOverlays.last;
+      lastOverlay.remove();
+      return lastOverlay.animationFuture;
+    }
+    return Future.value();
   }
+
+  @override
+  ToastOverlayHandler get toastHandler => widget.toastHandler;
+
+  @override
+  DrawerOverlayHandler get drawerHandler => widget.drawerHandler;
+
+  @override
+  T? getHandler<T>() {
+    if (T == ToastOverlayHandler && widget.toastHandler is T) {
+      return widget.toastHandler as T;
+    }
+    if (T == DrawerOverlayHandler && widget.drawerHandler is T) {
+      return widget.drawerHandler as T;
+    }
+    return null;
+  }
+
+  @override
+  Widget buildOverlayContent(BuildContext context) {
+    // Manager just delegates to the respective handlers
+    return const SizedBox();
+  }
+
+  @override
+  void initWithContext(BuildContext context) {
+    // Manager doesn't need this implementation since it's already initialized
+    // through context in the constructor
+  }
+}
+
+/// Closes a drawer from the specified context
+Future<void> closeDrawer<T>(BuildContext context, [T? value]) {
+  final manager = OverlayManager.maybeOf(context);
+  if (manager != null) {
+    return manager.closeLastOverlay();
+  }
+  return Future.value();
 }
