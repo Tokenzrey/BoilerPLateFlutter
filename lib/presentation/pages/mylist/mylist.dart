@@ -1,4 +1,5 @@
 import 'package:boilerplate/constants/app_theme.dart';
+import 'package:boilerplate/core/widgets/components/display/button.dart';
 import 'package:boilerplate/core/widgets/components/typography.dart';
 import 'package:boilerplate/core/widgets/empty_app_bar_widget.dart';
 import 'package:flutter/material.dart';
@@ -25,11 +26,11 @@ class Mycomiclist extends StatefulWidget {
 }
 
 class _MycomiclistState extends State<Mycomiclist> {
-  String allVal = items.first;
   String searchVal = "";
   final List<String> comics = [
     "Attack on Titan",
   ];
+  final Map<int, String> curStatus = {};
 
   @override
   Widget build(BuildContext context) {
@@ -65,19 +66,19 @@ class _MycomiclistState extends State<Mycomiclist> {
                       ),
                     ),
                   ),
-                  // const SizedBox(width: 8),
-                  // Button(
-                  //   variant: ButtonVariant.outlined,
-                  //   onPressed: () {},
-                  //   colors: ButtonColors(background: Colors.transparent, border: Colors.white24),
-                  //   child: Row(
-                  //     children: const [
-                  //       Icon(Icons.filter_list, color: Colors.white),
-                  //       SizedBox(width: 8),
-                  //       AppText("Filter"),
-                  //     ],
-                  //   ),
-                  // ),
+                  const SizedBox(width: 8),
+                  Button(
+                    variant: ButtonVariant.outlined,
+                    onPressed: () {},
+                    colors: ButtonColors(background: Colors.transparent, border: Colors.white24),
+                    child: Row(
+                      children: const [
+                        Icon(Icons.filter_list, color: Colors.white),
+                        SizedBox(width: 8),
+                        AppText("Filter"),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -104,6 +105,7 @@ class _MycomiclistState extends State<Mycomiclist> {
                     ),
                   ),
                   ...List.generate(filtered.length, (idx) {
+                    final curVal = curStatus[idx] ?? items.first;
                     return Padding(
                       padding: const EdgeInsets.symmetric(vertical: 8.0),
                       child: Row(
@@ -141,29 +143,33 @@ class _MycomiclistState extends State<Mycomiclist> {
                             width: 120,
                             child: DropdownButton<String>(
                               isExpanded: true,
-                              value: allVal,
+                              value: curVal,
                               items: items.map((value) {
                                 return DropdownMenuItem(
                                   value: value,
                                   child: Text(value, overflow: TextOverflow.ellipsis),
                                 );
                               }).toList(),
-                              onChanged: (value) {},
+                              onChanged: (val) {
+                                setState(() {
+                                  curStatus[idx] = val!;
+                                });
+                              },
                               style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
-                            ),
+                            )
                           ),
                           SizedBox(width: 12),
                           SizedBox(width: 120, child: AppText("Last Read $idx")),
                           SizedBox(width: 120, child: AppText("Updated $idx")),
                           AppText("Added $idx"),
-                        ],
-                      ),
+                        ]
+                      )
                     );
-                  }),
-                ],
+                  })
+                ]
               ),
-            ),
-          ],
+            )
+          ]
         )
       ),
     );
