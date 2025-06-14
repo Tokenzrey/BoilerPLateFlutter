@@ -5,6 +5,9 @@ import 'package:boilerplate/core/widgets/components/forms/app_form.dart';
 import 'package:boilerplate/core/widgets/components/forms/checkbox_widget.dart';
 import 'package:boilerplate/core/widgets/components/forms/radio_button.dart';
 import 'package:boilerplate/core/widgets/components/layout/collapsible.dart';
+import 'package:boilerplate/presentation/store/settings/settings_store.dart';
+import 'package:boilerplate/domain/entity/user/setting.dart';
+import 'package:boilerplate/di/service_locator.dart';
 
 class SettingsData {
   List<String> contentTypes;
@@ -32,6 +35,19 @@ class SettingsData {
       'matureContent': matureContent,
     };
   }
+
+  SettingsEntity toEntity() => SettingsEntity(
+        id: '',
+        contentTypes: contentTypes,
+        demographic: demographic,
+        matureContent: matureContent,
+      );
+
+  static SettingsData fromEntity(SettingsEntity e) => SettingsData(
+        contentTypes: e.contentTypes,
+        demographic: e.demographic,
+        matureContent: e.matureContent,
+      );
 }
 
 class SettingsTab extends StatefulWidget {
@@ -42,6 +58,7 @@ class SettingsTab extends StatefulWidget {
 }
 
 class _SettingsTabState extends State<SettingsTab> {
+  late final SettingsStore _settingsStore;
   late FormController<SettingsData> _formController;
 
   final CollapsibleController _contentTypeController =
@@ -105,23 +122,42 @@ class _SettingsTabState extends State<SettingsTab> {
     ),
   ];
 
+  bool _isSaving = false;
+
   @override
   void initState() {
     super.initState();
+    _settingsStore = getIt<SettingsStore>();
+    _initFormFromSettings();
+  }
+
+  Future<void> _initFormFromSettings() async {
+    await _settingsStore.getSettings();
+    final entity = _settingsStore.settings;
+    final defaultData = entity != null
+        ? SettingsData.fromEntity(entity)
+        : SettingsData(
+            contentTypes: ['manga', 'manhwa', 'manhua'],
+            demographic: 'male',
+            matureContent: ['mature', 'horror_gore', 'adult'],
+          );
     _formController = FormController<SettingsData>(
-      defaultValues: SettingsData(
-        contentTypes: ['manga', 'manhwa', 'manhua'],
-        demographic: 'male',
-        matureContent: ['mature', 'horror_gore', 'adult'],
-      ),
+      defaultValues: defaultData,
       fromJson: SettingsData.fromJson,
       toJson: (data) => data.toJson(),
       mode: ValidationMode.onBlur,
     );
-
-    _formController.watchAll().listen((values) {
-      debugPrint('Settings updated: $values');
+    _formController.watchAll().listen((map) {
+      final data = SettingsData.fromJson(map);
+      _onFormChanged(data);
     });
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _onFormChanged(SettingsData data) async {
+    setState(() => _isSaving = true);
+    await _settingsStore.saveOrUpdateSettings(data.toEntity());
+    setState(() => _isSaving = false);
   }
 
   @override
@@ -137,18 +173,43 @@ class _SettingsTabState extends State<SettingsTab> {
   Widget build(BuildContext context) {
     return FormScope<SettingsData>(
       controller: _formController,
-      child: ListView(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-        children: [
-          _buildSettingsSummary(),
-          const SizedBox(height: 24),
-          _buildContentTypeSection(),
-          const SizedBox(height: 16),
-          _buildDemographicSection(),
-          const SizedBox(height: 16),
-          _buildMatureContentSection(),
-          const SizedBox(height: 24),
-        ],
+      child: AbsorbPointer(
+        absorbing: _isSaving,
+        child: ListView(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+          children: [
+            _buildSettingsSummary(),
+            const SizedBox(height: 24),
+            _buildContentTypeSection(),
+            const SizedBox(height: 16),
+            _buildDemographicSection(),
+            const SizedBox(height: 16),
+            _buildMatureContentSection(),
+            const SizedBox(height: 24),
+            if (_isSaving)
+              Padding(
+                padding: const EdgeInsets.only(top: 12),
+                child: Center(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                      const SizedBox(width: 10),
+                      AppText(
+                        "Saving preferences...",
+                        variant: TextVariant.bodySmall,
+                        color: AppColors.primary,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -198,6 +259,7 @@ class _SettingsTabState extends State<SettingsTab> {
         name: 'contentTypes',
         options: contentTypeOptions,
         showBorder: false,
+        enabled: !_isSaving,
         style: _getCheckboxStyle(),
         spacing: 12,
         verticalSpacing: 8,
@@ -223,8 +285,11 @@ class _SettingsTabState extends State<SettingsTab> {
               return _buildCustomRadioOption(
                 option: option,
                 isSelected: selectedValue == option.value,
+                enabled: !_isSaving,
                 onChanged: (_) {
-                  _formController.setValue('demographic', option.value);
+                  if (!_isSaving) {
+                    _formController.setValue('demographic', option.value);
+                  }
                 },
               );
             }).toList(),
@@ -245,6 +310,7 @@ class _SettingsTabState extends State<SettingsTab> {
         name: 'matureContent',
         options: matureContentOptions,
         showBorder: false,
+        enabled: !_isSaving,
         style: _getCheckboxStyle(),
         spacing: 12,
         verticalSpacing: 8,
@@ -356,10 +422,11 @@ class _SettingsTabState extends State<SettingsTab> {
   Widget _buildCustomRadioOption({
     required RadioOption<String> option,
     required bool isSelected,
+    required bool enabled,
     required ValueChanged<bool> onChanged,
   }) {
     return InkWell(
-      onTap: () => onChanged(true),
+      onTap: enabled ? () => onChanged(true) : null,
       borderRadius: BorderRadius.circular(12),
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
