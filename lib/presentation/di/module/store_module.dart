@@ -5,7 +5,6 @@ import 'package:boilerplate/core/stores/form/form_store.dart';
 import 'package:boilerplate/domain/repository/setting/setting_repository.dart';
 import 'package:boilerplate/domain/usecase/api/top_api_usecase.dart';
 
-// Import dari auth_firebase dengan alias
 import 'package:boilerplate/domain/usecase/auth_firebase/register_usecase.dart';
 import 'package:boilerplate/domain/usecase/auth_firebase/login_usecase.dart'
     as firebase_auth;
@@ -19,12 +18,17 @@ import 'package:boilerplate/domain/usecase/auth_firebase/get_is_logged_in_usecas
     as firebase_auth;
 import 'package:boilerplate/domain/usecase/auth_firebase/get_current_user_usecase.dart'
     as firebase_auth;
-
-// Import dari user dengan alias
+import 'package:boilerplate/domain/usecase/settings/delete_setting_db_usecase.dart';
+import 'package:boilerplate/domain/usecase/settings/find_setting_db_usecase.dart';
+import 'package:boilerplate/domain/usecase/settings/get_current_setting_usecase.dart';
+import 'package:boilerplate/domain/usecase/settings/remove_current_setting_usecase.dart';
+import 'package:boilerplate/domain/usecase/settings/save_current_setting_usecase.dart';
+import 'package:boilerplate/domain/usecase/settings/save_setting_db_usecase.dart';
 
 import 'package:boilerplate/presentation/store/auth_firebase/auth_store.dart';
 import 'package:boilerplate/presentation/store/home/home_store.dart';
 import 'package:boilerplate/presentation/store/language/language_store.dart';
+import 'package:boilerplate/presentation/store/settings/settings_store.dart';
 import 'package:boilerplate/presentation/store/theme/theme_store.dart';
 
 import '../../../di/service_locator.dart';
@@ -69,6 +73,17 @@ class StoreModule {
     getIt.registerSingleton<HomeStore>(
       HomeStore(
         getIt<TopApiUseCase>(),
+      ),
+    );
+    getIt.registerSingleton<SettingsStore>(
+      SettingsStore(
+        authStore: getIt<AuthStore>(),
+        getCurrentSettingsUseCase: getIt<GetCurrentSettingsUseCase>(),
+        findSettingsByIdUseCase: getIt<FindSettingsByIdUseCase>(),
+        saveSettingsUseCase: getIt<SaveSettingsUseCase>(),
+        saveCurrentSettingsUseCase: getIt<SaveCurrentSettingsUseCase>(),
+        deleteByIdUseCase: getIt<DeleteSettingsByIdUseCase>(),
+        removeCurrentSettingsUseCase: getIt<RemoveCurrentSettingsUseCase>(),
       ),
     );
   }

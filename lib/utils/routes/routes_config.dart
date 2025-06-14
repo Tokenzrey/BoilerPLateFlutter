@@ -80,7 +80,7 @@ class RoutesConfig {
     RouteConfig(
       path: RoutePaths.profile,
       name: 'profile',
-      builder: (context, params) => const ProfileScreen(),
+      builder: (context, params) => const ProfileSettingsScreen(),
     ),
   ];
 

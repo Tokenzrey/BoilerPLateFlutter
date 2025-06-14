@@ -26,6 +26,10 @@ class ComicCard extends StatefulWidget {
   final VoidCallback? onDetailTap;
   final Function(bool)? onBookmarkChanged;
   final ComicCardStyle? style;
+  final Widget? badgeWidget;
+  final String?
+      statusText;
+  final Color? statusColor;
 
   const ComicCard({
     super.key,
@@ -51,6 +55,9 @@ class ComicCard extends StatefulWidget {
     this.onDetailTap,
     this.onBookmarkChanged,
     this.style,
+    this.badgeWidget,
+    this.statusText,
+    this.statusColor,
   });
 
   @override
@@ -107,13 +114,11 @@ class _ComicCardState extends State<ComicCard> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // --- IMAGE COVER ---
               GestureDetector(
                 behavior: HitTestBehavior.opaque,
                 onTap: widget.onImageTap ?? widget.onTap,
                 child: Stack(
                   children: [
-                    // Cover image - NOT STRETCHED
                     ClipRRect(
                       borderRadius: style.imageBorderRadius ??
                           const BorderRadius.only(
@@ -143,6 +148,7 @@ class _ComicCardState extends State<ComicCard> {
                           errorWidget: _flagErrorWidget(style),
                         ),
                       ),
+
                     if (widget.showBookmark)
                       Positioned(
                         top: 8,
@@ -170,10 +176,37 @@ class _ComicCardState extends State<ComicCard> {
                           ),
                         ),
                       ),
+
+                    if (widget.badgeWidget != null)
+                      Positioned(
+                        top: 8,
+                        left: widget.showCountryFlag ? 40 : 8,
+                        child: widget.badgeWidget!,
+                      ),
+
+                    if (widget.statusText != null)
+                      Positioned(
+                        bottom: 8,
+                        left: 8,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: widget.statusColor?.withValues(alpha: 0.8) ??
+                                AppColors.blue.withValues(alpha: 0.8),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: AppText(
+                            widget.statusText!,
+                            variant: TextVariant.labelSmall,
+                            color: AppColors.neutral,
+                          ),
+                        ),
+                      ),
                   ],
                 ),
               ),
-              // --- CONTENT SECTION ---
+
               Expanded(
                 child: Padding(
                   padding: style.contentPadding ?? const EdgeInsets.all(12),
@@ -197,7 +230,7 @@ class _ComicCardState extends State<ComicCard> {
                                 ),
                               ),
                             ),
-                            if (widget.showLike)
+                            if (widget.showLike && widget.likes.isNotEmpty)
                               Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
@@ -229,7 +262,8 @@ class _ComicCardState extends State<ComicCard> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              if (widget.showUpdated)
+                              if (widget.showUpdated &&
+                                  widget.updated.isNotEmpty)
                                 AppText(
                                   widget.updated,
                                   variant: TextVariant.bodySmall,
@@ -237,7 +271,8 @@ class _ComicCardState extends State<ComicCard> {
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
-                              if (widget.showScanlator)
+                              if (widget.showScanlator &&
+                                  widget.scanlator.isNotEmpty)
                                 AppText(
                                   widget.scanlator,
                                   variant: TextVariant.bodySmall,
@@ -257,7 +292,7 @@ class _ComicCardState extends State<ComicCard> {
                               widget.title,
                               variant: TextVariant.titleMedium,
                               style: style.titleStyle,
-                              maxLines: 1,
+                              maxLines: style.titleMaxLines ?? 1,
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
@@ -333,6 +368,7 @@ class ComicCardStyle {
   final BoxFit? imageFit;
   final Color? imageErrorColor;
   final TextStyle? titleStyle;
+  final int? titleMaxLines;
   final TextStyle? chapterStyle;
   final TextStyle? updatedStyle;
   final TextStyle? scanlatorStyle;
@@ -366,6 +402,7 @@ class ComicCardStyle {
     this.imageFit,
     this.imageErrorColor,
     this.titleStyle,
+    this.titleMaxLines,
     this.chapterStyle,
     this.updatedStyle,
     this.scanlatorStyle,
@@ -382,6 +419,76 @@ class ComicCardStyle {
     this.animationDuration = const Duration(milliseconds: 300),
     this.animationCurve = Curves.easeInOut,
   });
+
+  ComicCardStyle copyWith({
+    Color? backgroundColor,
+    BorderRadius? borderRadius,
+    EdgeInsetsGeometry? padding,
+    EdgeInsetsGeometry? contentPadding,
+    List<BoxShadow>? boxShadow,
+    List<BoxShadow>? hoverBoxShadow,
+    Border? border,
+    double? width,
+    double? height,
+    double? maxWidth,
+    double? maxHeight,
+    BorderRadius? imageBorderRadius,
+    double? imageHeight,
+    BoxFit? imageFit,
+    Color? imageErrorColor,
+    TextStyle? titleStyle,
+    int? titleMaxLines,
+    TextStyle? chapterStyle,
+    TextStyle? updatedStyle,
+    TextStyle? scanlatorStyle,
+    TextStyle? likesStyle,
+    Color? bookmarkColor,
+    Color? bookmarkActiveColor,
+    Color? likeIconColor,
+    double? bookmarkSize,
+    double? bookmarkActiveSize,
+    double? likeIconSize,
+    double? flagWidth,
+    double? flagHeight,
+    double? spaceBetweenElements,
+    Duration? animationDuration,
+    Curve? animationCurve,
+  }) {
+    return ComicCardStyle(
+      backgroundColor: backgroundColor ?? this.backgroundColor,
+      borderRadius: borderRadius ?? this.borderRadius,
+      padding: padding ?? this.padding,
+      contentPadding: contentPadding ?? this.contentPadding,
+      boxShadow: boxShadow ?? this.boxShadow,
+      hoverBoxShadow: hoverBoxShadow ?? this.hoverBoxShadow,
+      border: border ?? this.border,
+      width: width ?? this.width,
+      height: height ?? this.height,
+      maxWidth: maxWidth ?? this.maxWidth,
+      maxHeight: maxHeight ?? this.maxHeight,
+      imageBorderRadius: imageBorderRadius ?? this.imageBorderRadius,
+      imageHeight: imageHeight ?? this.imageHeight,
+      imageFit: imageFit ?? this.imageFit,
+      imageErrorColor: imageErrorColor ?? this.imageErrorColor,
+      titleStyle: titleStyle ?? this.titleStyle,
+      titleMaxLines: titleMaxLines ?? this.titleMaxLines,
+      chapterStyle: chapterStyle ?? this.chapterStyle,
+      updatedStyle: updatedStyle ?? this.updatedStyle,
+      scanlatorStyle: scanlatorStyle ?? this.scanlatorStyle,
+      likesStyle: likesStyle ?? this.likesStyle,
+      bookmarkColor: bookmarkColor ?? this.bookmarkColor,
+      bookmarkActiveColor: bookmarkActiveColor ?? this.bookmarkActiveColor,
+      likeIconColor: likeIconColor ?? this.likeIconColor,
+      bookmarkSize: bookmarkSize ?? this.bookmarkSize,
+      bookmarkActiveSize: bookmarkActiveSize ?? this.bookmarkActiveSize,
+      likeIconSize: likeIconSize ?? this.likeIconSize,
+      flagWidth: flagWidth ?? this.flagWidth,
+      flagHeight: flagHeight ?? this.flagHeight,
+      spaceBetweenElements: spaceBetweenElements ?? this.spaceBetweenElements,
+      animationDuration: animationDuration ?? this.animationDuration,
+      animationCurve: animationCurve ?? this.animationCurve,
+    );
+  }
 
   factory ComicCardStyle.light() {
     return ComicCardStyle(
@@ -414,6 +521,7 @@ class ComicCardStyle {
         fontWeight: FontWeight.bold,
         color: AppColors.neutral[900],
       ),
+      titleMaxLines: 1,
       chapterStyle: TextStyle(
         fontSize: 12,
         color: AppColors.neutral[700],
@@ -439,6 +547,97 @@ class ComicCardStyle {
       flagWidth: 24,
       flagHeight: 16,
       spaceBetweenElements: 4,
+    );
+  }
+
+  factory ComicCardStyle.dark() {
+    return ComicCardStyle(
+      backgroundColor: AppColors.neutral[900],
+      borderRadius: BorderRadius.circular(8),
+      padding: EdgeInsets.zero,
+      contentPadding: const EdgeInsets.all(12),
+      boxShadow: [
+        BoxShadow(
+          color: AppColors.neutral[950]!.withValues(alpha: 0.2),
+          blurRadius: 8,
+          offset: const Offset(0, 3),
+        ),
+      ],
+      hoverBoxShadow: [
+        BoxShadow(
+          color: AppColors.primary.withValues(alpha: 0.3),
+          blurRadius: 12,
+          offset: const Offset(0, 6),
+        ),
+      ],
+      imageBorderRadius: const BorderRadius.only(
+        topLeft: Radius.circular(8),
+        topRight: Radius.circular(8),
+      ),
+      imageFit: BoxFit.cover,
+      imageErrorColor: AppColors.neutral[800],
+      titleStyle: TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.bold,
+        color: AppColors.neutral,
+      ),
+      titleMaxLines: 1,
+      chapterStyle: TextStyle(
+        fontSize: 12,
+        color: AppColors.neutral[300],
+      ),
+      updatedStyle: TextStyle(
+        fontSize: 12,
+        color: AppColors.neutral[400],
+      ),
+      scanlatorStyle: TextStyle(
+        fontSize: 12,
+        color: AppColors.neutral[500],
+      ),
+      likesStyle: TextStyle(
+        fontSize: 12,
+        color: AppColors.neutral[300],
+      ),
+      bookmarkColor: AppColors.neutral[400],
+      bookmarkActiveColor: AppColors.green[400],
+      likeIconColor: AppColors.neutral[300],
+      bookmarkSize: 22,
+      bookmarkActiveSize: 28,
+      likeIconSize: 14,
+      flagWidth: 24,
+      flagHeight: 16,
+      spaceBetweenElements: 4,
+    );
+  }
+
+  factory ComicCardStyle.compact() {
+    return ComicCardStyle(
+      backgroundColor: AppColors.neutral[900],
+      borderRadius: BorderRadius.circular(8),
+      padding: EdgeInsets.zero,
+      contentPadding: const EdgeInsets.all(8),
+      boxShadow: [
+        BoxShadow(
+          color: AppColors.neutral[950]!.withValues(alpha: 0.15),
+          blurRadius: 4,
+          offset: const Offset(0, 2),
+        ),
+      ],
+      width: 120,
+      height: 200,
+      imageHeight: 150,
+      titleMaxLines: 2,
+      titleStyle: TextStyle(
+        fontSize: 12,
+        fontWeight: FontWeight.bold,
+        color: AppColors.neutral,
+      ),
+      chapterStyle: TextStyle(
+        fontSize: 10,
+        color: AppColors.neutral[400],
+      ),
+      bookmarkSize: 18,
+      bookmarkActiveSize: 22,
     );
   }
 }

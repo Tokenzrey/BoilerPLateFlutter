@@ -1,203 +1,162 @@
-import 'package:boilerplate/constants/app_theme.dart';
-import 'package:boilerplate/core/widgets/components/display/button.dart';
-import 'package:boilerplate/core/widgets/components/typography.dart';
-import 'package:boilerplate/core/widgets/empty_app_bar_widget.dart';
+import 'package:boilerplate/presentation/pages/profile/profile_tab.dart';
+import 'package:boilerplate/presentation/pages/profile/setting_tab.dart';
 import 'package:flutter/material.dart';
+import 'package:boilerplate/constants/colors.dart';
+import 'package:boilerplate/core/widgets/components/typography.dart';
+import 'package:boilerplate/utils/routes/routes.dart';
 
-class ProfileScreen extends StatelessWidget {
-  const ProfileScreen({super.key});
+class ProfileSettingsScreen extends StatefulWidget {
+  const ProfileSettingsScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      home: const Profilecomick(),
-      theme: AppThemeData.darkThemeData,
-    );
+  State<ProfileSettingsScreen> createState() => _ProfileSettingsScreenState();
+}
+
+class _ProfileSettingsScreenState extends State<ProfileSettingsScreen>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+  final PageController _pageController = PageController();
+  int _currentIndex = 0;
+
+  final List<Widget> _tabViews = const [
+    KeepAlivePage(child: ProfileTab()),
+    KeepAlivePage(child: SettingsTab()),
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+    _tabController.addListener(_handleTabChange);
   }
-}
 
-class Profilecomick extends StatefulWidget {
-  const Profilecomick({super.key});
+  void _handleTabChange() {
+    if (!_tabController.indexIsChanging) {
+      setState(() {
+        _currentIndex = _tabController.index;
+      });
+      _pageController.animateToPage(
+        _tabController.index,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+    }
+  }
 
   @override
-  State<Profilecomick> createState() => _ProfilecomickState();
-}
-
-class _ProfilecomickState extends State<Profilecomick> {
-  final usernameController = TextEditingController();
-  final passwordController = TextEditingController();
-
-  int cur = 0;
-  bool isobscure = true;
+  void dispose() {
+    _tabController.removeListener(_handleTabChange);
+    _tabController.dispose();
+    _pageController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    List<Widget> tabs = [profileTabs(), settingTabs()];
-
     return Scaffold(
-      appBar: EmptyAppBar(),
-      body: SingleChildScrollView(
-        child: Container(
-          margin: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SizedBox(
-                width: double.infinity,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    Button(
-                      onPressed: () => setState(() {
-                        cur = 0;
-                      }),
-                      colors: ButtonColors(background: Colors.transparent),
-                      child: Row(children: [
-                        Icon(
-                          Icons.person,
-                          color: Colors.white,
-                        ),
-                        SizedBox(width: 8),
-                        AppText("Profile"),
-                      ]),
-                    ),
-                    Button(
-                      onPressed: () => setState(() {
-                        cur = 1;
-                      }),
-                      colors: ButtonColors(background: Colors.transparent),
-                      child: Row(children: [
-                        Icon(
-                          Icons.settings,
-                          color: Colors.white,
-                        ),
-                        SizedBox(width: 8),
-                        AppText("Settings")
-                      ]),
-                    ),
-                  ],
+      backgroundColor: AppColors.background,
+      appBar: AppBar(
+        backgroundColor: AppColors.background,
+        elevation: 0,
+        centerTitle: true,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => context.go('/home'),
+          tooltip: 'Back to Home',
+        ),
+        title: const AppText(
+          'Profile Settings',
+          variant: TextVariant.headlineSmall,
+          color: Colors.white,
+        ),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(48),
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16),
+            decoration: BoxDecoration(
+              border: Border(
+                bottom: BorderSide(
+                  color: AppColors.neutral.shade800,
+                  width: 1.0,
                 ),
               ),
-              tabs[cur],
-            ],
+            ),
+            child: TabBar(
+              controller: _tabController,
+              tabs: [
+                _buildTab(0, Icons.person, 'Profile'),
+                _buildTab(1, Icons.settings, 'Settings'),
+              ],
+              indicatorColor: AppColors.primary,
+              indicatorWeight: 3,
+              indicatorSize: TabBarIndicatorSize.tab,
+              labelColor: AppColors.primary,
+              unselectedLabelColor: AppColors.neutral.shade400,
+              dividerColor: Colors.transparent,
+            ),
           ),
         ),
+      ),
+      body: PageView(
+        controller: _pageController,
+        physics: const ClampingScrollPhysics(),
+        onPageChanged: (index) {
+          if (_currentIndex != index) {
+            setState(() {
+              _currentIndex = index;
+              _tabController.animateTo(index, duration: Duration.zero);
+            });
+          }
+        },
+        children: _tabViews,
       ),
     );
   }
 
-  Widget profileTabs() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        AppText(
-          "Profile Settings",
-          variant: TextVariant.titleLarge,
-        ),
-        const SizedBox(height: 24),
-        AppText(
-          "E-Mail",
-          variant: TextVariant.titleMedium,
-        ),
-        TextField(
-          enabled: false,
-          decoration: InputDecoration(
-            labelText: "tes@gmail.com",
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16.0),
-            ),
+  Widget _buildTab(int index, IconData icon, String label) {
+    final bool isSelected = _currentIndex == index;
+    return Tab(
+      height: 48,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            icon,
+            color: isSelected ? AppColors.primary : AppColors.neutral.shade400,
+            size: 20,
           ),
-        ),
-        const SizedBox(height: 8),
-        AppText(
-          "Username",
-          variant: TextVariant.titleMedium,
-        ),
-        TextField(
-          decoration: InputDecoration(
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16.0),
-            ),
+          const SizedBox(width: 8),
+          AppText(
+            label,
+            variant: TextVariant.labelLarge,
+            color: isSelected ? AppColors.primary : AppColors.neutral.shade400,
+            fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
           ),
-          controller: usernameController,
-        ),
-        Button(
-          text: "Save",
-          colors:
-              ButtonColors(background: Colors.blue[900], text: Colors.white),
-          onPressed: () {},
-        ),
-        const SizedBox(height: 12),
-        AppText(
-          "Change Password",
-          variant: TextVariant.titleMedium,
-        ),
-        TextField(
-          decoration: InputDecoration(
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16.0),
-              ),
-              suffixIcon: IconButton(
-                onPressed: () {
-                  setState(() {
-                    isobscure = !isobscure;
-                  });
-                },
-                icon: Icon(isobscure ? Icons.visibility_off : Icons.visibility),
-              )),
-          controller: passwordController,
-          obscureText: isobscure,
-        ),
-        Button(
-          text: "Save",
-          colors:
-              ButtonColors(background: Colors.blue[900], text: Colors.white),
-          onPressed: () {},
-        ),
-        const SizedBox(height: 24),
-        AppText(
-          "Delete account",
-          variant: TextVariant.titleMedium,
-          fontWeight: FontWeight.bold,
-        ),
-        AppText(
-          "No longer want to use our service? You can delete your account here. This action is not reversible. All information related to this account will be deleted permanently.",
-          variant: TextVariant.bodyMedium,
-        ),
-        AppText(
-          "Note: Comick don't hold anything about your information but your email address. It is very safe even if you leave your account on Comick.",
-          variant: TextVariant.bodySmall,
-          color: Colors.red[700],
-        ),
-        AppText(
-          "You can't register again for 7 days after deleting your account.",
-          variant: TextVariant.bodySmall,
-          color: Colors.red[700],
-        ),
-        const SizedBox(height: 12),
-        AppText(
-          "Enter your ID to delete your account.",
-          variant: TextVariant.titleSmall,
-        ),
-        TextField(
-          decoration: InputDecoration(
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16.0),
-            ),
-            hintText: "Your ID",
-          ),
-          controller: passwordController,
-        ),
-        Button(
-          text: "Yes, delete my account",
-          colors: ButtonColors(background: Colors.red[900], text: Colors.white),
-          onPressed: () {},
-        ),
-      ],
+        ],
+      ),
     );
   }
+}
 
-  Widget settingTabs() {
-    return AppText("ini halaman settings");
+/// Wrapper to keep tab pages alive when switching tabs
+class KeepAlivePage extends StatefulWidget {
+  final Widget child;
+
+  const KeepAlivePage({super.key, required this.child});
+
+  @override
+  State<KeepAlivePage> createState() => _KeepAlivePageState();
+}
+
+class _KeepAlivePageState extends State<KeepAlivePage>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    return widget.child;
   }
 }

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:boilerplate/data/local/models/settings_model.dart';
 import 'package:boilerplate/data/local/models/user_model.dart';
 import 'package:boilerplate/domain/entity/user/user.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -66,6 +67,38 @@ class SharedPreferenceHelper {
 
   Future<bool> saveIsLoggedIn(bool value) async {
     return _sharedPreference.setBool(Preferences.isLoggedIn, value);
+  }
+
+  // SETTINGS: ----------------------------------------------------------------
+  // Key untuk settings aktif
+  static const String _currentSettingsKey = 'current_settings';
+
+  /// Menyimpan settings yang sedang dipakai
+  Future<bool> saveCurrentSettings(SettingsModel settings) async {
+    final jsonString = json.encode(settings.toJson());
+    return _sharedPreference.setString(_currentSettingsKey, jsonString);
+  }
+
+  /// Mengambil settings yang sedang dipakai (bisa null jika belum ada)
+  Future<SettingsModel?> getCurrentSettings() async {
+    final jsonString = _sharedPreference.getString(_currentSettingsKey);
+    if (jsonString == null || jsonString.isEmpty) return null;
+    try {
+      final Map<String, dynamic> data = json.decode(jsonString);
+      return SettingsModel.fromJson(data);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// Update settings (overwrite dengan instance baru)
+  Future<bool> updateCurrentSettings(SettingsModel updated) async {
+    return await saveCurrentSettings(updated);
+  }
+
+  /// Hapus settings yang sedang dipakai
+  Future<bool> removeCurrentSettings() async {
+    return _sharedPreference.remove(_currentSettingsKey);
   }
 
   // Theme:------------------------------------------------------
