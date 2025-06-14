@@ -10,7 +10,13 @@ class AppbarSandbox extends StatefulWidget {
 }
 
 class _AppbarSandboxState extends State<AppbarSandbox> {
-  bool isBottomNavbarVisible = true;
+  final ValueNotifier<bool> _navbarVisibleNotifier = ValueNotifier(true);
+
+  @override
+  void dispose() {
+    _navbarVisibleNotifier.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -21,26 +27,22 @@ class _AppbarSandboxState extends State<AppbarSandbox> {
       extendBodyBehindAppBar: true,
       appBar: TopNavbar(),
       bottomNavigationBar: BottomNavbar(
-        isVisible: isBottomNavbarVisible, 
-        selectedItem: NavbarItem.search, 
+        isVisibleNotifier: _navbarVisibleNotifier, 
+        selectedItem: NavbarItem.home, 
         onItemSelected: (value) {},
       ),
       body: NotificationListener<ScrollNotification>(
         onNotification: (notification) {
-          if (notification is ScrollUpdateNotification && isBottomNavbarVisible) {
-            setState(() {
-              isBottomNavbarVisible = false;
-            });
+          if (notification is ScrollUpdateNotification && _navbarVisibleNotifier.value) {
+              _navbarVisibleNotifier.value = false;
           }
           return true;
         },
         child: GestureDetector(
           behavior: HitTestBehavior.translucent,
           onTap: () {
-            if (!isBottomNavbarVisible) {
-              setState(() {
-                isBottomNavbarVisible = true;
-              });
+            if (!_navbarVisibleNotifier.value) {
+                _navbarVisibleNotifier.value = true;
             }
           },
 
@@ -50,7 +52,13 @@ class _AppbarSandboxState extends State<AppbarSandbox> {
           child: ListView(
             padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
             children: [
-              const SizedBox(height: 600),
+              const SizedBox(height: 1000),
+              Container(
+                height: 200,
+                decoration: BoxDecoration(
+                  color: Colors.blue
+                ),
+              ),
             ],
           ),
         ),

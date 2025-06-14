@@ -1,67 +1,154 @@
-import 'package:boilerplate/constants/app_theme.dart';
+import 'package:boilerplate/constants/colors.dart';
+import 'package:boilerplate/core/widgets/components/overlay/overlay.dart';
+import 'package:boilerplate/core/widgets/components/overlay/popover.dart';
 import 'package:flutter/material.dart';
 
-class PopoverMenu extends StatelessWidget {
-  const PopoverMenu({super.key});
+class PopoverMenu extends StatefulWidget {
+  final VoidCallback? onProfilePressed;
+  final VoidCallback? onSettingsPressed;
+  final VoidCallback? onSignoutPressed;
+
+  const PopoverMenu({
+    super.key,
+    this.onProfilePressed,
+    this.onSettingsPressed,
+    this.onSignoutPressed,
+  });
+
+  @override
+  State<PopoverMenu> createState() => _PopoverMenuState();
+}
+
+class _PopoverMenuState extends State<PopoverMenu> {
+  final _popoverTextStyle = TextStyle(
+    fontWeight: FontWeight.bold,
+    fontSize: 16,
+    color: AppColors.cardForeground,
+  );
+
+  final _popoverIconColor = AppColors.cardForeground;
 
   @override
   Widget build(BuildContext context) {
-    final darkThemeColor = AppThemeData.darkThemeData.colorScheme.surface;
-    final iconColor = AppThemeData.darkThemeData.colorScheme.onSurface;
-
-    return PopupMenuButton<int>(
-      icon: Icon(Icons.account_circle_rounded, color: iconColor),
-      shadowColor: Colors.grey[200],
-      itemBuilder: (context) => [
-        PopupMenuItem(
-          value: 1,
-          child: Row(
-            children: [
-              Icon(Icons.accessibility_new, color: iconColor),
-              const SizedBox(
-                width: 10,
-              ),
-              Text("Profile", style: TextStyle(color: iconColor) ),
-            ],
-          ),
-        ),
-        PopupMenuItem(
-          value: 2,
-          child: Row(
-            children: [
-              Icon(Icons.settings, color: iconColor),
-              const SizedBox(
-                width: 10,
-              ),
-              Text("Settings", style: TextStyle(color: iconColor),)
-            ],
-          ),
-        ),
-        PopupMenuItem(
-          value: 3,
-          child: Row(
-            children: [
-              Icon(Icons.logout, color: iconColor),
-              const SizedBox(
-                width: 10,
-              ),
-              Text("Logout", style: TextStyle(color: iconColor) ),
-            ],
-          ),
-        ),
-      ],
-      offset: Offset(0, 52),
-      color: darkThemeColor,
-      elevation: 2,
-      onSelected: (value) {
-        if (value == 1) {
-          // _showDialog(context);
-        } else if (value == 2) {
-          // _showDialog(context);
-        } else if (value == 3) {
-          // _showDialog(context);
-        }
+    return IconButton(
+      icon: Icon(
+        Icons.account_circle, 
+        color: AppColors.primaryForeground,
+      ),
+      onPressed: () {
+        showPopover(
+          context: context, 
+          alignment: Alignment.topRight, 
+          anchorAlignment: Alignment.bottomRight,
+          stayVisibleOnScroll: false,
+          offset: Offset(0, 4),
+          enterAnimations: [
+            PopoverAnimationType.fadeIn,
+            PopoverAnimationType.slideDown,
+          ],
+          exitAnimations: [
+            PopoverAnimationType.fadeOut,
+            PopoverAnimationType.slideUp,
+          ],
+          builder: (_) => _buildPopoverContent(),
+        );
       },
+    );
+  }
+
+  Widget _buildPopoverContent() {
+    return Container(
+      constraints: const BoxConstraints(
+        maxWidth: 200,
+        maxHeight: 400,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.card,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(38),
+            blurRadius: 12,
+            spreadRadius: 2,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          InkWell(
+            onTap: () {
+              closeOverlay(context, 'Profile');
+              widget.onProfilePressed?.call();
+            },
+            child: Row(
+              children: [
+                Icon(
+                  Icons.accessibility_new,
+                  color: _popoverIconColor,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Profile',
+                    style: _popoverTextStyle,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          InkWell(
+            onTap: () {
+              closeOverlay(context, 'Settings');
+              widget.onSettingsPressed?.call();
+            },
+            child: Row(
+              children: [
+                Icon(
+                  Icons.settings,
+                  color: _popoverIconColor,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Settings',
+                    style: _popoverTextStyle,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          InkWell(
+            onTap: () {
+              closeOverlay(context, 'Signout');
+              widget.onSignoutPressed?.call();
+            },
+            child: Row(
+              children: [
+                Icon(
+                  Icons.logout,
+                  color: _popoverIconColor,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Sign Out',
+                    style: _popoverTextStyle,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
