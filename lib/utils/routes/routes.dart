@@ -28,7 +28,7 @@ class AppRouter {
   static final router = GoRouter(
     navigatorKey: _rootNavigatorKey,
     // dev purpose
-    initialLocation: RoutePaths.home,
+    initialLocation: RoutePaths.profile,
     debugLogDiagnostics: true,
     routerNeglect: true,
     refreshListenable: RouteGuard.authStateChanges,
