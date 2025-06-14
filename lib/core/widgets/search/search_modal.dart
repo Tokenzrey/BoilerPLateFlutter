@@ -1,16 +1,12 @@
-import 'package:boilerplate/constants/app_theme.dart';
+import 'package:boilerplate/constants/colors.dart';
 import 'package:boilerplate/utils/routes/routes.dart';
 import 'package:flutter/material.dart';
-import 'package:boilerplate/core/widgets/card/comic_search_result_item.dart';
+import 'package:boilerplate/core/widgets/components/display/comic_search_result_item.dart';
 
 class SearchModal extends StatefulWidget {
-  final double positionX;
-  final double positionY;
 
   const SearchModal({
     super.key,
-    this.positionX = 0.0,
-    this.positionY = 5.0,
   });
 
   @override
@@ -75,49 +71,56 @@ class _SearchModalState extends State<SearchModal> {
 
   @override
   Widget build(BuildContext context) {
-    return Dialog(
-      alignment: Alignment.topCenter,
-      insetPadding: EdgeInsets.only(
-        left: widget.positionX,
-        top: widget.positionY,
+    return  Container(
+      constraints: const BoxConstraints(
+        maxWidth: 340,
+        maxHeight: 400,
       ),
-      backgroundColor: AppThemeData.darkThemeData.colorScheme.onSurface,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Container(
-        constraints: BoxConstraints(maxHeight: 500, maxWidth: 350),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            TextField(
-              autofocus: true,
-              controller: _textController,
-              onChanged: (inputQuery) {
-                _performSearch(inputQuery);
-              },
-              onSubmitted: (inputQuery) {
-                _handleSubmit(inputQuery);
-              },
-              decoration: InputDecoration(
-                prefixIcon: Icon(Icons.search),
-                hintText: "Comic Search...",
-              ),
+      decoration: BoxDecoration(
+        color: AppColors.card,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(38),
+            blurRadius: 12,
+            spreadRadius: 2,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(8),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          TextField(
+            autofocus: true,
+            controller: _textController,
+            onChanged: (inputQuery) {
+              _performSearch(inputQuery);
+            },
+            onSubmitted: (inputQuery) {
+              _handleSubmit(inputQuery);
+            },
+            decoration: InputDecoration(
+              prefixIcon: Icon(Icons.search),
+              hintText: "Comic Search...",
             ),
-            // const SizedBox(height: 8),
-            Flexible(
-              fit: FlexFit.loose,
-              child: ListView.builder(
-                shrinkWrap: true,
-                itemCount: searchResult.length,
-                itemBuilder: (context, index) => searchResult[index],
-              ),
+          ),
+          // const SizedBox(height: 8),
+          Flexible(
+            fit: FlexFit.loose,
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: searchResult.length,
+              itemBuilder: (context, index) => searchResult[index],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
-
+  
   @override
   void dispose() {
     _textController.dispose();
