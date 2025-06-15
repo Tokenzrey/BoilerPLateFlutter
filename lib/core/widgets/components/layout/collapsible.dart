@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/foundation.dart';
 
 /// Controller to manage state & progress of a collapsible widget (expand/collapse)
 class CollapsibleController extends ChangeNotifier {
@@ -11,12 +10,7 @@ class CollapsibleController extends ChangeNotifier {
   /// Creates a controller with an initial expanded state
   CollapsibleController({bool initialExpanded = false})
       : _isExpanded = initialExpanded,
-        _expansionProgress = initialExpanded ? 1.0 : 0.0 {
-    if (kDebugMode) {
-      debugPrint(
-          '[COLLAPSIBLE] Created controller $_id with initialExpanded=$initialExpanded');
-    }
-  }
+        _expansionProgress = initialExpanded ? 1.0 : 0.0;
 
   /// Whether the collapsible is currently expanded
   bool get isExpanded => _isExpanded;
@@ -35,10 +29,7 @@ class CollapsibleController extends ChangeNotifier {
       // Optionally: auto update _isExpanded if progress threshold crossed
       final wasExpanded = _isExpanded;
       _isExpanded = _expansionProgress > 0.5;
-      if (kDebugMode) {
-        debugPrint(
-            '[COLLAPSIBLE] Controller $_id progress updated: $_expansionProgress (isExpanded=$_isExpanded)');
-      }
+
       if (wasExpanded != _isExpanded) {
         // Optionally notify only if expanded state changed, or always notify (here: always notify)
         notifyListeners();
@@ -53,9 +44,7 @@ class CollapsibleController extends ChangeNotifier {
     if (!_isExpanded || _expansionProgress != 1.0) {
       _isExpanded = true;
       _expansionProgress = 1.0;
-      if (kDebugMode) {
-        debugPrint('[COLLAPSIBLE] Controller $_id expanded');
-      }
+
       notifyListeners();
     }
   }
@@ -65,19 +54,13 @@ class CollapsibleController extends ChangeNotifier {
     if (_isExpanded || _expansionProgress != 0.0) {
       _isExpanded = false;
       _expansionProgress = 0.0;
-      if (kDebugMode) {
-        debugPrint('[COLLAPSIBLE] Controller $_id collapsed');
-      }
+
       notifyListeners();
     }
   }
 
   /// Toggle expanded/collapsed state
   void toggle() {
-    if (kDebugMode) {
-      debugPrint(
-          '[COLLAPSIBLE] Controller $_id toggle from $_isExpanded to ${!_isExpanded}');
-    }
     _isExpanded ? collapse() : expand();
   }
 
@@ -86,9 +69,7 @@ class CollapsibleController extends ChangeNotifier {
     if (_isExpanded != value) {
       _isExpanded = value;
       _expansionProgress = value ? 1.0 : 0.0;
-      if (kDebugMode) {
-        debugPrint('[COLLAPSIBLE] Controller $_id setExpanded to $value');
-      }
+
       notifyListeners();
     }
   }
@@ -99,10 +80,7 @@ class CollapsibleController extends ChangeNotifier {
     final wasExpanded = _isExpanded;
     _expansionProgress = clamped;
     _isExpanded = clamped > 0.5;
-    if (kDebugMode) {
-      debugPrint(
-          '[COLLAPSIBLE] Controller $_id setPartialExpansion: progress=$clamped, isExpanded=$_isExpanded');
-    }
+
     // Notify if either progress or expanded state changed
     if (wasExpanded != _isExpanded ||
         (_expansionProgress - clamped).abs() > 0.001) {
@@ -290,8 +268,8 @@ class CollapsibleTheme {
     this.crossAxisAlignment = CrossAxisAlignment.start,
     this.mainAxisAlignment = MainAxisAlignment.start,
     this.textButtonStyle,
-    this.animationDuration = const Duration(milliseconds: 300),
-    this.animationCurve = Curves.easeInOut,
+    this.animationDuration = const Duration(milliseconds: 200),
+    this.animationCurve = Curves.easeInOutCubic,
     this.collapseAnimationCurve,
     this.animationType = CollapsibleAnimationType.sizeAndFade,
     this.triggerBorderRadius,
@@ -530,21 +508,14 @@ class _AppCollapsibleState extends State<AppCollapsible>
         CollapsibleController(initialExpanded: widget.initialExpanded);
     _effectiveTheme = widget.theme ?? const CollapsibleTheme();
 
-    // Initialize animation controller
     _animController = AnimationController(
       vsync: this,
       duration: _effectiveTheme.animationDuration,
       value: _controller.isExpanded ? 1.0 : 0.0,
     );
 
-    // Connect controller with animation
     _controller.addListener(_handleControllerChanged);
     _animController.addListener(_handleAnimationTick);
-
-    if (kDebugMode) {
-      debugPrint('[COLLAPSIBLE] $_debugId initialized with '
-          'initialExpanded=${widget.initialExpanded}');
-    }
   }
 
   @override
@@ -583,13 +554,20 @@ class _AppCollapsibleState extends State<AppCollapsible>
   }
 
   void _handleControllerChanged() {
-    if (_controller.isExpanded) {
-      _animController.forward();
-    } else {
-      _animController.reverse();
+    if (_controller.isExpanded && _animController.value != 1.0) {
+      _animController.animateTo(
+        1.0,
+        duration: _effectiveTheme.animationDuration,
+        curve: _effectiveTheme.animationCurve,
+      );
+    } else if (!_controller.isExpanded && _animController.value != 0.0) {
+      _animController.animateTo(
+        0.0,
+        duration: _effectiveTheme.animationDuration,
+        curve: _effectiveTheme.collapseAnimationCurve ??
+            _effectiveTheme.animationCurve,
+      );
     }
-
-    // Notify listeners about expansion state changes
     widget.onExpansionChanged?.call(_controller.isExpanded);
     widget.onProgressChanged?.call(_controller.expansionProgress);
 
@@ -598,11 +576,6 @@ class _AppCollapsibleState extends State<AppCollapsible>
 
   void _toggleExpanded() {
     if (!widget.enabled) return;
-
-    if (kDebugMode) {
-      debugPrint('[COLLAPSIBLE] $_debugId toggle '
-          'from ${_controller.isExpanded}');
-    }
 
     _controller.toggle();
   }
@@ -660,11 +633,6 @@ class _AppCollapsibleState extends State<AppCollapsible>
 
   @override
   Widget build(BuildContext context) {
-    if (kDebugMode) {
-      debugPrint('[COLLAPSIBLE] $_debugId build, '
-          'isExpanded=${_controller.isExpanded}');
-    }
-
     // Get trigger and content widgets from children
     final Widget? trigger =
         widget.children.isNotEmpty ? widget.children[0] : null;
@@ -922,10 +890,7 @@ class _CollapsibleScope extends InheritedWidget {
   static _CollapsibleScope? maybeOf(BuildContext context) {
     final scope =
         context.dependOnInheritedWidgetOfExactType<_CollapsibleScope>();
-    if (scope == null && kDebugMode) {
-      debugPrint(
-          '[COLLAPSIBLE] WARNING: No _CollapsibleScope found for context=${context.hashCode}');
-    }
+
     return scope;
   }
 
@@ -940,10 +905,6 @@ class _CollapsibleScope extends InheritedWidget {
         isPressed != oldWidget.isPressed ||
         focusNode != oldWidget.focusNode ||
         interactionMode != oldWidget.interactionMode;
-
-    if (kDebugMode && shouldNotify) {
-      debugPrint('[COLLAPSIBLE] SCOPE $debugId updateShouldNotify: true');
-    }
 
     return shouldNotify;
   }
@@ -1107,7 +1068,6 @@ class AppCollapsibleTrigger extends StatefulWidget {
 class _AppCollapsibleTriggerState extends State<AppCollapsibleTrigger> {
   bool _isHovering = false;
   bool _isPressed = false;
-  final String _debugId = UniqueKey().toString().substring(0, 8);
 
   @override
   Widget build(BuildContext context) {
@@ -1116,21 +1076,9 @@ class _AppCollapsibleTriggerState extends State<AppCollapsibleTrigger> {
 
     // Check for missing scope
     if (scope == null) {
-      if (kDebugMode) {
-        debugPrint(
-            '[COLLAPSIBLE] TRIGGER $_debugId ERROR: No _CollapsibleScope found in context! '
-            'Widget type=${widget.runtimeType}, context=${context.hashCode}');
-        debugPrint(
-            '[COLLAPSIBLE] TRIGGER ERROR stackTrace: \n${StackTrace.current}');
-      }
       assert(scope != null,
           'AppCollapsibleTrigger must be a child of AppCollapsible');
       return widget.child; // Fallback to just showing the child
-    }
-
-    if (kDebugMode) {
-      debugPrint(
-          '[COLLAPSIBLE] TRIGGER $_debugId building, expanded=${scope.controller.isExpanded}');
     }
 
     final theme = scope.theme;
@@ -1305,10 +1253,6 @@ class _AppCollapsibleTriggerState extends State<AppCollapsibleTrigger> {
     void handleTap() {
       if (scope.enabled &&
           scope.interactionMode == TriggerInteractionMode.tap) {
-        if (kDebugMode) {
-          debugPrint('[COLLAPSIBLE] TRIGGER $_debugId onTap, '
-              'isExpanded before=${scope.controller.isExpanded}');
-        }
         scope.toggleExpanded();
       }
     }
@@ -1316,10 +1260,6 @@ class _AppCollapsibleTriggerState extends State<AppCollapsibleTrigger> {
     void handleLongPress() {
       if (scope.enabled &&
           scope.interactionMode == TriggerInteractionMode.longPress) {
-        if (kDebugMode) {
-          debugPrint('[COLLAPSIBLE] TRIGGER $_debugId onLongPress, '
-              'isExpanded before=${scope.controller.isExpanded}');
-        }
         scope.toggleExpanded();
       }
     }
@@ -1327,10 +1267,6 @@ class _AppCollapsibleTriggerState extends State<AppCollapsibleTrigger> {
     void handleDoubleTap() {
       if (scope.enabled &&
           scope.interactionMode == TriggerInteractionMode.doubleTap) {
-        if (kDebugMode) {
-          debugPrint('[COLLAPSIBLE] TRIGGER $_debugId onDoubleTap, '
-              'isExpanded before=${scope.controller.isExpanded}');
-        }
         scope.toggleExpanded();
       }
     }
@@ -1340,11 +1276,6 @@ class _AppCollapsibleTriggerState extends State<AppCollapsibleTrigger> {
         scope.onHoverChanged(value);
 
         if (scope.interactionMode == TriggerInteractionMode.hover) {
-          if (kDebugMode) {
-            debugPrint('[COLLAPSIBLE] TRIGGER $_debugId onHoverChange: $value, '
-                'isExpanded before=${scope.controller.isExpanded}');
-          }
-
           if (value) {
             scope.controller.expand();
           } else {
@@ -1357,11 +1288,6 @@ class _AppCollapsibleTriggerState extends State<AppCollapsibleTrigger> {
     }
 
     void handlePointerDown(PointerDownEvent event) {
-      if (kDebugMode) {
-        debugPrint('[COLLAPSIBLE] TRIGGER $_debugId onPointerDown, '
-            'isExpanded before=${scope.controller.isExpanded}');
-      }
-
       setState(() => _isPressed = true);
 
       if (widget.onInteraction != null) {
@@ -1394,11 +1320,6 @@ class _AppCollapsibleTriggerState extends State<AppCollapsibleTrigger> {
         if (event is KeyDownEvent &&
             (event.logicalKey == LogicalKeyboardKey.enter ||
                 event.logicalKey == LogicalKeyboardKey.space)) {
-          if (kDebugMode) {
-            debugPrint(
-                '[COLLAPSIBLE] TRIGGER $_debugId onKeyEvent: ${event.logicalKey.keyId}, '
-                'isExpanded before=${scope.controller.isExpanded}');
-          }
           scope.toggleExpanded();
           return KeyEventResult.handled;
         }
@@ -1481,27 +1402,13 @@ class AppCollapsibleContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scope = _CollapsibleScope.maybeOf(context);
-    final String debugId = UniqueKey().toString().substring(0, 8);
+    UniqueKey().toString().substring(0, 8);
 
     // Check for missing scope
     if (scope == null) {
-      if (kDebugMode) {
-        debugPrint(
-            '[COLLAPSIBLE] CONTENT $debugId ERROR: No _CollapsibleScope found in context! '
-            'Widget type=$runtimeType, context=${context.hashCode}');
-        debugPrint(
-            '[COLLAPSIBLE] CONTENT ERROR stackTrace: \n${StackTrace.current}');
-      }
       assert(scope != null,
           'AppCollapsibleContent must be a child of AppCollapsible');
       return child; // Fallback to just showing the child
-    }
-
-    if (kDebugMode) {
-      debugPrint('[COLLAPSIBLE] CONTENT $debugId building, '
-          'isExpanded=${scope.controller.isExpanded}, '
-          'animation=${scope.animationController.value}, '
-          'key=${key?.toString() ?? 'null'}');
     }
 
     // Skip collapsing if not collapsible
@@ -1514,10 +1421,6 @@ class AppCollapsibleContent extends StatelessWidget {
 
     // Skip animation if requested
     if (!scope.controller.isExpanded && !animate) {
-      if (kDebugMode) {
-        debugPrint(
-            '[COLLAPSIBLE] CONTENT $debugId not expanded and not animating, returning empty');
-      }
       return const SizedBox.shrink();
     }
 
@@ -1708,14 +1611,10 @@ class _AppExpandableTextState extends State<AppExpandableText> {
   late final TextSpan _textSpan;
   bool _hasOverflow = false;
   late final CollapsibleTheme _effectiveTheme;
-  final String _debugId = UniqueKey().toString().substring(0, 8);
 
   @override
   void initState() {
     super.initState();
-    if (kDebugMode) {
-      debugPrint('[COLLAPSIBLE] TEXT $_debugId initializing');
-    }
 
     _controller = widget.controller ??
         CollapsibleController(initialExpanded: widget.initialExpanded);
@@ -1730,18 +1629,9 @@ class _AppExpandableTextState extends State<AppExpandableText> {
   @override
   void didUpdateWidget(AppExpandableText oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (kDebugMode) {
-      debugPrint('[COLLAPSIBLE] TEXT $_debugId updating');
-    }
 
     // Update controller if it changed
     if (widget.controller != oldWidget.controller) {
-      if (kDebugMode) {
-        debugPrint('[COLLAPSIBLE] TEXT $_debugId controller changed from '
-            '${oldWidget.controller?.debugId ?? 'internal'} to '
-            '${widget.controller?.debugId ?? 'internal'}');
-      }
-
       if (oldWidget.controller == null) {
         _controller.removeListener(_handleControllerChanged);
       }
@@ -1768,11 +1658,6 @@ class _AppExpandableTextState extends State<AppExpandableText> {
     if (widget.initialExpanded != oldWidget.initialExpanded &&
         widget.controller == null &&
         oldWidget.controller == null) {
-      if (kDebugMode) {
-        debugPrint('[COLLAPSIBLE] TEXT $_debugId initialExpanded changed: '
-            '${oldWidget.initialExpanded} -> ${widget.initialExpanded}');
-      }
-
       if (_controller.isExpanded != widget.initialExpanded) {
         _controller.setExpanded(widget.initialExpanded);
       }
@@ -1780,11 +1665,6 @@ class _AppExpandableTextState extends State<AppExpandableText> {
   }
 
   void _handleControllerChanged() {
-    if (kDebugMode) {
-      debugPrint('[COLLAPSIBLE] TEXT $_debugId controller changed: '
-          'isExpanded=${_controller.isExpanded}');
-    }
-
     if (widget.onExpansionChanged != null) {
       widget.onExpansionChanged!(_controller.isExpanded);
     }
@@ -1792,11 +1672,6 @@ class _AppExpandableTextState extends State<AppExpandableText> {
   }
 
   void _toggleExpanded() {
-    if (kDebugMode) {
-      debugPrint(
-          '[COLLAPSIBLE] TEXT $_debugId toggle from ${_controller.isExpanded}');
-    }
-
     _controller.toggle();
 
     if (widget.onExpansionChanged != null && widget.controller != null) {
@@ -1806,10 +1681,6 @@ class _AppExpandableTextState extends State<AppExpandableText> {
 
   @override
   void dispose() {
-    if (kDebugMode) {
-      debugPrint('[COLLAPSIBLE] TEXT $_debugId disposing');
-    }
-
     if (widget.controller == null) {
       _controller.removeListener(_handleControllerChanged);
       _controller.dispose();
@@ -1819,10 +1690,6 @@ class _AppExpandableTextState extends State<AppExpandableText> {
 
   @override
   Widget build(BuildContext context) {
-    if (kDebugMode) {
-      debugPrint('[COLLAPSIBLE] TEXT $_debugId building');
-    }
-
     final defaultTextStyle = DefaultTextStyle.of(context);
     final textStyle = widget.style ?? defaultTextStyle.style;
     final buttonStyle = _effectiveTheme.textButtonStyle ??
@@ -1840,10 +1707,6 @@ class _AppExpandableTextState extends State<AppExpandableText> {
         )..layout(maxWidth: constraints.maxWidth);
 
         _hasOverflow = textPainter.didExceedMaxLines;
-
-        if (kDebugMode && _hasOverflow) {
-          debugPrint('[COLLAPSIBLE] TEXT $_debugId hasOverflow=$_hasOverflow');
-        }
 
         if (!_hasOverflow) {
           return Text(
@@ -1949,15 +1812,9 @@ class AppCollapsibleCard extends StatefulWidget {
 
 class _AppCollapsibleCardState extends State<AppCollapsibleCard> {
   bool _isHovering = false;
-  final String _debugId = UniqueKey().toString().substring(0, 8);
 
   @override
   Widget build(BuildContext context) {
-    if (kDebugMode) {
-      debugPrint(
-          '[COLLAPSIBLE] CARD $_debugId building, hovering=$_isHovering');
-    }
-
     final effectiveTheme =
         (widget.theme ?? CollapsibleTheme.fromContext(context)).copyWith(
       animationType: widget.animationType,
@@ -1968,15 +1825,9 @@ class _AppCollapsibleCardState extends State<AppCollapsibleCard> {
     return MouseRegion(
       onEnter: (_) => setState(() {
         _isHovering = true;
-        if (kDebugMode) {
-          debugPrint('[COLLAPSIBLE] CARD $_debugId hover enter');
-        }
       }),
       onExit: (_) => setState(() {
         _isHovering = false;
-        if (kDebugMode) {
-          debugPrint('[COLLAPSIBLE] CARD $_debugId hover exit');
-        }
       }),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
@@ -2004,10 +1855,6 @@ class _AppCollapsibleCardState extends State<AppCollapsibleCard> {
           theme: effectiveTheme,
           onExpansionChanged: widget.onExpansionChanged != null
               ? (expanded) {
-                  if (kDebugMode) {
-                    debugPrint(
-                        '[COLLAPSIBLE] CARD $_debugId expansion changed: $expanded');
-                  }
                   widget.onExpansionChanged!(expanded);
                 }
               : null,
@@ -2080,14 +1927,10 @@ class _AppDraggableCollapsibleState extends State<AppDraggableCollapsible>
   late AnimationController _animController;
   double _currentHeight = 0;
   bool _isDragging = false;
-  final String _debugId = UniqueKey().toString().substring(0, 8);
 
   @override
   void initState() {
     super.initState();
-    if (kDebugMode) {
-      debugPrint('[COLLAPSIBLE] DRAGGABLE $_debugId initializing');
-    }
 
     // Initialize controller
     _controller = widget.controller ??
@@ -2100,7 +1943,7 @@ class _AppDraggableCollapsibleState extends State<AppDraggableCollapsible>
     // Initialize animation controller
     _animController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 300),
+      duration: const Duration(milliseconds: 200),
       value: widget.initialExpanded ? 1.0 : 0.0,
     );
 
@@ -2115,16 +1958,9 @@ class _AppDraggableCollapsibleState extends State<AppDraggableCollapsible>
   @override
   void didUpdateWidget(AppDraggableCollapsible oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (kDebugMode) {
-      debugPrint('[COLLAPSIBLE] DRAGGABLE $_debugId updating');
-    }
 
     // Update controller if needed
     if (widget.controller != oldWidget.controller) {
-      if (kDebugMode) {
-        debugPrint('[COLLAPSIBLE] DRAGGABLE $_debugId controller changed');
-      }
-
       if (oldWidget.controller == null) {
         _controller.removeListener(_handleControllerChanged);
       }
@@ -2141,21 +1977,11 @@ class _AppDraggableCollapsibleState extends State<AppDraggableCollapsible>
     // Update heights if they changed
     if (widget.minHeight != oldWidget.minHeight ||
         widget.maxHeight != oldWidget.maxHeight) {
-      if (kDebugMode) {
-        debugPrint('[COLLAPSIBLE] DRAGGABLE $_debugId height range changed: '
-            '${oldWidget.minHeight}-${oldWidget.maxHeight} to '
-            '${widget.minHeight}-${widget.maxHeight}');
-      }
       _updateHeight();
     }
   }
 
   void _handleControllerChanged() {
-    if (kDebugMode) {
-      debugPrint('[COLLAPSIBLE] DRAGGABLE $_debugId controller changed: '
-          'isExpanded=${_controller.isExpanded}');
-    }
-
     if (_controller.isExpanded) {
       _animController.animateTo(1.0);
     } else {
@@ -2179,27 +2005,13 @@ class _AppDraggableCollapsibleState extends State<AppDraggableCollapsible>
     setState(() {
       _currentHeight = widget.minHeight +
           (widget.maxHeight - widget.minHeight) * _animController.value;
-
-      if (kDebugMode) {
-        debugPrint(
-            '[COLLAPSIBLE] DRAGGABLE $_debugId height updated: $_currentHeight, '
-            'progress=${_animController.value}');
-      }
     });
   }
 
   void _updateFromController() {
     if (_controller.isExpanded && _animController.value == 0) {
-      if (kDebugMode) {
-        debugPrint(
-            '[COLLAPSIBLE] DRAGGABLE $_debugId syncing from controller: expanding');
-      }
       _animController.animateTo(1.0);
     } else if (!_controller.isExpanded && _animController.value == 1) {
-      if (kDebugMode) {
-        debugPrint(
-            '[COLLAPSIBLE] DRAGGABLE $_debugId syncing from controller: collapsing');
-      }
       _animController.animateTo(0.0);
     }
   }
@@ -2218,11 +2030,6 @@ class _AppDraggableCollapsibleState extends State<AppDraggableCollapsible>
       // Calculate progress value
       final progress = (_currentHeight - widget.minHeight) /
           (widget.maxHeight - widget.minHeight);
-
-      if (kDebugMode) {
-        debugPrint('[COLLAPSIBLE] DRAGGABLE $_debugId drag update: '
-            'delta=${details.delta.dy}, height=$_currentHeight, progress=$progress');
-      }
 
       // Update animation controller without triggering animation
       _animController.value = progress;
@@ -2254,12 +2061,6 @@ class _AppDraggableCollapsibleState extends State<AppDraggableCollapsible>
     final expand = velocity < 0 ||
         _currentHeight > (widget.maxHeight + widget.minHeight) / 2;
 
-    if (kDebugMode) {
-      debugPrint('[COLLAPSIBLE] DRAGGABLE $_debugId drag end: '
-          'velocity=$velocity, currentHeight=$_currentHeight, '
-          'expand=$expand, threshold=${(widget.maxHeight + widget.minHeight) / 2}');
-    }
-
     setState(() {
       _isDragging = false;
 
@@ -2286,10 +2087,6 @@ class _AppDraggableCollapsibleState extends State<AppDraggableCollapsible>
 
   @override
   void dispose() {
-    if (kDebugMode) {
-      debugPrint('[COLLAPSIBLE] DRAGGABLE $_debugId disposing');
-    }
-
     if (widget.controller == null) {
       _controller.removeListener(_handleControllerChanged);
       _controller.dispose();
@@ -2302,10 +2099,6 @@ class _AppDraggableCollapsibleState extends State<AppDraggableCollapsible>
   @override
   Widget build(BuildContext context) {
     final theme = widget.theme ?? CollapsibleTheme.fromContext(context);
-    if (kDebugMode) {
-      debugPrint('[COLLAPSIBLE] DRAGGABLE $_debugId building, '
-          'height=$_currentHeight, expanded=${_controller.isExpanded}');
-    }
 
     return GestureDetector(
       onVerticalDragUpdate: _handleDragUpdate,

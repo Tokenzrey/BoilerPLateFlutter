@@ -227,7 +227,6 @@ class AppImage extends StatefulWidget {
 
 class _AppImageState extends State<AppImage> with WidgetsBindingObserver {
   late ImageProvider imageProvider;
-  bool _hasError = false;
 
   @override
   void initState() {
@@ -294,12 +293,19 @@ class _AppImageState extends State<AppImage> with WidgetsBindingObserver {
 
   ImageProvider _createOptimizedProvider(ImageProvider provider) {
     if (widget.width != null && widget.height != null) {
-      return ResizeImage(
-        provider,
-        width: widget.width?.toInt(),
-        height: widget.height?.toInt(),
-        allowUpscaling: false,
-      );
+      final int? safeWidth =
+          widget.width!.isFinite ? widget.width!.toInt() : null;
+      final int? safeHeight =
+          widget.height!.isFinite ? widget.height!.toInt() : null;
+
+      if (safeWidth != null || safeHeight != null) {
+        return ResizeImage(
+          provider,
+          width: safeWidth,
+          height: safeHeight,
+          allowUpscaling: false,
+        );
+      }
     }
     return provider;
   }
@@ -308,63 +314,57 @@ class _AppImageState extends State<AppImage> with WidgetsBindingObserver {
   Widget build(BuildContext context) {
     Widget imageWidget;
 
-    if (_hasError) {
-      imageWidget = _buildErrorWidget();
-    } else {
-      imageWidget = Image(
-        image: imageProvider,
-        fit: widget.fit,
-        width: widget.width,
-        height: widget.height,
-        color: widget.color,
-        colorBlendMode: widget.colorBlendMode,
-        alignment: widget.alignment,
-        excludeFromSemantics: widget.excludeFromSemantics,
-        gaplessPlayback: widget.gaplessPlayback,
-        semanticLabel: widget.semanticLabel,
-        frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
-          if (wasSynchronouslyLoaded || frame != null) {
-            return AnimatedOpacity(
-              opacity: 1.0,
-              duration: widget.fadeInDuration,
-              child: child,
-            );
-          }
-          return widget.loadingWidget ?? _buildLoadingWidget();
-        },
-        errorBuilder: (context, error, stackTrace) {
-          setState(() {
-            _hasError = true;
-          });
-          return _buildErrorWidget();
-        },
-        loadingBuilder: widget.progressiveLoading
-            ? (context, child, loadingProgress) {
-                if (loadingProgress == null) {
-                  return child;
-                }
-                return Stack(
-                  children: [
-                    _buildLoadingWidget(),
-                    if (loadingProgress.expectedTotalBytes != null &&
-                        loadingProgress.cumulativeBytesLoaded > 0)
-                      Positioned.fill(
-                        child: Center(
-                          child: AppCircularProgress(
-                            value: loadingProgress.cumulativeBytesLoaded /
-                                loadingProgress.expectedTotalBytes!,
-                            size: 30,
-                            strokeWidth: 3,
-                            color: Theme.of(context).colorScheme.primary,
-                          ),
+    imageWidget = Image(
+      image: imageProvider,
+      fit: widget.fit,
+      width: widget.width,
+      height: widget.height,
+      color: widget.color,
+      colorBlendMode: widget.colorBlendMode,
+      alignment: widget.alignment,
+      excludeFromSemantics: widget.excludeFromSemantics,
+      gaplessPlayback: widget.gaplessPlayback,
+      semanticLabel: widget.semanticLabel,
+      frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+        if (wasSynchronouslyLoaded || frame != null) {
+          return AnimatedOpacity(
+            opacity: 1.0,
+            duration: widget.fadeInDuration,
+            child: child,
+          );
+        }
+        return widget.loadingWidget ?? _buildLoadingWidget();
+      },
+      errorBuilder: (context, error, stackTrace) {
+        // JANGAN SETSTATE!
+        return _buildErrorWidget();
+      },
+      loadingBuilder: widget.progressiveLoading
+          ? (context, child, loadingProgress) {
+              if (loadingProgress == null) {
+                return child;
+              }
+              return Stack(
+                children: [
+                  _buildLoadingWidget(),
+                  if (loadingProgress.expectedTotalBytes != null &&
+                      loadingProgress.cumulativeBytesLoaded > 0)
+                    Positioned.fill(
+                      child: Center(
+                        child: AppCircularProgress(
+                          value: loadingProgress.cumulativeBytesLoaded /
+                              loadingProgress.expectedTotalBytes!,
+                          size: 30,
+                          strokeWidth: 3,
+                          color: Theme.of(context).colorScheme.primary,
                         ),
                       ),
-                  ],
-                );
-              }
-            : null,
-      );
-    }
+                    ),
+                ],
+              );
+            }
+          : null,
+    );
 
     if (widget.borderRadius != null) {
       imageWidget = ClipRRect(

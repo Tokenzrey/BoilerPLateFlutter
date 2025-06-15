@@ -4,7 +4,6 @@ import 'package:boilerplate/core/stores/form/form_store.dart';
 import 'package:boilerplate/core/widgets/notification.dart';
 import 'package:flutter/foundation.dart';
 import 'package:mobx/mobx.dart';
-
 import 'package:boilerplate/domain/entity/user/user.dart';
 import 'package:boilerplate/domain/usecase/auth_firebase/register_usecase.dart';
 import 'package:boilerplate/domain/usecase/auth_firebase/login_usecase.dart';
@@ -15,6 +14,8 @@ import 'package:boilerplate/domain/usecase/auth_firebase/update_password_usecase
 import 'package:boilerplate/domain/usecase/auth_firebase/get_current_user_usecase.dart';
 import 'package:boilerplate/domain/usecase/auth_firebase/save_user_data_usecase.dart';
 import 'package:boilerplate/domain/usecase/auth_firebase/save_is_logged_in_usecase.dart';
+
+import 'package:boilerplate/di/service_locator.dart';
 
 part 'auth_store.g.dart';
 
@@ -35,8 +36,6 @@ abstract class AuthStoreBase with Store {
     this.errorStore,
   ) {
     _setupDisposers();
-    // Pastikan init NotificationService di main.dart atau di sini
-    _notificationService.init();
     checkLoginStatus();
   }
 
@@ -53,7 +52,7 @@ abstract class AuthStoreBase with Store {
   final FormErrorStore formErrorStore;
   final ErrorStore errorStore;
 
-  final NotificationService _notificationService = NotificationService();
+  final NotificationService _notificationService = getIt<NotificationService>();
 
   late List<ReactionDisposer> _disposers;
 
@@ -92,11 +91,10 @@ abstract class AuthStoreBase with Store {
     errorMessage = message;
     if (message != null && message.isNotEmpty) {
       _notificationService.showNotification(
-        id: DateTime.now()
-            .millisecondsSinceEpoch
-            .remainder(1000000), // Gunakan ID unik
+        id: DateTime.now().millisecondsSinceEpoch.remainder(1000000),
         title: 'Error',
         body: message,
+        channelType: NotificationChannelType.general,
       );
     }
   }
@@ -139,6 +137,7 @@ abstract class AuthStoreBase with Store {
           id: DateTime.now().millisecondsSinceEpoch.remainder(1000000),
           title: 'Registration Successful',
           body: 'Welcome, ${user.fullName}!',
+          channelType: NotificationChannelType.general,
         );
 
         setLoading(false);
@@ -173,6 +172,7 @@ abstract class AuthStoreBase with Store {
           id: DateTime.now().millisecondsSinceEpoch.remainder(1000000),
           title: 'Login Successful',
           body: 'Hello again, ${user.fullName}!',
+          channelType: NotificationChannelType.general,
         );
 
         setLoading(false);
@@ -210,6 +210,7 @@ abstract class AuthStoreBase with Store {
           id: DateTime.now().millisecondsSinceEpoch.remainder(1000000),
           title: 'Profile Updated',
           body: 'Your profile has been updated.',
+          channelType: NotificationChannelType.general,
         );
 
         setLoading(false);
@@ -242,6 +243,7 @@ abstract class AuthStoreBase with Store {
           id: DateTime.now().millisecondsSinceEpoch.remainder(1000000),
           title: 'Password Updated',
           body: 'Your password has been changed successfully.',
+          channelType: NotificationChannelType.general,
         );
 
         setLoading(false);
@@ -275,6 +277,7 @@ abstract class AuthStoreBase with Store {
           id: DateTime.now().millisecondsSinceEpoch.remainder(1000000),
           title: 'Logged Out',
           body: 'You have been logged out.',
+          channelType: NotificationChannelType.general,
         );
 
         setLoading(false);

@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'package:boilerplate/data/local/datasources/auth/auth_firebase_datasource.dart';
+import 'package:boilerplate/data/local/datasources/user/setting_datasource.dart';
+import 'package:boilerplate/data/local/models/settings_model.dart';
 import 'package:boilerplate/domain/repository/user/user_repository.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -63,6 +65,7 @@ class LocalModule {
     await getIt<DatabaseService>().init();
 
     getIt<DatabaseService>().registerAdapter(UserModelAdapter());
+    getIt<DatabaseService>().registerAdapter(SettingsModelAdapter());
   }
 
   static Future<void> _registerDataSources() async {
@@ -83,7 +86,28 @@ class LocalModule {
       }
     }
 
+    Box<SettingsModel>? settingsBox;
+    try {
+      settingsBox =
+          await getIt<DatabaseService>().openBox<SettingsModel>('settings_box');
+    } catch (e) {
+      try {
+        await Hive.deleteBoxFromDisk('settings_box');
+        settingsBox = await getIt<DatabaseService>()
+            .openBox<SettingsModel>('settings_box');
+      } catch (secondError) {
+        final databaseService = getIt<DatabaseService>();
+        if (databaseService is HiveService) {
+          await databaseService
+              .forceRecoveryAndOpen<SettingsModel>('settings_box');
+          settingsBox =
+              await databaseService.openBox<SettingsModel>('settings_box');
+        }
+      }
+    }
+
     getIt.registerLazySingleton(() => UserLocalDataSource(userBox!));
+    getIt.registerLazySingleton(() => SettingLocalDataSource(settingsBox!));
 
     getIt.registerLazySingleton(() => AuthLocalDataSource(
           getIt<FlutterSecureStorage>(),

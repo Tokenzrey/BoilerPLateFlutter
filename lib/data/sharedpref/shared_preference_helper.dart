@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:boilerplate/data/local/models/settings_model.dart';
 import 'package:boilerplate/data/local/models/user_model.dart';
 import 'package:boilerplate/domain/entity/user/user.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -68,6 +69,38 @@ class SharedPreferenceHelper {
     return _sharedPreference.setBool(Preferences.isLoggedIn, value);
   }
 
+  // SETTINGS: ----------------------------------------------------------------
+  // Key untuk settings aktif
+  static const String _currentSettingsKey = 'current_settings';
+
+  /// Menyimpan settings yang sedang dipakai
+  Future<bool> saveCurrentSettings(SettingsModel settings) async {
+    final jsonString = json.encode(settings.toJson());
+    return _sharedPreference.setString(_currentSettingsKey, jsonString);
+  }
+
+  /// Mengambil settings yang sedang dipakai (bisa null jika belum ada)
+  Future<SettingsModel?> getCurrentSettings() async {
+    final jsonString = _sharedPreference.getString(_currentSettingsKey);
+    if (jsonString == null || jsonString.isEmpty) return null;
+    try {
+      final Map<String, dynamic> data = json.decode(jsonString);
+      return SettingsModel.fromJson(data);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// Update settings (overwrite dengan instance baru)
+  Future<bool> updateCurrentSettings(SettingsModel updated) async {
+    return await saveCurrentSettings(updated);
+  }
+
+  /// Hapus settings yang sedang dipakai
+  Future<bool> removeCurrentSettings() async {
+    return _sharedPreference.remove(_currentSettingsKey);
+  }
+
   // Theme:------------------------------------------------------
   bool get isDarkMode {
     return _sharedPreference.getBool(Preferences.isDarkMode) ?? false;
@@ -84,5 +117,62 @@ class SharedPreferenceHelper {
 
   Future<void> changeLanguage(String language) {
     return _sharedPreference.setString(Preferences.currentLanguage, language);
+  }
+
+  // Clear all network cache entries
+  Future<bool> clearNetworkCache() async {
+    final keyPrefix = 'network_cache_';
+    final keys = _sharedPreference.getKeys();
+    bool allSuccess = true;
+
+    for (final key in keys) {
+      if (key.startsWith(keyPrefix)) {
+        final success = await _sharedPreference.remove(key);
+        if (!success) allSuccess = false;
+      }
+    }
+
+    return allSuccess;
+  }
+
+  // Cache:------------------------------------------------------
+  // Get cache usage statistics
+  Future<Map<String, dynamic>> getNetworkCacheStats() async {
+    final keyPrefix = 'network_cache_';
+    final keys = _sharedPreference
+        .getKeys()
+        .where((key) => key.startsWith(keyPrefix))
+        .toList();
+
+    int totalSize = 0;
+    DateTime? oldestEntry;
+    DateTime? newestEntry;
+
+    for (final key in keys) {
+      final value = _sharedPreference.getString(key);
+      if (value != null) {
+        totalSize += value.length;
+
+        try {
+          final json = jsonDecode(value) as Map<String, dynamic>;
+          final createdAt = DateTime.parse(json['createdAt'] as String);
+
+          if (oldestEntry == null || createdAt.isBefore(oldestEntry)) {
+            oldestEntry = createdAt;
+          }
+
+          if (newestEntry == null || createdAt.isAfter(newestEntry)) {
+            newestEntry = createdAt;
+          }
+        } catch (_) {}
+      }
+    }
+
+    return {
+      'entryCount': keys.length,
+      'totalSizeBytes': totalSize,
+      'oldestEntry': oldestEntry?.toIso8601String(),
+      'newestEntry': newestEntry?.toIso8601String(),
+    };
   }
 }

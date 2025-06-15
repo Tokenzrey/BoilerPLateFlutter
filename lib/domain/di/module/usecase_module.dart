@@ -1,8 +1,11 @@
 import 'dart:async';
 
+import 'package:boilerplate/domain/repository/api/home_repository.dart';
 import 'package:boilerplate/domain/repository/auth/auth_firebase_repository.dart';
+import 'package:boilerplate/domain/repository/user/setting_repository.dart';
 import 'package:boilerplate/domain/repository/user/user_repository.dart';
 import 'package:boilerplate/domain/repository/auth/auth_repository.dart';
+import 'package:boilerplate/domain/usecase/api/top_api_usecase.dart';
 import 'package:boilerplate/domain/usecase/auth_firebase/get_current_user_usecase.dart';
 import 'package:boilerplate/domain/usecase/auth_firebase/get_is_logged_in_usecase.dart';
 import 'package:boilerplate/domain/usecase/auth_firebase/login_usecase.dart';
@@ -12,6 +15,12 @@ import 'package:boilerplate/domain/usecase/auth_firebase/save_is_logged_in_useca
 import 'package:boilerplate/domain/usecase/auth_firebase/save_user_data_usecase.dart';
 import 'package:boilerplate/domain/usecase/auth_firebase/update_password_usecase.dart';
 import 'package:boilerplate/domain/usecase/auth_firebase/update_user_usecase.dart';
+import 'package:boilerplate/domain/usecase/settings/delete_setting_db_usecase.dart';
+import 'package:boilerplate/domain/usecase/settings/find_setting_db_usecase.dart';
+import 'package:boilerplate/domain/usecase/settings/get_current_setting_usecase.dart';
+import 'package:boilerplate/domain/usecase/settings/remove_current_setting_usecase.dart';
+import 'package:boilerplate/domain/usecase/settings/save_current_setting_usecase.dart';
+import 'package:boilerplate/domain/usecase/settings/save_setting_db_usecase.dart';
 
 import 'package:boilerplate/domain/usecase/user/is_logged_in_usecase.dart'
     as user;
@@ -124,6 +133,33 @@ class UseCaseModule {
       user.UpdateUserUseCase(
         getIt<UserRepository>(),
         getIt<auth.GetCurrentUserUseCase>(),
+      ),
+    );
+
+    // Settings
+    getIt.registerSingleton<SaveSettingsUseCase>(
+      SaveSettingsUseCase(getIt<SettingsRepository>()),
+    );
+    getIt.registerSingleton<FindSettingsByIdUseCase>(
+      FindSettingsByIdUseCase(getIt<SettingsRepository>()),
+    );
+    getIt.registerSingleton<SaveCurrentSettingsUseCase>(
+      SaveCurrentSettingsUseCase(getIt<SettingsRepository>()),
+    );
+    getIt.registerSingleton<GetCurrentSettingsUseCase>(
+      GetCurrentSettingsUseCase(getIt<SettingsRepository>()),
+    );
+    getIt.registerSingleton<DeleteSettingsByIdUseCase>(
+      DeleteSettingsByIdUseCase(getIt<SettingsRepository>()),
+    );
+    getIt.registerSingleton<RemoveCurrentSettingsUseCase>(
+      RemoveCurrentSettingsUseCase(getIt<SettingsRepository>()),
+    );
+
+    // API
+    getIt.registerSingleton<TopApiUseCase>(
+      TopApiUseCase(
+        getIt<HomeRepository>(),
       ),
     );
   }
