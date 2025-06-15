@@ -439,20 +439,24 @@ class _ProfileTabState extends State<ProfileTab> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  children: [
-                    Icon(
-                      Icons.person_outline,
-                      color: AppColors.primary,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 8),
-                    const AppText(
-                      'Account Information',
-                      variant: TextVariant.titleMedium,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ],
+                Expanded(
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.person_outline,
+                        color: AppColors.primary,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: const AppText(
+                          'Account Information',
+                          variant: TextVariant.titleMedium,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
                 AnimatedSwitcher(
                   duration: const Duration(milliseconds: 300),

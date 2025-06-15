@@ -2,6 +2,7 @@ import 'package:boilerplate/presentation/pages/auth/register/register.dart';
 import 'package:boilerplate/presentation/pages/auth/unauthorized/unauthorized.dart';
 import 'package:boilerplate/presentation/pages/home/home.dart';
 import 'package:boilerplate/presentation/pages/auth/login/login.dart';
+import 'package:boilerplate/presentation/pages/mylist/mylist.dart';
 import 'package:boilerplate/presentation/pages/profile/profile.dart';
 import 'package:boilerplate/presentation/pages/sandbox/sandbox_page.dart';
 import 'package:flutter/material.dart';
@@ -14,6 +15,7 @@ class RoutePaths {
   static const String sandbox = '/sandbox';
   static const String profile = '/profile';
   static const String unauthorized = '/unauthorized';
+  static const String mylist = '/my-list';
 }
 
 class RouteParams {
@@ -82,6 +84,10 @@ class RoutesConfig {
       name: 'profile',
       builder: (context, params) => const ProfileSettingsScreen(),
     ),
+    RouteConfig(
+        path: RoutePaths.mylist,
+        name: 'my-list',
+        builder: (context, params) => const MylistScreen()),
   ];
 
   static final List<RouteConfig> authenticatedRoutes = [
@@ -91,12 +97,6 @@ class RoutesConfig {
       builder: (context, params) => const HomeScreen(),
       requiresAuth: true,
     ),
-    // RouteConfig(
-    //   path: RoutePaths.profile,
-    //   name: 'profile',
-    //   builder: (context, params) => const ProfileScreen(),
-    //   requiresAuth: true,
-    // ),
   ];
 
   static List<RouteConfig> get allRoutes => [
