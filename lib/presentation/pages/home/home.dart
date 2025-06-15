@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:boilerplate/core/widgets/components/overlay/drawer.dart';
+import 'package:boilerplate/core/widgets/navbar/navigation.dart';
 import 'package:boilerplate/di/service_locator.dart';
 import 'package:boilerplate/domain/entity/user/setting.dart';
 import 'package:boilerplate/presentation/store/settings/settings_store.dart';
@@ -10,7 +11,6 @@ import 'package:boilerplate/core/widgets/components/display/comic_card.dart';
 import 'package:boilerplate/core/widgets/components/typography.dart';
 import 'package:boilerplate/core/widgets/components/overlay/refresh_trigger.dart';
 import 'package:boilerplate/presentation/pages/home/content_constant.dart';
-import 'package:go_router/go_router.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -220,10 +220,9 @@ class _HomeScreenState extends State<HomeScreen> {
         body: Center(child: CircularProgressIndicator()),
       );
     }
-    return Scaffold(
+    return ScaffoldWithNavBar(
       backgroundColor: AppColors.background,
-      floatingActionButton: _buildSandboxFab(),
-      body: SafeArea(
+      child: SafeArea(
         child: RefreshTrigger(
           key: _refreshTriggerKey,
           minExtent: 200,
@@ -231,7 +230,7 @@ class _HomeScreenState extends State<HomeScreen> {
           onRefresh: _refreshContent,
           child: SingleChildScrollView(
             controller: _mainScrollController,
-            padding: const EdgeInsets.only(bottom: 24.0),
+            padding: const EdgeInsets.symmetric(vertical: 64.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -844,24 +843,6 @@ class _HomeScreenState extends State<HomeScreen> {
       padding: const EdgeInsets.symmetric(vertical: 16),
       alignment: Alignment.center,
       child: const CircularProgressIndicator(),
-    );
-  }
-
-  Widget _buildSandboxFab() {
-    return FloatingActionButton.extended(
-      onPressed: () => context.push('/sandbox'),
-      backgroundColor: AppColors.primary,
-      foregroundColor: AppColors.primaryForeground,
-      elevation: 4,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
-      icon: const Icon(Icons.science_outlined),
-      label: const AppText(
-        'API Sandbox',
-        variant: TextVariant.labelLarge,
-        fontWeight: FontWeight.w600,
-      ),
     );
   }
 

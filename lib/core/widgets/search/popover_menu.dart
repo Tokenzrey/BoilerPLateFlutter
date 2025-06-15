@@ -1,3 +1,4 @@
+import 'package:boilerplate/utils/routes/routes.dart';
 import 'package:flutter/material.dart';
 import 'package:boilerplate/constants/colors.dart';
 import 'package:boilerplate/core/widgets/components/overlay/overlay.dart';
@@ -45,11 +46,23 @@ class PopoverMenu extends StatelessWidget {
               label: 'Profile',
               desc: 'View and edit your profile',
               onTap: () {
+                context.push('/profile');
                 closeOverlay(context, 'Profile');
                 onProfilePressed?.call();
               },
             ),
             const SizedBox(height: 10),
+            _menuItem(
+              context,
+              icon: Icons.science_outlined,
+              label: 'Sandbox',
+              desc: 'Sandbox Component',
+              danger: true,
+              onTap: () {
+                context.push('/sandbox');
+                closeOverlay(context, 'Sandbox');
+              },
+            ),
             _menuItem(
               context,
               icon: Icons.logout_rounded,
