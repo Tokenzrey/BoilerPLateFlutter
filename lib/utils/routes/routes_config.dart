@@ -5,7 +5,6 @@ import 'package:boilerplate/presentation/pages/auth/login/login.dart';
 import 'package:boilerplate/presentation/pages/mylist/mylist.dart';
 import 'package:boilerplate/presentation/pages/profile/profile.dart';
 import 'package:boilerplate/presentation/pages/sandbox/sandbox_page.dart';
-import 'package:boilerplate/presentation/pages/users/profile_settings.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
