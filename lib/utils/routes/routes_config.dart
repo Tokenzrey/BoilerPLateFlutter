@@ -4,7 +4,6 @@ import 'package:boilerplate/presentation/pages/home/home.dart';
 import 'package:boilerplate/presentation/pages/auth/login/login.dart';
 import 'package:boilerplate/presentation/pages/mylist/mylist.dart';
 import 'package:boilerplate/presentation/pages/profile/profile.dart';
-import 'package:boilerplate/presentation/pages/mylist/mylist.dart';
 import 'package:boilerplate/presentation/pages/sandbox/sandbox_page.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -86,10 +85,9 @@ class RoutesConfig {
       builder: (context, params) => const ProfileSettingsScreen(),
     ),
     RouteConfig(
-      path: RoutePaths.mylist,
-      name: 'my-list',
-      builder: (context, params) => const MylistScreen()
-    ),
+        path: RoutePaths.mylist,
+        name: 'my-list',
+        builder: (context, params) => const MylistScreen()),
   ];
 
   static final List<RouteConfig> authenticatedRoutes = [
