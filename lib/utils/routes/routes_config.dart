@@ -1,5 +1,6 @@
 import 'package:boilerplate/presentation/pages/auth/register/register.dart';
 import 'package:boilerplate/presentation/pages/auth/unauthorized/unauthorized.dart';
+import 'package:boilerplate/presentation/pages/comick_detail/comick_detail.dart';
 import 'package:boilerplate/presentation/pages/home/home.dart';
 import 'package:boilerplate/presentation/pages/auth/login/login.dart';
 import 'package:boilerplate/presentation/pages/mylist/mylist.dart';
@@ -16,6 +17,7 @@ class RoutePaths {
   static const String profile = '/profile';
   static const String unauthorized = '/unauthorized';
   static const String mylist = '/my-list';
+  static const String comicDetail = '/comicDetail/:comicId';
 }
 
 class RouteParams {
@@ -88,6 +90,14 @@ class RoutesConfig {
         path: RoutePaths.mylist,
         name: 'my-list',
         builder: (context, params) => const MylistScreen()),
+    RouteConfig(
+      path: RoutePaths.comicDetail,
+      name: 'comicDetail',
+      builder: (context, params) {
+        final comicId = params.pathParams['comicId'] ?? '1';
+        return ComicDetailScreen(comicId: comicId);
+      },
+    )
   ];
 
   static final List<RouteConfig> authenticatedRoutes = [
