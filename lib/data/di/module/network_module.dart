@@ -1,4 +1,5 @@
 import 'package:boilerplate/core/logging/logger.dart';
+import 'package:boilerplate/data/network/api/chapter_top_service.dart';
 import 'package:boilerplate/data/network/api/top_api_service.dart';
 import 'package:boilerplate/data/network/dio/configs/dio_configs.dart';
 import 'package:boilerplate/data/network/dio/configs/environment.dart';
@@ -148,6 +149,9 @@ class NetworkModule {
     // Register your API services here
     getIt.registerSingleton<TopApiService>(
       TopApiService(getIt<DioClient>()),
+    );
+    getIt.registerSingleton<ChapterApiService>(
+      ChapterApiService(getIt<DioClient>()),
     );
   }
 }
