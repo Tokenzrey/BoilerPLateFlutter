@@ -1,7 +1,13 @@
+import 'package:boilerplate/data/sharedpref/constants/preferences.dart';
+import 'package:boilerplate/di/service_locator.dart';
+import 'package:boilerplate/presentation/store/auth_firebase/auth_store.dart';
+import 'package:boilerplate/utils/hoc/check_auth.dart';
 import 'package:boilerplate/utils/routes/routes.dart';
+import 'package:boilerplate/utils/routes/routes_config.dart';
 import 'package:flutter/material.dart';
 import 'package:boilerplate/constants/colors.dart';
 import 'package:boilerplate/core/widgets/components/overlay/overlay.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class PopoverMenu extends StatelessWidget {
   final VoidCallback? onProfilePressed;
@@ -16,6 +22,9 @@ class PopoverMenu extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final borderRadius = BorderRadius.circular(24);
+    // Get AuthStore instance from service locator
+    final AuthStore authStore = getIt<AuthStore>();
+
     return Material(
       type: MaterialType.transparency,
       child: Container(
@@ -63,17 +72,40 @@ class PopoverMenu extends StatelessWidget {
                 closeOverlay(context, 'Sandbox');
               },
             ),
-            _menuItem(
-              context,
-              icon: Icons.logout_rounded,
-              label: 'Sign Out',
-              desc: 'Log out from this account',
-              danger: true,
-              onTap: () {
-                closeOverlay(context, 'Signout');
-                onSignoutPressed?.call();
-              },
+            AuthWidget(
+              // Show Sign In option when user is not authenticated
+              noAuthBuilder: (context) => _menuItem(
+                context,
+                icon: Icons.login_rounded,
+                label: 'Sign In',
+                desc: 'Sign in to your account',
+                danger: false,
+                onTap: () {
+                  context.push('/login');
+                  closeOverlay(context, 'SignIn');
+                },
+              ),
+              // Show Sign Out option when user is authenticated
+              child: _menuItem(
+                context,
+                icon: Icons.logout_rounded,
+                label: 'Sign Out',
+                desc: 'Log out from this account',
+                danger: true,
+                onTap: () {
+                  SharedPreferences.getInstance().then((preference) {
+                    preference.setBool(Preferences.isLoggedIn, false);
+                    authStore.logout();
+                    if (context.mounted) {
+                      context.go(RoutePaths.unauthorized);
+                    }
+                  });
+                  closeOverlay(context, 'Signout');
+                  onSignoutPressed?.call();
+                },
+              ),
             ),
+            // Removed duplicate Sign Out menu item
           ],
         ),
       ),

@@ -5,6 +5,7 @@ import 'package:boilerplate/domain/repository/auth/auth_firebase_repository.dart
 import 'package:boilerplate/domain/repository/user/setting_repository.dart';
 import 'package:boilerplate/domain/repository/user/user_repository.dart';
 import 'package:boilerplate/domain/repository/auth/auth_repository.dart';
+import 'package:boilerplate/domain/usecase/api/chapter_top_usecase.dart';
 import 'package:boilerplate/domain/usecase/api/top_api_usecase.dart';
 import 'package:boilerplate/domain/usecase/auth_firebase/get_current_user_usecase.dart';
 import 'package:boilerplate/domain/usecase/auth_firebase/get_is_logged_in_usecase.dart';
@@ -159,6 +160,11 @@ class UseCaseModule {
     // API
     getIt.registerSingleton<TopApiUseCase>(
       TopApiUseCase(
+        getIt<HomeRepository>(),
+      ),
+    );
+    getIt.registerSingleton<LatestChaptersUseCase>(
+      LatestChaptersUseCase(
         getIt<HomeRepository>(),
       ),
     );

@@ -5,6 +5,7 @@ import 'package:boilerplate/data/local/datasources/auth/auth_datasource.dart';
 import 'package:boilerplate/data/local/datasources/auth/auth_firebase_datasource.dart';
 import 'package:boilerplate/data/local/datasources/user/setting_datasource.dart';
 import 'package:boilerplate/data/local/datasources/user/user_datasource.dart';
+import 'package:boilerplate/data/network/api/chapter_top_service.dart';
 import 'package:boilerplate/data/network/api/top_api_service.dart';
 import 'package:boilerplate/data/repository/api/home_impl.dart';
 import 'package:boilerplate/data/repository/auth/auth_firebase_repository_impl.dart';
@@ -52,6 +53,7 @@ class RepositoryModule {
 
     getIt.registerLazySingleton<HomeRepository>(
       () => HomeRepositoryImpl(
+        chapterApiService: getIt<ChapterApiService>(),
         topApiService: getIt<TopApiService>(),
       ),
     );

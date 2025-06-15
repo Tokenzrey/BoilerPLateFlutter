@@ -31,6 +31,23 @@ extension ComicTypeX on ComicType {
 class TopApiService extends BaseApi {
   TopApiService(super.client);
 
+  String buildQuery(Map<String, dynamic> params) {
+    final buffer = StringBuffer();
+    params.forEach((key, value) {
+      if (value == null) return;
+      if (value is List) {
+        for (final v in value) {
+          buffer.write(
+              '&${Uri.encodeQueryComponent(key)}=${Uri.encodeQueryComponent('$v')}');
+        }
+      } else {
+        buffer.write(
+            '&${Uri.encodeQueryComponent(key)}=${Uri.encodeQueryComponent('$value')}');
+      }
+    });
+    return buffer.toString();
+  }
+
   Future<ResponseWrapper<TopResponseModel>> getTop({
     TopGender? gender,
     TopDay? day,
@@ -43,16 +60,23 @@ class TopApiService extends BaseApi {
     if (gender != null) q['gender'] = gender.value;
     if (day != null) q['day'] = day.value;
     if (type != null) q['type'] = type.value;
-    if (comicTypes != null && comicTypes.isNotEmpty) {
-      q['comic_types'] = comicTypes.map((e) => e.value).toList();
-    }
     if (acceptMatureContent != null) {
-      q['mature_content'] = acceptMatureContent ? 1 : 0;
+      q['accept_mature_content'] = acceptMatureContent ? 'true' : 'false';
     }
 
+    String comicTypesQuery = '';
+    if (comicTypes != null && comicTypes.isNotEmpty) {
+      comicTypesQuery = comicTypes
+          .map((e) => '&comic_types=${Uri.encodeQueryComponent(e.value)}')
+          .join('');
+    }
+
+    final queryString = buildQuery(q) + comicTypesQuery;
+    final url =
+        '/top?${queryString.isNotEmpty ? queryString.substring(1) : ''}';
+
     return safeGet<TopResponseModel>(
-      '/top',
-      queryParams: q.isEmpty ? null : q,
+      url,
       mapper: (data) {
         if (data == null) return TopResponseModel.empty();
         if (data is Map<String, dynamic>) {

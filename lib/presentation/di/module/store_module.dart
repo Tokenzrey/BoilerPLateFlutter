@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:boilerplate/core/stores/error/error_store.dart';
 import 'package:boilerplate/core/stores/form/form_store.dart';
 import 'package:boilerplate/domain/repository/setting/setting_repository.dart';
+import 'package:boilerplate/domain/usecase/api/chapter_top_usecase.dart';
 import 'package:boilerplate/domain/usecase/api/top_api_usecase.dart';
 
 import 'package:boilerplate/domain/usecase/auth_firebase/register_usecase.dart';
@@ -70,11 +71,7 @@ class StoreModule {
         getIt<ErrorStore>(),
       ),
     );
-    getIt.registerSingleton<HomeStore>(
-      HomeStore(
-        getIt<TopApiUseCase>(),
-      ),
-    );
+
     getIt.registerSingleton<SettingsStore>(
       SettingsStore(
         authStore: getIt<AuthStore>(),
@@ -84,6 +81,14 @@ class StoreModule {
         saveCurrentSettingsUseCase: getIt<SaveCurrentSettingsUseCase>(),
         deleteByIdUseCase: getIt<DeleteSettingsByIdUseCase>(),
         removeCurrentSettingsUseCase: getIt<RemoveCurrentSettingsUseCase>(),
+      ),
+    );
+
+    getIt.registerSingleton<HomeStore>(
+      HomeStore(
+        getIt<TopApiUseCase>(),
+        getIt<LatestChaptersUseCase>(),
+        getIt<SettingsStore>(),
       ),
     );
   }
