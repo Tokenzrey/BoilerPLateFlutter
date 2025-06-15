@@ -17,6 +17,7 @@ import 'package:boilerplate/presentation/pages/sandbox/refresh_trigger_sandbox.d
 import 'package:boilerplate/presentation/pages/sandbox/toast_sandbox.dart';
 import 'package:boilerplate/presentation/pages/sandbox/typography_sandbox.dart';
 import 'package:boilerplate/presentation/pages/sandbox/form_sandbox.dart';
+import 'package:boilerplate/presentation/pages/sandbox/appbar_sandbox.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -57,6 +58,7 @@ class _SandboxScreenState extends State<SandboxScreen> {
     'Notification',
     'Auth',
     'API',
+    'Navbar',
   ];
 
   @override
@@ -160,6 +162,8 @@ class _SandboxScreenState extends State<SandboxScreen> {
         return const AuthSandbox();
       case 'API':
         return const ApiSandbox();
+      case 'Navbar':
+        return const AppbarSandbox();
       default:
         return Center(
           child: Text('Component "$_selectedComponent" not implemented yet'),

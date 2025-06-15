@@ -1,5 +1,4 @@
-import 'package:boilerplate/core/widgets/navbar/bottom_navbar.dart';
-import 'package:boilerplate/core/widgets/navbar/top_navbar.dart';
+import 'package:boilerplate/core/widgets/navbar/navigation.dart';
 import 'package:flutter/material.dart';
 
 class AppbarSandbox extends StatefulWidget {
@@ -20,48 +19,24 @@ class _AppbarSandboxState extends State<AppbarSandbox> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-
-      
-      extendBody: true,
-      extendBodyBehindAppBar: true,
-      appBar: TopNavbar(),
-      bottomNavigationBar: BottomNavbar(
-        isVisibleNotifier: _navbarVisibleNotifier, 
-        selectedItem: NavbarItem.home, 
-        onItemSelected: (value) {},
-      ),
-      body: NotificationListener<ScrollNotification>(
-        onNotification: (notification) {
-          if (notification is ScrollUpdateNotification && _navbarVisibleNotifier.value) {
-              _navbarVisibleNotifier.value = false;
-          }
-          return true;
+    return ScaffoldWithNavBar(
+      child: ListView.separated(
+        padding: const EdgeInsets.only(top: 100, bottom: 90),
+        itemCount: 30,
+        separatorBuilder: (_, __) => const Divider(height: 0),
+        itemBuilder: (context, i) {
+          return ListTile(
+            leading: CircleAvatar(
+              backgroundColor: Colors.blueGrey.shade200,
+              child: Text('${i + 1}'),
+            ),
+            title: Text('Item ${i + 1}'),
+            subtitle: const Text(
+                'Scroll up/down to see navbar animation.\nTap anywhere to toggle TopNavbar.'),
+            trailing: const Icon(Icons.chevron_right_rounded),
+            onTap: () {},
+          );
         },
-        child: GestureDetector(
-          behavior: HitTestBehavior.translucent,
-          onTap: () {
-            if (!_navbarVisibleNotifier.value) {
-                _navbarVisibleNotifier.value = true;
-            }
-          },
-
-
-
-
-          child: ListView(
-            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-            children: [
-              const SizedBox(height: 1000),
-              Container(
-                height: 200,
-                decoration: BoxDecoration(
-                  color: Colors.blue
-                ),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }
