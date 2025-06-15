@@ -2,7 +2,7 @@ import 'package:boilerplate/presentation/pages/auth/register/register.dart';
 import 'package:boilerplate/presentation/pages/auth/unauthorized/unauthorized.dart';
 import 'package:boilerplate/presentation/pages/home/home.dart';
 import 'package:boilerplate/presentation/pages/auth/login/login.dart';
-import 'package:boilerplate/presentation/pages/mylist/mylist.dart';
+import 'package:boilerplate/presentation/pages/users/list.dart';
 import 'package:boilerplate/presentation/pages/profile/profile.dart';
 import 'package:boilerplate/presentation/pages/sandbox/sandbox_page.dart';
 import 'package:flutter/material.dart';
