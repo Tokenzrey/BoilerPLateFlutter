@@ -1,5 +1,5 @@
 import 'package:boilerplate/presentation/pages/sandbox/animation_sandbox.dart';
-import 'package:boilerplate/presentation/pages/sandbox/api_sandbox.dart';
+// import 'package:boilerplate/presentation/pages/sandbox/api_sandbox.dart';
 import 'package:boilerplate/presentation/pages/sandbox/breadcrumb_sandbox.dart';
 import 'package:boilerplate/presentation/pages/sandbox/button_sandbox.dart';
 import 'package:boilerplate/presentation/pages/sandbox/check_auth_sandbox.dart';
@@ -161,7 +161,7 @@ class _SandboxScreenState extends State<SandboxScreen> {
       case 'Auth':
         return const AuthSandbox();
       case 'API':
-        return const ApiSandbox();
+        return const AuthSandbox();
       case 'Navbar':
         return const AppbarSandbox();
       default:

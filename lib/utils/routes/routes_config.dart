@@ -97,17 +97,15 @@ class RoutesConfig {
         final comicId = params.pathParams['comicId'] ?? '1';
         return ComicDetailScreen(comicId: comicId);
       },
-    )
-  ];
-
-  static final List<RouteConfig> authenticatedRoutes = [
+    ),
     RouteConfig(
       path: RoutePaths.home,
       name: 'home',
       builder: (context, params) => const HomeScreen(),
-      requiresAuth: true,
     ),
   ];
+
+  static final List<RouteConfig> authenticatedRoutes = [];
 
   static List<RouteConfig> get allRoutes => [
         ...publicRoutes,
