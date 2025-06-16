@@ -1,5 +1,3 @@
-// ignore_for_file: use_build_context_synchronously
-
 import 'package:boilerplate/constants/colors.dart';
 import 'package:boilerplate/core/widgets/components/typography.dart';
 import 'package:boilerplate/core/widgets/components/forms/app_form.dart';
@@ -7,6 +5,7 @@ import 'package:boilerplate/core/widgets/components/forms/input.dart';
 import 'package:boilerplate/core/widgets/components/display/button.dart';
 import 'package:boilerplate/presentation/store/auth_firebase/auth_store.dart';
 import 'package:boilerplate/utils/device/device_utils.dart';
+import 'package:boilerplate/utils/routes/routes.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_mobx/flutter_mobx.dart';
 import '../../../../di/service_locator.dart';
@@ -63,7 +62,27 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      // Remove AppBar completely
+      appBar: AppBar(
+        backgroundColor: AppColors.background,
+        elevation: 0,
+        automaticallyImplyLeading: false,
+        title: Row(
+          children: [
+            Button(
+              leftIcon: Icons.arrow_back,
+              iconOnly: true,
+              density: ButtonDensity.icon,
+              variant: ButtonVariant.ghost,
+              colors: ButtonColors(
+                text: AppColors.neutral[200],
+              ),
+              onPressed: () {
+                context.go('/home');
+              },
+            ),
+          ],
+        ),
+      ),
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
@@ -90,18 +109,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         const SizedBox(height: 24),
-        // Back button at the top left
-        Align(
-          alignment: Alignment.centerLeft,
-          child: IconButton(
-            icon: const Icon(Icons.arrow_back, color: AppColors.neutral),
-            onPressed: () => Navigator.of(context).pop(),
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(),
-            iconSize: 24,
-          ),
-        ),
-        const SizedBox(height: 16),
         // Logo placeholder
         Image.asset(
           'assets/icons/ic_app.png',

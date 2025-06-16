@@ -12,7 +12,8 @@ class AuthFirebaseDataSource {
   });
 
   Future<FirebaseUserModel> register(
-      String email, String password, String username, String fullName) async {
+      String email, String password, String username, String fullName,
+      {String avatar = "0"}) async {
     try {
       final usernameDoc = await firestore
           .collection('usernames')
@@ -38,6 +39,7 @@ class AuthFirebaseDataSource {
         'fullName': fullName,
         'createdAt': Timestamp.fromDate(now),
         'roles': ['user'],
+        'avatar': avatar,
       };
 
       await firestore
@@ -83,7 +85,7 @@ class AuthFirebaseDataSource {
   }
 
   Future<FirebaseUserModel> updateUserData(
-      String fullName, String username, String? photoUrl) async {
+      String fullName, String username, String avatar) async {
     try {
       final user = firebaseAuth.currentUser;
       if (user == null) {
@@ -122,15 +124,11 @@ class AuthFirebaseDataSource {
 
       await user.updateDisplayName(fullName);
 
-      if (photoUrl != null) {
-        await user.updatePhotoURL(photoUrl);
-      }
-
       await firestore.collection('users').doc(user.uid).update({
         'fullName': fullName,
         'username': username,
         'updatedAt': Timestamp.now(),
-        if (photoUrl != null) 'photoUrl': photoUrl,
+        'avatar': avatar,
       });
 
       await user.reload();
@@ -165,6 +163,83 @@ class AuthFirebaseDataSource {
     }
   }
 
+  Future<void> deleteAccount(String password) async {
+    try {
+      final user = firebaseAuth.currentUser;
+      if (user == null || user.email == null) {
+        throw Exception('No authenticated user found or user has no email');
+      }
+
+      // Re-authenticate user before deletion
+      final credential = firebase_auth.EmailAuthProvider.credential(
+        email: user.email!,
+        password: password,
+      );
+      await user.reauthenticateWithCredential(credential);
+
+      // Get user data to find username
+      final userDoc = await firestore.collection('users').doc(user.uid).get();
+      final userData = userDoc.data();
+      final username = userData?['username'] as String?;
+
+      // Perform batch delete operations
+      final batch = firestore.batch();
+
+      // Delete user document
+      batch.delete(firestore.collection('users').doc(user.uid));
+
+      // Delete username entry if it exists
+      if (username != null) {
+        batch.delete(
+            firestore.collection('usernames').doc(username.toLowerCase()));
+      }
+
+      // Execute batch operations
+      await batch.commit();
+
+      // Finally delete the Firebase Auth user
+      await user.delete();
+    } catch (e) {
+      throw Exception('Account deletion failed: ${e.toString()}');
+    }
+  }
+
+  Future<void> deleteAccountById(String uid) async {
+    try {
+      // This method would be used by admins to delete other user accounts
+      // Check if the document exists first
+      final userDoc = await firestore.collection('users').doc(uid).get();
+
+      if (!userDoc.exists) {
+        throw Exception('User not found');
+      }
+
+      final userData = userDoc.data();
+      final username = userData?['username'] as String?;
+
+      // Perform batch delete operations
+      final batch = firestore.batch();
+
+      // Delete user document
+      batch.delete(firestore.collection('users').doc(uid));
+
+      // Delete username entry if it exists
+      if (username != null) {
+        batch.delete(
+            firestore.collection('usernames').doc(username.toLowerCase()));
+      }
+
+      // Execute batch operations
+      await batch.commit();
+
+      // Delete the Firebase Auth user
+      // Note: This requires admin SDK and cannot be done directly from client-side
+      // You would need a Firebase Cloud Function or a backend server for this
+    } catch (e) {
+      throw Exception('Account deletion failed: ${e.toString()}');
+    }
+  }
+
   Future<void> logout() async {
     try {
       await firebaseAuth.signOut();
@@ -181,13 +256,4 @@ class AuthFirebaseDataSource {
     }
     return null;
   }
-
-  // Future<FirebaseUserModel?> getCompleteCurrentUser() async {
-  //   final user = firebaseAuth.currentUser;
-  //   if (user != null) {
-  //     final userDoc = await firestore.collection('users').doc(user.uid).get();
-  //     return FirebaseUserModel.fromFirebase(user, userDoc.data());
-  //   }
-  //   return null;
-  // }
 }

@@ -216,3 +216,4 @@ codemagic.yaml.tmp
 
 # WASM
 *.wasm
+.vscode/templates

@@ -14,6 +14,7 @@ import 'package:boilerplate/domain/usecase/auth_firebase/update_password_usecase
 import 'package:boilerplate/domain/usecase/auth_firebase/get_current_user_usecase.dart';
 import 'package:boilerplate/domain/usecase/auth_firebase/save_user_data_usecase.dart';
 import 'package:boilerplate/domain/usecase/auth_firebase/save_is_logged_in_usecase.dart';
+import 'package:boilerplate/domain/usecase/auth_firebase/delete_account_usecase.dart';
 
 import 'package:boilerplate/di/service_locator.dart';
 
@@ -32,6 +33,8 @@ abstract class AuthStoreBase with Store {
     this._getCurrentUserUseCase,
     this._saveUserDataUseCase,
     this._saveLoginStatusUseCase,
+    this._deleteAccountUseCase,
+    this._deleteAccountByIdUseCase,
     this.formErrorStore,
     this.errorStore,
   ) {
@@ -48,6 +51,8 @@ abstract class AuthStoreBase with Store {
   final GetCurrentUserUseCase _getCurrentUserUseCase;
   final SaveUserDataUseCase _saveUserDataUseCase;
   final SaveLoginStatusUseCase _saveLoginStatusUseCase;
+  final DeleteAccountUseCase _deleteAccountUseCase;
+  final DeleteAccountByIdUseCase _deleteAccountByIdUseCase;
 
   final FormErrorStore formErrorStore;
   final ErrorStore errorStore;
@@ -106,7 +111,8 @@ abstract class AuthStoreBase with Store {
 
   @action
   Future<bool> register(
-      String email, String password, String username, String fullName) async {
+      String email, String password, String username, String fullName,
+      {String avatar = "0"}) async {
     setLoading(true);
     setErrorMessage(null);
 
@@ -183,14 +189,14 @@ abstract class AuthStoreBase with Store {
 
   @action
   Future<bool> updateUserData(
-      String fullName, String username, String? photoUrl) async {
+      String fullName, String username, String avatar) async {
     setLoading(true);
     setErrorMessage(null);
 
     final params = UpdateUserDataParams(
       fullName: fullName,
       username: username,
-      photoUrl: photoUrl,
+      avatar: avatar,
     );
 
     final result = await _updateUserDataUseCase(params);
@@ -243,6 +249,69 @@ abstract class AuthStoreBase with Store {
           id: DateTime.now().millisecondsSinceEpoch.remainder(1000000),
           title: 'Password Updated',
           body: 'Your password has been changed successfully.',
+          channelType: NotificationChannelType.general,
+        );
+
+        setLoading(false);
+        return true;
+      },
+    );
+  }
+
+  @action
+  Future<bool> deleteAccount(String password) async {
+    setLoading(true);
+    setErrorMessage(null);
+
+    final params = DeleteAccountParams(password: password);
+    final result = await _deleteAccountUseCase(params);
+
+    return await result.fold(
+      (failure) async {
+        setErrorMessage(failure.message);
+        setLoading(false);
+        return false;
+      },
+      (_) async {
+        setCurrentUser(null);
+        setLoggedIn(false);
+
+        await _saveLoginStatusUseCase(
+            const SaveLoginStatusParams(isLoggedIn: false));
+        await _saveUserDataUseCase(const SaveUserDataParams(userData: null));
+
+        _notificationService.showNotification(
+          id: DateTime.now().millisecondsSinceEpoch.remainder(1000000),
+          title: 'Account Deleted',
+          body: 'Your account has been permanently deleted.',
+          channelType: NotificationChannelType.general,
+        );
+
+        setLoading(false);
+        return true;
+      },
+    );
+  }
+
+  @action
+  Future<bool> deleteAccountById(String uid) async {
+    setLoading(true);
+    setErrorMessage(null);
+
+    final params = DeleteAccountByIdParams(uid: uid);
+    final result = await _deleteAccountByIdUseCase(params);
+
+    return await result.fold(
+      (failure) async {
+        setErrorMessage(failure.message);
+        setLoading(false);
+        return false;
+      },
+      (_) async {
+        _notificationService.showNotification(
+          id: DateTime.now().millisecondsSinceEpoch.remainder(1000000),
+          title: 'Account Deleted',
+          body: 'The user account has been permanently deleted.',
           channelType: NotificationChannelType.general,
         );
 

@@ -2,6 +2,8 @@ import 'package:boilerplate/core/widgets/components/layout/collapsible.dart';
 import 'package:boilerplate/core/widgets/components/overlay/confirmation_dialog.dart';
 import 'package:boilerplate/core/widgets/components/overlay/popover.dart';
 import 'package:boilerplate/core/widgets/components/overlay/toast.dart';
+import 'package:boilerplate/di/service_locator.dart';
+import 'package:boilerplate/presentation/store/auth_firebase/auth_store.dart';
 import 'package:boilerplate/utils/routes/routes.dart';
 import 'package:flutter/material.dart' hide showDialog;
 import 'package:boilerplate/constants/colors.dart';
@@ -16,12 +18,16 @@ import 'package:boilerplate/presentation/pages/profile/avatar_picker_dialog.dart
 class UserProfileData {
   final String id;
   String username;
-  String email;
+  final String email;
+  String fullName;
+  String avatar;
 
   UserProfileData({
     required this.id,
     required this.username,
     required this.email,
+    required this.fullName,
+    required this.avatar,
   });
 
   factory UserProfileData.fromJson(Map<String, dynamic> json) {
@@ -29,6 +35,8 @@ class UserProfileData {
       id: json['id'] as String? ?? '',
       username: json['username'] as String? ?? '',
       email: json['email'] as String? ?? '',
+      fullName: json['fullName'] as String? ?? '',
+      avatar: json['avatar'] as String? ?? 'assets/images/avatar/avatar1.png',
     );
   }
 
@@ -37,6 +45,8 @@ class UserProfileData {
       'id': id,
       'username': username,
       'email': email,
+      'fullName': fullName,
+      'avatar': avatar,
     };
   }
 }
@@ -71,20 +81,24 @@ class PasswordData {
 
 class DeleteAccountData {
   String confirmationId;
+  String password;
 
   DeleteAccountData({
     this.confirmationId = '',
+    this.password = '',
   });
 
   factory DeleteAccountData.fromJson(Map<String, dynamic> json) {
     return DeleteAccountData(
       confirmationId: json['confirmationId'] as String? ?? '',
+      password: json['password'] as String? ?? '',
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
       'confirmationId': confirmationId,
+      'password': password,
     };
   }
 }
@@ -115,21 +129,27 @@ class ProfileTab extends StatefulWidget {
 }
 
 class _ProfileTabState extends State<ProfileTab> {
-  String _selectedAvatar = 'assets/images/avatar/avatar1.png';
   late FormController<UserProfileData> _formController;
   late FormController<PasswordData> _passwordFormController;
   late FormController<DeleteAccountData> _deleteAccountFormController;
   bool _isEditing = false;
 
+  // Get auth store instance
+  final AuthStore _authStore = getIt<AuthStore>();
+
   @override
   void initState() {
     super.initState();
 
+    final user = _authStore.currentUser;
+
     _formController = FormController<UserProfileData>(
       defaultValues: UserProfileData(
-        id: 'abc-123-xyz-456',
-        username: 'TOKENZREY',
-        email: 'tokenzrey@gmail.com',
+        id: user?.id ?? '',
+        username: user?.username ?? '',
+        email: user?.email ?? '',
+        fullName: user?.fullName ?? '',
+        avatar: user?.avatar ?? "0",
       ),
       fromJson: UserProfileData.fromJson,
       toJson: (data) => data.toJson(),
@@ -159,20 +179,100 @@ class _ProfileTabState extends State<ProfileTab> {
     super.dispose();
   }
 
+  // Method to get avatar asset path from avatar ID
+  String _getAvatarPath(String avatarId) {
+    // Map avatar IDs to asset paths
+    final Map<String, String> avatarMap = {
+      "1": "assets/images/avatar/avatar1.png",
+      "2": "assets/images/avatar/avatar2.png",
+      "3": "assets/images/avatar/avatar3.png",
+      "4": "assets/images/avatar/avatar4.png",
+      "5": "assets/images/avatar/avatar5.png",
+      "6": "assets/images/avatar/avatar6.png",
+      "7": "assets/images/avatar/avatar7.png",
+      "8": "assets/images/avatar/avatar8.png",
+      "9": "assets/images/avatar/avatar9.png",
+      "10": "assets/images/avatar/avatar10.png",
+      "11": "assets/images/avatar/avatar11.png",
+      "12": "assets/images/avatar/avatar12.png",
+      "13": "assets/images/avatar/avatar13.png",
+      "14": "assets/images/avatar/avatar14.png",
+      "15": "assets/images/avatar/avatar15.png",
+    };
+
+    return avatarMap[avatarId] ?? "assets/images/avatar/avatar1.png";
+  }
+
+  // Method to convert asset path to avatar ID
+  String _getAvatarId(String assetPath) {
+    // Map asset paths to avatar IDs
+    final Map<String, String> reverseAvatarMap = {
+      "assets/images/avatar/avatar2.png": "1",
+      "assets/images/avatar/avatar3.png": "2",
+      "assets/images/avatar/avatar4.png": "3",
+      "assets/images/avatar/avatar5.png": "4",
+      "assets/images/avatar/avatar6.png": "5",
+      "assets/images/avatar/avatar7.png": "6",
+      "assets/images/avatar/avatar8.png": "7",
+      "assets/images/avatar/avatar9.png": "8",
+      "assets/images/avatar/avatar10.png": "9",
+      "assets/images/avatar/avatar11.png": "10",
+      "assets/images/avatar/avatar12.png": "11",
+      "assets/images/avatar/avatar13.png": "12",
+      "assets/images/avatar/avatar14.png": "13",
+      "assets/images/avatar/avatar15.png": "14",
+      "assets/images/avatar/avatar16.png": "15",
+    };
+
+    return reverseAvatarMap[assetPath] ?? "0";
+  }
+
   void _showAvatarPicker() {
+    final userData = _formController.getValues();
+    final avatarPath = _getAvatarPath(userData.avatar);
+    // Capture the context before the async operation
+    final currentContext = context;
+
     showDialog(
-      context: context,
+      context: currentContext,
       enterAnimations: [
         PopoverAnimationType.fadeIn,
         PopoverAnimationType.scale,
       ],
       builder: (context) => AvatarPickerDialog(
-        onAvatarSelected: (avatar) {
-          setState(() {
-            _selectedAvatar = avatar;
-          });
+        onAvatarSelected: (avatar) async {
+          // Update the form value
+          final userData = _formController.getValues();
+          userData.avatar = _getAvatarId(avatar);
+
+          // Instead of setValues, we'll update the form field directly
+          _formController.setValue('avatar', userData.avatar);
+
+          // Save avatar change immediately
+          final success = await _authStore.updateUserData(
+            userData.fullName,
+            userData.username,
+            userData.avatar,
+          );
+
+          // Check if the widget is still mounted before using context
+          if (currentContext.mounted) {
+            if (success) {
+              showSuccessToast(
+                context: currentContext, // Use captured context
+                title: 'Avatar',
+                message: 'Avatar updated successfully',
+              );
+            } else if (_authStore.errorMessage != null) {
+              showErrorToast(
+                context: currentContext, // Use captured context
+                title: 'Avatar',
+                message: _authStore.errorMessage!,
+              );
+            }
+          }
         },
-        selectedAvatar: _selectedAvatar,
+        selectedAvatar: avatarPath,
       ),
       dialogBackgroundColor: AppColors.cardForeground,
     );
@@ -182,19 +282,36 @@ class _ProfileTabState extends State<ProfileTab> {
     showDialog(
       context: context,
       dialogBackgroundColor: AppColors.neutral,
-      builder: (BuildContext context) {
+      builder: (BuildContext dialogContext) {
         return ConfirmDialog(
           title: 'Confirm Logout',
           content: 'Are you sure you want to logout?',
           confirmText: 'Logout',
           confirmVariant: ButtonVariant.danger,
-          onConfirm: () {
-            context.go('/home');
-            showSuccessToast(
-              context: context,
-              title: 'Logout',
-              message: 'Logged out successfully',
-            );
+          onConfirm: () async {
+            // Capture the navigation context
+            final navContext = dialogContext;
+
+            final success = await _authStore.logout();
+
+            // Check if widget is still mounted
+            if (navContext.mounted) {
+              if (success) {
+                // Use Navigator.of with the captured context to navigate
+                navContext.go('/home');
+                showSuccessToast(
+                  context: navContext,
+                  title: 'Logout',
+                  message: 'Logged out successfully',
+                );
+              } else if (_authStore.errorMessage != null) {
+                showErrorToast(
+                  context: navContext,
+                  title: 'Logout',
+                  message: _authStore.errorMessage!,
+                );
+              }
+            }
           },
         );
       },
@@ -208,17 +325,34 @@ class _ProfileTabState extends State<ProfileTab> {
     });
   }
 
-  void _saveProfile() {
+  void _saveProfile() async {
     if (_formController.validate()) {
       final userData = _formController.getValues();
-      debugPrint('Saving profile: ${userData.toJson()}');
-      _toggleEditing();
+      final currentContext = context;
 
-      showSuccessToast(
-        context: context,
-        title: 'Profile',
-        message: 'Profile updated successfully',
+      final success = await _authStore.updateUserData(
+        userData.fullName,
+        userData.username,
+        userData.avatar,
       );
+
+      // Check if widget is still mounted before using context
+      if (currentContext.mounted) {
+        if (success) {
+          _toggleEditing();
+          showSuccessToast(
+            context: currentContext,
+            title: 'Profile',
+            message: 'Profile updated successfully',
+          );
+        } else if (_authStore.errorMessage != null) {
+          showErrorToast(
+            context: currentContext,
+            title: 'Profile',
+            message: _authStore.errorMessage!,
+          );
+        }
+      }
     }
   }
 
@@ -229,24 +363,40 @@ class _ProfileTabState extends State<ProfileTab> {
       showDialog(
         context: context,
         dialogBackgroundColor: AppColors.neutral,
-        builder: (BuildContext context) {
+        builder: (BuildContext dialogContext) {
           return ConfirmDialog(
             title: 'Confirm Password Change',
             content: 'Are you sure you want to change your password?',
             confirmText: 'Change',
             confirmVariant: ButtonVariant.primary,
             icon: Icons.lock,
-            onConfirm: () {
-              debugPrint('Changing password: ${passwordData.toJson()}');
+            onConfirm: () async {
+              // Capture context before async operation
+              final capturedContext = dialogContext;
 
-              _passwordFormController.reset();
-
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: const Text('Password changed successfully'),
-                  backgroundColor: AppColors.success,
-                ),
+              final success = await _authStore.updatePassword(
+                passwordData.oldPassword,
+                passwordData.newPassword,
               );
+
+              // Check if widget is still mounted
+              if (capturedContext.mounted) {
+                if (success) {
+                  _passwordFormController.reset();
+
+                  showSuccessToast(
+                    context: capturedContext,
+                    title: 'Password Changed',
+                    message: 'Your password has been updated successfully',
+                  );
+                } else if (_authStore.errorMessage != null) {
+                  showErrorToast(
+                    context: capturedContext,
+                    title: 'Password Change',
+                    message: _authStore.errorMessage!,
+                  );
+                }
+              }
             },
           );
         },
@@ -255,25 +405,27 @@ class _ProfileTabState extends State<ProfileTab> {
   }
 
   void _handleDeleteAccount() {
-    showDialog(
-      context: context,
-      dialogBackgroundColor: AppColors.neutral,
-      builder: (BuildContext context) {
-        return ConfirmDialog(
-          title: 'Delete Account',
-          content:
-              'Are you sure you want to delete your account? This action cannot be undone.',
-          confirmText: 'Proceed',
-          confirmVariant: ButtonVariant.danger,
-          icon: Icons.delete_forever,
-          onConfirm: () {
-            Navigator.pop(context);
+    if (_deleteAccountFormController.validate()) {
+      showDialog(
+        context: context,
+        dialogBackgroundColor: AppColors.neutral,
+        builder: (BuildContext dialogContext) {
+          return ConfirmDialog(
+            title: 'Delete Account',
+            content:
+                'Are you sure you want to delete your account? This action cannot be undone.',
+            confirmText: 'Proceed',
+            confirmVariant: ButtonVariant.danger,
+            icon: Icons.delete_forever,
+            onConfirm: () {
+              Navigator.pop(dialogContext);
 
-            _validateDeleteAccountId();
-          },
-        );
-      },
-    );
+              _validateDeleteAccountId();
+            },
+          );
+        },
+      );
+    }
   }
 
   void _validateDeleteAccountId() {
@@ -291,7 +443,7 @@ class _ProfileTabState extends State<ProfileTab> {
 
     showDialog(
       context: context,
-      builder: (BuildContext context) {
+      builder: (BuildContext dialogContext) {
         return ConfirmDialog(
           title: 'Delete Account Permanently',
           content:
@@ -299,15 +451,31 @@ class _ProfileTabState extends State<ProfileTab> {
           confirmText: 'Delete permanently',
           confirmVariant: ButtonVariant.danger,
           icon: Icons.delete_forever,
-          onConfirm: () {
-            context.go('/home');
+          onConfirm: () async {
+            // Capture context before async operation
+            final capturedContext = dialogContext;
 
-            _deleteAccountFormController.reset();
-            showSuccessToast(
-              context: context,
-              title: 'Delete Account',
-              message: 'Account deleted successfully',
-            );
+            final success = await _authStore.deleteAccount(deleteData.password);
+
+            // Check if widget is still mounted
+            if (capturedContext.mounted) {
+              if (success) {
+                capturedContext.go('/home');
+                _deleteAccountFormController.reset();
+
+                showSuccessToast(
+                  context: capturedContext,
+                  title: 'Delete Account',
+                  message: 'Account deleted successfully',
+                );
+              } else if (_authStore.errorMessage != null) {
+                showErrorToast(
+                  context: capturedContext,
+                  title: 'Delete Account',
+                  message: _authStore.errorMessage!,
+                );
+              }
+            }
           },
         );
       },
@@ -354,6 +522,9 @@ class _ProfileTabState extends State<ProfileTab> {
   }
 
   Widget _buildAvatarSection() {
+    final userData = _formController.getValues();
+    final avatarPath = _getAvatarPath(userData.avatar);
+
     return Column(
       children: [
         Stack(
@@ -371,7 +542,7 @@ class _ProfileTabState extends State<ProfileTab> {
               ),
               child: ClipOval(
                 child: AppImage.avatar(
-                  src: _selectedAvatar,
+                  src: avatarPath,
                   size: 120,
                   source: ImageSource.asset,
                   errorWidget: Container(
@@ -412,7 +583,8 @@ class _ProfileTabState extends State<ProfileTab> {
         ),
         const SizedBox(height: 8),
         AppText(
-          _formController.getValue('username') as String,
+          _formController.getValue('fullName') as String? ??
+              _formController.getValue('username') as String,
           variant: TextVariant.headlineMedium,
           color: Colors.white,
           fontWeight: FontWeight.w600,
@@ -492,6 +664,13 @@ class _ProfileTabState extends State<ProfileTab> {
                   isEditable: false,
                 ),
                 const SizedBox(height: 16),
+                _buildInfoRow(
+                  label: 'Email',
+                  value: userData.email,
+                  icon: Icons.email,
+                  isEditable: false,
+                ),
+                const SizedBox(height: 16),
                 AnimatedSwitcher(
                   duration: const Duration(milliseconds: 300),
                   transitionBuilder:
@@ -541,22 +720,22 @@ class _ProfileTabState extends State<ProfileTab> {
                   },
                   child: _isEditing
                       ? _buildEditableField(
-                          key: const ValueKey('email_edit'),
-                          label: 'Email',
-                          name: 'email',
-                          keyboardType: TextInputType.emailAddress,
+                          key: const ValueKey('fullName_edit'),
+                          label: 'Full Name',
+                          name: 'fullName',
                           rules: [
-                            RequiredRule(message: 'Email is required'),
-                            EmailRule(
-                                message: 'Please enter a valid email address'),
+                            RequiredRule(message: 'Full name is required'),
+                            MinLengthRule(2,
+                                message:
+                                    'Full name must be at least 2 characters'),
                           ],
-                          icon: Icons.email,
+                          icon: Icons.badge,
                         )
                       : _buildInfoRow(
-                          key: const ValueKey('email_view'),
-                          label: 'Email',
-                          value: userData.email,
-                          icon: Icons.email,
+                          key: const ValueKey('fullName_view'),
+                          label: 'Full Name',
+                          value: userData.fullName,
+                          icon: Icons.badge,
                         ),
                 ),
                 AnimatedSize(
@@ -982,6 +1161,32 @@ class _ProfileTabState extends State<ProfileTab> {
                   rules: [
                     RequiredRule(
                         message: 'Please enter your ID to confirm deletion'),
+                  ],
+                  filled: true,
+                ),
+                const SizedBox(height: 16),
+                const AppText(
+                  'Enter your password to confirm',
+                  variant: TextVariant.labelLarge,
+                  fontWeight: FontWeight.w600,
+                ),
+                const SizedBox(height: 8),
+                AppText(
+                  'For security, please enter your password to proceed with account deletion',
+                  variant: TextVariant.bodySmall,
+                  color: AppColors.neutral.shade300,
+                ),
+                const SizedBox(height: 12),
+                FormInputField(
+                  formController: _deleteAccountFormController,
+                  name: 'password',
+                  label: 'Password',
+                  isRequired: true,
+                  obscureText: true,
+                  features: [InputFeature.passwordToggle()],
+                  rules: [
+                    RequiredRule(
+                        message: 'Password is required to delete your account'),
                   ],
                   filled: true,
                 ),
