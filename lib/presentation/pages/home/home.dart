@@ -1045,7 +1045,9 @@ class _HomeScreenState extends State<HomeScreen> {
       showCountryFlag: true,
       showUpdated: true,
       showScanlator: false,
-      onTap: () => context.go('/comicDetail/${comic['slug']}'),
+      onTap: () => context.goNamed('comicDetail', pathParameters: {
+        'comicId': comic['slug'] as String,
+      }),
       style: ComicCardStyle.light().copyWith(
         width: 170,
         height: 270,
@@ -1068,7 +1070,9 @@ class _HomeScreenState extends State<HomeScreen> {
       showUpdated: false,
       showLike: false,
       showScanlator: false,
-      onTap: () => context.go('/comicDetail/${comic['slug']}'),
+      onTap: () => context.goNamed('comicDetail', pathParameters: {
+        'comicId': comic['slug'] as String,
+      }),
       style: ComicCardStyle.light().copyWith(
         width: 170,
         height: 270,
@@ -1094,7 +1098,9 @@ class _HomeScreenState extends State<HomeScreen> {
           showUpdated: false,
           showLike: true,
           showScanlator: false,
-          onTap: () => context.go('/comicDetail/${comic['slug']}'),
+          onTap: () => context.goNamed('comicDetail', pathParameters: {
+            'comicId': comic['slug'] as String,
+          }),
           style: ComicCardStyle.light().copyWith(
             width: 170,
             height: 250,
@@ -1184,7 +1190,9 @@ class _HomeScreenState extends State<HomeScreen> {
         showUpdated: true,
         showLike: true,
         showScanlator: true,
-        onTap: () => context.go('/comicDetail/${comic.slug}'),
+        onTap: () => context.goNamed('comicDetail', pathParameters: {
+          'comicId': comic.slug as String,
+        }),
         style: ComicCardStyle.light().copyWith(
           width: cardWidth,
           height: cardHeight,
