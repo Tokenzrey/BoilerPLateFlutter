@@ -253,7 +253,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                       data.username,
                                       data.fullName,
                                     );
-
+                                    if (!context.mounted) return;
                                     if (success && mounted) {
                                       Navigator.of(context).pop();
                                     } else {

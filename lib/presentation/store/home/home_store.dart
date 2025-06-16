@@ -6,8 +6,8 @@ import 'package:boilerplate/data/network/api/top_api_service.dart';
 import 'package:boilerplate/domain/usecase/api/chapter_top_usecase.dart';
 import 'package:boilerplate/domain/usecase/api/top_api_usecase.dart';
 import 'package:boilerplate/presentation/store/settings/settings_store.dart';
-import 'package:flutter/foundation.dart';
 import 'package:mobx/mobx.dart';
+import 'package:flutter/foundation.dart';
 
 part 'home_store.g.dart';
 
@@ -29,146 +29,120 @@ abstract class HomeStoreBase with Store {
   }
 
   List<ReactionDisposer>? _disposers;
-  final List<StreamSubscription> _activeSubscriptions = [];
 
-  // Top comics state
+  // State
   @observable
   bool isTopLoading = false;
-
   @observable
   String? topErrorMessage;
-
   @observable
   TopResponseModel? topData;
 
-  // Latest chapters state
   @observable
   bool isHotChaptersLoading = false;
-
   @observable
   bool isNewChaptersLoading = false;
-
   @observable
   String? chaptersErrorMessage;
-
   @observable
-  List<ChapterResponseModel> hotChapters = [];
-
+  ObservableList<ChapterResponseModel> hotChapters = ObservableList();
   @observable
-  List<ChapterResponseModel> newChapters = [];
+  ObservableList<ChapterResponseModel> newChapters = ObservableList();
 
-  // Pagination state for chapters
   @observable
   int hotChaptersPage = 1;
-
   @observable
   int newChaptersPage = 1;
-
   @observable
   bool hasMoreHotChapters = true;
-
   @observable
   bool hasMoreNewChapters = true;
-
-  // Initialization state
   @observable
   bool isInitialized = false;
 
-  // Computed properties for top comics
+  // Computed
   @computed
-  bool get hasTopError =>
-      topErrorMessage != null && topErrorMessage!.isNotEmpty;
-
+  bool get hasTopError => topErrorMessage?.isNotEmpty == true;
   @computed
   bool get hasTopData => topData != null;
-
   @computed
   Map<TopPeriod, List<dynamic>> get topFollowComicsMap => {
         TopPeriod.seven: topData?.topFollowComics.seven ?? [],
         TopPeriod.thirty: topData?.topFollowComics.thirty ?? [],
         TopPeriod.ninety: topData?.topFollowComics.ninety ?? [],
       };
-
   @computed
   Map<TopPeriod, List<dynamic>> get topFollowNewComicsMap => {
         TopPeriod.seven: topData?.topFollowNewComics.seven ?? [],
         TopPeriod.thirty: topData?.topFollowNewComics.thirty ?? [],
         TopPeriod.ninety: topData?.topFollowNewComics.ninety ?? [],
       };
-
-  // Computed properties for latest chapters
   @computed
-  bool get hasChaptersError =>
-      chaptersErrorMessage != null && chaptersErrorMessage!.isNotEmpty;
-
+  bool get hasChaptersError => chaptersErrorMessage?.isNotEmpty == true;
   @computed
   bool get hasHotChaptersData => hotChapters.isNotEmpty;
-
   @computed
   bool get hasNewChaptersData => newChapters.isNotEmpty;
 
-  // Initialize store state
   @action
   Future<void> initialize() async {
     if (isInitialized) return;
-
     resetState();
     await fetchTrendingWithSettings();
     await fetchLatestChaptersWithSettings();
-
     isInitialized = true;
   }
 
-  // Reset all state
   @action
   void resetState() {
-    // Cancel any ongoing operations
-    _cancelActiveOperations();
-
-    // Reset top comics state
     topData = null;
     topErrorMessage = null;
     isTopLoading = false;
-
-    // Reset chapters state
     resetChaptersPagination();
     chaptersErrorMessage = null;
-
     isInitialized = false;
   }
 
-  // Top comics actions
+  @action
+  void resetChaptersPagination() {
+    hotChaptersPage = 1;
+    newChaptersPage = 1;
+    hotChapters.clear();
+    newChapters.clear();
+    hasMoreHotChapters = true;
+    hasMoreNewChapters = true;
+    isHotChaptersLoading = false;
+    isNewChaptersLoading = false;
+  }
+
+  // Helper untuk set data secara batch biar hemat observable notification
+  void _replaceList<T>(ObservableList<T> list, List<T> newItems) {
+    list
+      ..clear()
+      ..addAll(newItems);
+  }
+
+  // --- TOP
   @action
   Future<void> fetchTrendingWithSettings() async {
     if (isTopLoading) return;
-
-    _setTopLoading(true);
-    _resetTopError();
-
+    isTopLoading = true;
+    topErrorMessage = null;
     try {
-      // Get settings first
       await settingsStore.getSettings();
       final settings = settingsStore.settings;
 
-      // Set default values
       TopGender gender = TopGender.male;
       List<ComicType>? comicTypes;
       bool acceptMatureContent = false;
-
       if (settings != null) {
-        // Demographic
-        final demographic = settings.demographic;
-        gender = demographic == 'female' ? TopGender.female : TopGender.male;
-
-        // contentTypes
+        gender = settings.demographic == 'female'
+            ? TopGender.female
+            : TopGender.male;
         final types = settings.contentTypes;
-        final allTypes = ['manga', 'manhwa', 'manhua'];
-        if (types.length == allTypes.length &&
-            allTypes.every((e) => types.contains(e))) {
-          comicTypes = null;
-        } else if (types.isEmpty) {
-          comicTypes = null;
-        } else {
+        const allTypes = ['manga', 'manhwa', 'manhua'];
+        if (types.length != allTypes.length ||
+            !allTypes.every(types.contains)) {
           comicTypes = types.map((e) {
             switch (e) {
               case 'manga':
@@ -182,9 +156,7 @@ abstract class HomeStoreBase with Store {
             }
           }).toList();
         }
-
-        // matureContent
-        acceptMatureContent = (settings.matureContent).contains('mature');
+        acceptMatureContent = settings.matureContent.contains('mature');
       }
 
       final params = TopApiParams(
@@ -193,77 +165,23 @@ abstract class HomeStoreBase with Store {
         acceptMatureContent: acceptMatureContent,
       );
 
-      final completer = Completer<void>();
-      final subscription =
-          Stream.fromFuture(_topApiUseCase.execute(params)).listen((result) {
-        result.fold(
-          (failure) => _setTopErrorMessage(failure.message),
-          (data) => topData = data,
-        );
-        completer.complete();
-      }, onError: (e) {
-        _setTopErrorMessage('Failed to load trending: $e');
-        completer.complete();
-      });
-
-      _activeSubscriptions.add(subscription);
-      await completer.future;
-    } catch (e) {
-      _setTopErrorMessage('Failed to load trending: $e');
-    } finally {
-      _setTopLoading(false);
-    }
-  }
-
-  /// Fetches trending manga comics (preset)
-  @action
-  Future<void> fetchTrendingManga() async {
-    if (isTopLoading) return;
-
-    _setTopLoading(true);
-    _resetTopError();
-
-    final params = TopApiParams.trendingManga();
-
-    try {
       final result = await _topApiUseCase.execute(params);
-
       result.fold(
-        (failure) => _setTopErrorMessage(failure.message),
+        (failure) => topErrorMessage = failure.message,
         (data) => topData = data,
       );
     } catch (e) {
-      _setTopErrorMessage('Failed to load trending manga: $e');
-    } finally {
-      _setTopLoading(false);
+      topErrorMessage = 'Failed to load trending: $e';
     }
+    isTopLoading = false;
   }
 
-  /// Fetches comics popular with female readers (preset)
   @action
-  Future<void> fetchPopularForFemaleReaders() async {
-    if (isTopLoading) return;
-
-    _setTopLoading(true);
-    _resetTopError();
-
-    final params = TopApiParams.popularForFemaleReaders();
-
-    try {
-      final result = await _topApiUseCase.execute(params);
-
-      result.fold(
-        (failure) => _setTopErrorMessage(failure.message),
-        (data) => topData = data,
-      );
-    } catch (e) {
-      _setTopErrorMessage('Failed to load female-targeted content: $e');
-    } finally {
-      _setTopLoading(false);
-    }
-  }
-
-  /// Fetches comics with custom parameters
+  Future<void> fetchTrendingManga() =>
+      _fetchTopPreset(TopApiParams.trendingManga(), 'trending manga');
+  @action
+  Future<void> fetchPopularForFemaleReaders() => _fetchTopPreset(
+      TopApiParams.popularForFemaleReaders(), 'female-targeted content');
   @action
   Future<void> fetchCustom({
     TopGender gender = TopGender.male,
@@ -271,99 +189,66 @@ abstract class HomeStoreBase with Store {
     TopType? type,
     List<ComicType>? comicTypes,
     bool acceptMatureContent = true,
-  }) async {
+  }) =>
+      _fetchTopPreset(
+        TopApiParams(
+          gender: gender,
+          day: day,
+          type: type,
+          comicTypes: comicTypes,
+          acceptMatureContent: acceptMatureContent,
+        ),
+        'custom content',
+      );
+
+  Future<void> _fetchTopPreset(TopApiParams params, String contextText) async {
     if (isTopLoading) return;
-
-    _setTopLoading(true);
-    _resetTopError();
-
-    final params = TopApiParams(
-      gender: gender,
-      day: day,
-      type: type,
-      comicTypes: comicTypes,
-      acceptMatureContent: acceptMatureContent,
-    );
-
+    isTopLoading = true;
+    topErrorMessage = null;
     try {
       final result = await _topApiUseCase.execute(params);
-
       result.fold(
-        (failure) => _setTopErrorMessage(failure.message),
+        (failure) => topErrorMessage = failure.message,
         (data) => topData = data,
       );
     } catch (e) {
-      _setTopErrorMessage('Failed to load custom content: $e');
-    } finally {
-      _setTopLoading(false);
+      topErrorMessage = 'Failed to load $contextText: $e';
     }
+    isTopLoading = false;
   }
 
-  // Latest chapters actions
+  // --- CHAPTERS (PAGINATION)
   @action
   Future<void> fetchLatestChaptersWithSettings() async {
-    // Reset pagination when fetching with settings - this is initial load
     resetChaptersPagination();
-
     await Future.wait([
       fetchHotChaptersWithSettings(),
       fetchNewChaptersWithSettings(),
     ]);
   }
 
-  // Reset pagination state when settings change
-  @action
-  void resetChaptersPagination() {
-    _cancelActiveOperations();
-
-    hotChaptersPage = 1;
-    newChaptersPage = 1;
-    hotChapters = [];
-    newChapters = [];
-    hasMoreHotChapters = true;
-    hasMoreNewChapters = true;
-    isHotChaptersLoading = false;
-    isNewChaptersLoading = false;
-  }
-
   @action
   Future<void> fetchHotChaptersWithSettings(
       {bool appendResults = false}) async {
-    // Don't start a new request if we're already loading
-    if (isHotChaptersLoading) return;
-
-    // Don't proceed if we already know there are no more items
-    if (appendResults && !hasMoreHotChapters) return;
-
-    _setHotChaptersLoading(true);
-    if (!appendResults) _resetChaptersError();
-
+    if (isHotChaptersLoading || (appendResults && !hasMoreHotChapters)) return;
+    isHotChaptersLoading = true;
+    if (!appendResults) chaptersErrorMessage = null;
     try {
-      // Get settings
       await settingsStore.getSettings();
       final settings = settingsStore.settings;
 
-      // Set default values
       ChapterGender gender = ChapterGender.male;
       List<ChapterType>? types;
       bool acceptEroticContent = false;
-      List<String> lang = ['en']; // Default to English
-
+      const lang = ['en'];
       if (settings != null) {
-        // Demographic
-        final demographic = settings.demographic;
-        gender =
-            demographic == 'female' ? ChapterGender.female : ChapterGender.male;
-
-        // contentTypes
+        gender = settings.demographic == 'female'
+            ? ChapterGender.female
+            : ChapterGender.male;
+        const allTypes = ['manga', 'manhwa', 'manhua'];
         final contentTypes = settings.contentTypes;
-        final allTypes = ['manga', 'manhwa', 'manhua'];
-        if (contentTypes.length == allTypes.length &&
-            allTypes.every((e) => contentTypes.contains(e))) {
-          types = null;
-        } else if (contentTypes.isEmpty) {
-          types = null;
-        } else {
+        if (contentTypes.length != allTypes.length ||
+            !allTypes.every(contentTypes.contains)) {
           types = contentTypes.map((e) {
             switch (e) {
               case 'manga':
@@ -377,9 +262,7 @@ abstract class HomeStoreBase with Store {
             }
           }).toList();
         }
-
-        // matureContent
-        acceptEroticContent = (settings.matureContent).contains('mature');
+        acceptEroticContent = settings.matureContent.contains('mature');
       }
 
       final params = LatestChaptersParams(
@@ -390,83 +273,50 @@ abstract class HomeStoreBase with Store {
         lang: lang,
         page: hotChaptersPage,
       );
-
-      final completer = Completer<void>();
-      final subscription =
-          Stream.fromFuture(_latestChaptersUseCase.execute(params)).listen(
-              (result) {
-        result.fold(
-          (failure) => _setChaptersErrorMessage(failure.message),
-          (data) {
-            if (data.isEmpty) {
-              // No more data to load
-              hasMoreHotChapters = false;
+      final result = await _latestChaptersUseCase.execute(params);
+      result.fold(
+        (failure) => chaptersErrorMessage = failure.message,
+        (data) {
+          if (data.isEmpty) {
+            hasMoreHotChapters = false;
+          } else {
+            if (appendResults) {
+              hotChapters.addAll(data);
             } else {
-              if (appendResults) {
-                // Append new results to existing list
-                hotChapters = [...hotChapters, ...data];
-              } else {
-                // Replace with new results
-                hotChapters = data;
-              }
-              // Increment page number for next request
-              hotChaptersPage++;
+              _replaceList(hotChapters, data);
             }
-          },
-        );
-        completer.complete();
-      }, onError: (e) {
-        _setChaptersErrorMessage('Failed to load hot chapters: $e');
-        completer.complete();
-      });
-
-      _activeSubscriptions.add(subscription);
-      await completer.future;
+            hotChaptersPage++;
+          }
+        },
+      );
     } catch (e) {
-      _setChaptersErrorMessage('Failed to load hot chapters: $e');
-    } finally {
-      _setHotChaptersLoading(false);
+      chaptersErrorMessage = 'Failed to load hot chapters: $e';
     }
+    isHotChaptersLoading = false;
   }
 
   @action
   Future<void> fetchNewChaptersWithSettings(
       {bool appendResults = false}) async {
-    // Don't start a new request if we're already loading
-    if (isNewChaptersLoading) return;
-
-    // Don't proceed if we already know there are no more items
-    if (appendResults && !hasMoreNewChapters) return;
-
-    _setNewChaptersLoading(true);
-    if (!appendResults) _resetChaptersError();
-
+    if (isNewChaptersLoading || (appendResults && !hasMoreNewChapters)) return;
+    isNewChaptersLoading = true;
+    if (!appendResults) chaptersErrorMessage = null;
     try {
-      // Get settings
       await settingsStore.getSettings();
       final settings = settingsStore.settings;
 
-      // Set default values
       ChapterGender gender = ChapterGender.male;
       List<ChapterType>? types;
       bool acceptEroticContent = false;
-      List<String> lang = ['en']; // Default to English
-
+      const lang = ['en'];
       if (settings != null) {
-        // Demographic
-        final demographic = settings.demographic;
-        gender =
-            demographic == 'female' ? ChapterGender.female : ChapterGender.male;
-
-        // contentTypes
+        gender = settings.demographic == 'female'
+            ? ChapterGender.female
+            : ChapterGender.male;
+        const allTypes = ['manga', 'manhwa', 'manhua'];
         final contentTypes = settings.contentTypes;
-        final allTypes = ['manga', 'manhwa', 'manhua'];
-        if (contentTypes.length == allTypes.length &&
-            allTypes.every((e) => contentTypes.contains(e))) {
-          types = null;
-        } else if (contentTypes.isEmpty) {
-          types = null;
-        } else {
+        if (contentTypes.length != allTypes.length ||
+            !allTypes.every(contentTypes.contains)) {
           types = contentTypes.map((e) {
             switch (e) {
               case 'manga':
@@ -480,9 +330,7 @@ abstract class HomeStoreBase with Store {
             }
           }).toList();
         }
-
-        // matureContent
-        acceptEroticContent = (settings.matureContent).contains('mature');
+        acceptEroticContent = settings.matureContent.contains('mature');
       }
 
       final params = LatestChaptersParams(
@@ -493,208 +341,28 @@ abstract class HomeStoreBase with Store {
         lang: lang,
         page: newChaptersPage,
       );
-
-      final completer = Completer<void>();
-      final subscription =
-          Stream.fromFuture(_latestChaptersUseCase.execute(params)).listen(
-              (result) {
-        result.fold(
-          (failure) => _setChaptersErrorMessage(failure.message),
-          (data) {
-            if (data.isEmpty) {
-              // No more data to load
-              hasMoreNewChapters = false;
-            } else {
-              if (appendResults) {
-                // Append new results to existing list
-                newChapters = [...newChapters, ...data];
-              } else {
-                // Replace with new results
-                newChapters = data;
-              }
-              // Increment page number for next request
-              newChaptersPage++;
-            }
-          },
-        );
-        completer.complete();
-      }, onError: (e) {
-        _setChaptersErrorMessage('Failed to load new chapters: $e');
-        completer.complete();
-      });
-
-      _activeSubscriptions.add(subscription);
-      await completer.future;
-    } catch (e) {
-      _setChaptersErrorMessage('Failed to load new chapters: $e');
-    } finally {
-      _setNewChaptersLoading(false);
-    }
-  }
-
-  @action
-  Future<void> fetchHotEnglishChapters() async {
-    if (isHotChaptersLoading) return;
-
-    _setHotChaptersLoading(true);
-    _resetChaptersError();
-
-    // Reset pagination
-    hotChaptersPage = 1;
-    hotChapters = [];
-    hasMoreHotChapters = true;
-
-    try {
-      final params = LatestChaptersParams.hotEnglish();
       final result = await _latestChaptersUseCase.execute(params);
-
       result.fold(
-        (failure) => _setChaptersErrorMessage(failure.message),
-        (data) {
-          hotChapters = data;
-          if (data.isNotEmpty) {
-            hotChaptersPage++;
-          } else {
-            hasMoreHotChapters = false;
-          }
-        },
-      );
-    } catch (e) {
-      _setChaptersErrorMessage('Failed to load hot English chapters: $e');
-    } finally {
-      _setHotChaptersLoading(false);
-    }
-  }
-
-  @action
-  Future<void> fetchLatestMangaUpdates() async {
-    if (isNewChaptersLoading) return;
-
-    _setNewChaptersLoading(true);
-    _resetChaptersError();
-
-    // Reset pagination
-    newChaptersPage = 1;
-    newChapters = [];
-    hasMoreNewChapters = true;
-
-    try {
-      final params = LatestChaptersParams.latestManga();
-      final result = await _latestChaptersUseCase.execute(params);
-
-      result.fold(
-        (failure) => _setChaptersErrorMessage(failure.message),
-        (data) {
-          newChapters = data;
-          if (data.isNotEmpty) {
-            newChaptersPage++;
-          } else {
-            hasMoreNewChapters = false;
-          }
-        },
-      );
-    } catch (e) {
-      _setChaptersErrorMessage('Failed to load latest manga updates: $e');
-    } finally {
-      _setNewChaptersLoading(false);
-    }
-  }
-
-  @action
-  Future<void> fetchCustomChapters({
-    List<String>? lang,
-    int? page = 1,
-    ChapterGender? gender,
-    ChapterOrderType order = ChapterOrderType.hot,
-    List<ChapterType>? types,
-    bool? acceptEroticContent = false,
-    bool appendResults = false,
-  }) async {
-    final isHot = order == ChapterOrderType.hot;
-
-    // Don't start a new request if we're already loading
-    if (isHot && isHotChaptersLoading || !isHot && isNewChaptersLoading) {
-      return;
-    }
-
-    if (!appendResults) {
-      // Reset pagination for this type
-      if (isHot) {
-        hotChaptersPage = 1;
-        hotChapters = [];
-        hasMoreHotChapters = true;
-      } else {
-        newChaptersPage = 1;
-        newChapters = [];
-        hasMoreNewChapters = true;
-      }
-    }
-
-    // Don't proceed if we know there are no more items
-    if (isHot && !hasMoreHotChapters || !isHot && !hasMoreNewChapters) {
-      return;
-    }
-
-    if (isHot) {
-      _setHotChaptersLoading(true);
-    } else {
-      _setNewChaptersLoading(true);
-    }
-
-    if (!appendResults) _resetChaptersError();
-
-    try {
-      final params = LatestChaptersParams(
-        lang: lang,
-        page: isHot ? hotChaptersPage : newChaptersPage,
-        gender: gender,
-        order: order,
-        types: types,
-        acceptEroticContent: acceptEroticContent,
-      );
-
-      final result = await _latestChaptersUseCase.execute(params);
-
-      result.fold(
-        (failure) => _setChaptersErrorMessage(failure.message),
+        (failure) => chaptersErrorMessage = failure.message,
         (data) {
           if (data.isEmpty) {
-            if (isHot) {
-              hasMoreHotChapters = false;
-            } else {
-              hasMoreNewChapters = false;
-            }
+            hasMoreNewChapters = false;
           } else {
-            if (isHot) {
-              if (appendResults) {
-                hotChapters = [...hotChapters, ...data];
-              } else {
-                hotChapters = data;
-              }
-              hotChaptersPage++;
+            if (appendResults) {
+              newChapters.addAll(data);
             } else {
-              if (appendResults) {
-                newChapters = [...newChapters, ...data];
-              } else {
-                newChapters = data;
-              }
-              newChaptersPage++;
+              _replaceList(newChapters, data);
             }
+            newChaptersPage++;
           }
         },
       );
     } catch (e) {
-      _setChaptersErrorMessage('Failed to load chapters: $e');
-    } finally {
-      if (isHot) {
-        _setHotChaptersLoading(false);
-      } else {
-        _setNewChaptersLoading(false);
-      }
+      chaptersErrorMessage = 'Failed to load new chapters: $e';
     }
+    isNewChaptersLoading = false;
   }
 
-  // Load next page of data
   @action
   Future<void> loadMoreChapters(bool isHot) async {
     if (isHot) {
@@ -708,52 +376,7 @@ abstract class HomeStoreBase with Store {
     }
   }
 
-  // Cancel any active operations
-  void _cancelActiveOperations() {
-    for (var subscription in _activeSubscriptions) {
-      subscription.cancel();
-    }
-    _activeSubscriptions.clear();
-  }
-
-  // State management methods for top comics
-  @action
-  void _setTopLoading(bool value) {
-    isTopLoading = value;
-  }
-
-  @action
-  void _setTopErrorMessage(String? message) {
-    topErrorMessage = message;
-  }
-
-  @action
-  void _resetTopError() {
-    topErrorMessage = null;
-  }
-
-  // State management methods for latest chapters
-  @action
-  void _setHotChaptersLoading(bool value) {
-    isHotChaptersLoading = value;
-  }
-
-  @action
-  void _setNewChaptersLoading(bool value) {
-    isNewChaptersLoading = value;
-  }
-
-  @action
-  void _setChaptersErrorMessage(String? message) {
-    chaptersErrorMessage = message;
-  }
-
-  @action
-  void _resetChaptersError() {
-    chaptersErrorMessage = null;
-  }
-
-  // Utility methods
+  // -- MobX Reaction (untuk debugging/refresh di UI)
   void _setupReactions() {
     _disposers = [
       reaction((_) => topData, (_) {
@@ -761,28 +384,24 @@ abstract class HomeStoreBase with Store {
           print("Top data loaded with ${topData?.rank.length ?? 0} rank items");
         }
       }),
-      reaction((_) => hotChapters, (_) {
+      reaction((_) => hotChapters.length, (_) {
         if (kDebugMode) {
           print("Hot chapters loaded with ${hotChapters.length} items");
         }
       }),
-      reaction((_) => newChapters, (_) {
+      reaction((_) => newChapters.length, (_) {
         if (kDebugMode) {
           print("New chapters loaded with ${newChapters.length} items");
         }
       }),
       reaction((_) => isInitialized, (initialized) {
-        if (kDebugMode) {
-          print("HomeStore initialized: $initialized");
-        }
+        if (kDebugMode) print("HomeStore initialized: $initialized");
       }),
     ];
   }
 
   void dispose() {
-    _cancelActiveOperations();
-
-    _disposers?.forEach((disposer) => disposer());
+    _disposers?.forEach((d) => d());
     _disposers = null;
   }
 }
