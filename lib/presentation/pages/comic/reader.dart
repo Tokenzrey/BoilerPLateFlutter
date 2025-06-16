@@ -1,6 +1,8 @@
 import 'package:boilerplate/constants/colors.dart';
 import 'package:boilerplate/core/widgets/components/typography.dart';
 import 'package:boilerplate/core/widgets/empty_app_bar_widget.dart';
+import 'package:boilerplate/di/service_locator.dart';
+import 'package:boilerplate/presentation/store/comic/comic_store.dart';
 import 'package:flutter/material.dart';
 
 
@@ -25,7 +27,9 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final FollowedComicStore store = getIt<FollowedComicStore>();
     final List<String> images = comicPicture[curChap] ?? [];
+
     return Scaffold(
       appBar: EmptyAppBar(),
       backgroundColor: AppColors.background,

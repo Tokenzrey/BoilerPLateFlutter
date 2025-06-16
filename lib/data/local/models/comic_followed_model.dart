@@ -13,8 +13,24 @@ class FollowedComic with _$FollowedComic {
     @HiveField(1) required String slug,
     @HiveField(2) required String hid,
     @HiveField(3) required String chap,
-    @HiveField(4) required DateTime createdAt,
+    @HiveField(4) DateTime? createdAt,
   }) = _FollowedComic;
+
+  factory FollowedComic.create({
+    required String userId,
+    required String slug,
+    required String hid,
+    required String chap,
+    DateTime? createdAt,
+  }) {
+    return FollowedComic(
+      userId: userId,
+      slug: slug,
+      hid: hid,
+      chap: chap,
+      createdAt: createdAt ?? DateTime.now(),
+    );
+  }
 
   factory FollowedComic.fromJson(Map<String, Object?> json) =>
       _$FollowedComicFromJson(json);
@@ -25,7 +41,7 @@ class FollowedComic with _$FollowedComic {
         slug: entity.slug,
         hid: entity.hid,
         chap: entity.chap,
-        createdAt: entity.createdAt,
+        createdAt: entity.createdAt
       );
 }
 
@@ -35,6 +51,6 @@ extension FollowedComicMapper on FollowedComic {
     slug: slug,
     hid: hid,
     chap: chap,
-    createdAt: createdAt,
+    createdAt: createdAt ?? DateTime.now(),
   );
 }

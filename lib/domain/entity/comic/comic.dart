@@ -5,14 +5,14 @@ class FollowedComicEntity extends Equatable {
   final String slug;
   final String hid;
   final String chap;
-  final DateTime createdAt;
+  final DateTime? createdAt;
 
   const FollowedComicEntity({
     required this.userId,
     required this.slug,
     required this.hid,
     required this.chap,
-    required this.createdAt,
+    this.createdAt,
   });
 
   @override
