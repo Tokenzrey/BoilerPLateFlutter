@@ -104,16 +104,15 @@ class RoutesConfig {
       path: RoutePaths.home,
       name: 'home',
       builder: (context, params) => const HomeScreen(),
+    ),
     RouteConfig(
         path: RoutePaths.comicContent,
         name: 'comic-content',
-        builder: (context, params) => const ReaderScreen()
-    ),
+        builder: (context, params) => const ReaderScreen()),
     RouteConfig(
-      path: RoutePaths.home,
-      name: 'home',
-      builder: (context, params) => const HomeScreen()
-    ),
+        path: RoutePaths.home,
+        name: 'home',
+        builder: (context, params) => const HomeScreen()),
   ];
 
   static final List<RouteConfig> authenticatedRoutes = [];
