@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:boilerplate/constants/colors.dart';
 import 'package:boilerplate/core/widgets/components/typography.dart';
 import 'package:boilerplate/utils/routes/routes.dart';
+import 'package:boilerplate/utils/hoc/check_auth.dart';
 
 class ProfileSettingsScreen extends StatefulWidget {
   const ProfileSettingsScreen({super.key});
@@ -17,11 +18,6 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen>
   late TabController _tabController;
   final PageController _pageController = PageController();
   int _currentIndex = 0;
-
-  final List<Widget> _tabViews = const [
-    KeepAlivePage(child: ProfileTab()),
-    KeepAlivePage(child: SettingsTab()),
-  ];
 
   @override
   void initState() {
@@ -108,7 +104,21 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen>
             });
           }
         },
-        children: _tabViews,
+        children: [
+          // Profile tab with auth check
+          KeepAlivePage(
+            child: AuthWidget(
+              builder: (context) => const ProfileTab(),
+              noAuthBuilder: (context) => const AuthRequiredView(
+                title: 'Profile Access',
+                message: 'Sign in to view and manage your profile information.',
+                icon: Icons.person_outline,
+              ),
+            ),
+          ),
+          // Settings tab (always visible)
+          const KeepAlivePage(child: SettingsTab()),
+        ],
       ),
     );
   }
@@ -134,6 +144,176 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen>
             fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Professional UI/UX design for auth-required fallback view
+class AuthRequiredView extends StatelessWidget {
+  final String title;
+  final String message;
+  final IconData icon;
+  final String buttonText;
+
+  const AuthRequiredView({
+    super.key,
+    required this.title,
+    required this.message,
+    required this.icon,
+    this.buttonText = 'Sign In',
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: LinearGradient(
+                    colors: [
+                      AppColors.primary.withValues(alpha: 0.7),
+                      AppColors.primary.withValues(alpha: 0.3),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                ),
+                child: Container(
+                  width: 90,
+                  height: 90,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: AppColors.slate.withValues(alpha: 0.2),
+                  ),
+                  child: Icon(
+                    icon,
+                    size: 48,
+                    color: AppColors.primary,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 28),
+              AppText(
+                title,
+                variant: TextVariant.titleLarge,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+              const SizedBox(height: 16),
+              AppText(
+                message,
+                variant: TextVariant.bodyLarge,
+                color: AppColors.neutral.shade400,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 32),
+              _AnimatedButton(
+                onPressed: () => context.go('/login'),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.login, size: 20),
+                    const SizedBox(width: 8),
+                    AppText(
+                      buttonText,
+                      variant: TextVariant.labelLarge,
+                      color: Colors.white,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextButton(
+                onPressed: () => context.go('/register'),
+                style: TextButton.styleFrom(
+                  foregroundColor: AppColors.primary,
+                ),
+                child: const AppText(
+                  'Create an account',
+                  variant: TextVariant.bodyMedium,
+                  decoration: TextDecoration.underline,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Animated button with hover effect for better UX
+class _AnimatedButton extends StatefulWidget {
+  final Widget child;
+  final VoidCallback onPressed;
+
+  const _AnimatedButton({
+    required this.child,
+    required this.onPressed,
+  });
+
+  @override
+  State<_AnimatedButton> createState() => _AnimatedButtonState();
+}
+
+class _AnimatedButtonState extends State<_AnimatedButton> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeInOut,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(30),
+          gradient: LinearGradient(
+            colors: _isHovered
+                ? [AppColors.primary, AppColors.primary]
+                : [AppColors.primary, AppColors.primary],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          boxShadow: _isHovered
+              ? [
+                  BoxShadow(
+                    color: AppColors.primary.withValues(alpha: 0.4),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  )
+                ]
+              : [
+                  BoxShadow(
+                    color: AppColors.primary.withValues(alpha: 0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  )
+                ],
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: widget.onPressed,
+            borderRadius: BorderRadius.circular(30),
+            splashColor: Colors.white.withValues(alpha: 0.1),
+            highlightColor: Colors.transparent,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+              child: widget.child,
+            ),
+          ),
+        ),
       ),
     );
   }

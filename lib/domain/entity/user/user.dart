@@ -9,6 +9,7 @@ class User extends Equatable {
   final DateTime createdAt;
   final DateTime? lastLogin;
   final List<String> roles;
+  final String avatar;
 
   const User({
     required this.id,
@@ -18,12 +19,14 @@ class User extends Equatable {
     required this.createdAt,
     this.lastLogin,
     this.roles = const ['user'],
+    this.avatar = "0",
   });
 
   factory User.create({
     required String email,
     required String username,
     required String fullName,
+    String avatar = "0",
   }) {
     return User(
       id: const Uuid().v4(),
@@ -32,6 +35,7 @@ class User extends Equatable {
       fullName: fullName.trim(),
       createdAt: DateTime.now(),
       roles: const ['user'],
+      avatar: avatar,
     );
   }
 
@@ -41,6 +45,7 @@ class User extends Equatable {
     String? fullName,
     DateTime? lastLogin,
     List<String>? roles,
+    String? avatar,
   }) {
     return User(
       id: id,
@@ -50,10 +55,11 @@ class User extends Equatable {
       createdAt: createdAt,
       lastLogin: lastLogin ?? this.lastLogin,
       roles: roles ?? this.roles,
+      avatar: avatar ?? this.avatar,
     );
   }
-  
+
   @override
   List<Object?> get props =>
-      [id, email, username, fullName, createdAt, lastLogin, roles];
+      [id, email, username, fullName, createdAt, lastLogin, roles, avatar];
 }
