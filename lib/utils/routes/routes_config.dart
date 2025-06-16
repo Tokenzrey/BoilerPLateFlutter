@@ -91,7 +91,8 @@ class RoutesConfig {
     RouteConfig(
         path: RoutePaths.mylist,
         name: 'my-list',
-        builder: (context, params) => const MylistScreen()),
+        builder: (context, params) => const MylistScreen()
+    ),
     RouteConfig(
       path: RoutePaths.comicDetail,
       name: 'comicDetail',

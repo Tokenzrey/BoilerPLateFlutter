@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:boilerplate/data/local/datasources/auth/auth_firebase_datasource.dart';
+import 'package:boilerplate/data/local/datasources/comic/comic_datasource.dart';
 import 'package:boilerplate/data/local/datasources/user/setting_datasource.dart';
+import 'package:boilerplate/data/local/models/comic_followed_model.dart';
 import 'package:boilerplate/data/local/models/settings_model.dart';
 import 'package:boilerplate/domain/repository/user/user_repository.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -66,6 +68,7 @@ class LocalModule {
 
     getIt<DatabaseService>().registerAdapter(UserModelAdapter());
     getIt<DatabaseService>().registerAdapter(SettingsModelAdapter());
+    getIt<DatabaseService>().registerAdapter(FollowedComicAdapter());
   }
 
   static Future<void> _registerDataSources() async {
@@ -106,8 +109,26 @@ class LocalModule {
       }
     }
 
+    Box<FollowedComic>? fcBox;
+    try {
+      fcBox = await getIt<DatabaseService>().openBox<FollowedComic>('fc_box');
+    } catch (e) {
+      try {
+        await Hive.deleteBoxFromDisk('fc_box');
+        fcBox =
+        await getIt<DatabaseService>().openBox<UserModel>('fc_box');
+      } catch (secondError) {
+        final databaseService = getIt<DatabaseService>();
+        if (databaseService is HiveService) {
+          await databaseService.forceRecoveryAndOpen<FollowedComic>('fc_box');
+          fcBox = await databaseService.openBox<FollowedComic>('fc_box');
+        }
+      }
+    }
+
     getIt.registerLazySingleton(() => UserLocalDataSource(userBox!));
     getIt.registerLazySingleton(() => SettingLocalDataSource(settingsBox!));
+    getIt.registerLazySingleton(() => FollowedComicLocalDataSource(fcBox!));
 
     getIt.registerLazySingleton(() => AuthLocalDataSource(
           getIt<FlutterSecureStorage>(),
