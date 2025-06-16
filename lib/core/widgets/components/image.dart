@@ -1,38 +1,10 @@
-// Gambar dari jaringan dengan loading skeleton dan circular progress
-// AppImage.network(
-//   'https://example.com/image.jpg',
-//   width: 300,
-//   height: 200,
-//   fit: BoxFit.cover,
-// )
-
-// Gambar asset dengan border radius
-// AppImage.asset(
-//   'assets/images/logo.png',
-//   width: 200,
-//   height: 150,
-//   borderRadius: BorderRadius.circular(12),
-// )
-
-// Avatar/profile picture
-// AppImage.avatar(
-//   src: 'https://example.com/profile.jpg',
-//   size: 80,
-// )
-
-// Dengan custom error dan loading widgets
-// AppImage.network(
-//   'https://example.com/large-image.jpg',
-//   progressiveLoading: true, // Menampilkan circular progress indicator
-//   errorWidget: Text('Image failed to load'),
-//   loadingWidget: Center(child: AppCircularProgress.small()),
-// )
-
 import 'dart:io';
 import 'package:boilerplate/core/widgets/components/display/circular.dart';
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'display/skeleton.dart';
 
+// Hindari tabrakan dengan dart:ui
 enum ImageSource { asset, network, file, memory }
 
 class AppImage extends StatefulWidget {
@@ -269,18 +241,35 @@ class _AppImageState extends State<AppImage> with WidgetsBindingObserver {
     }
   }
 
+  /// Helper to check width/height valid, finite & > 0
+  int? _validSize(double? value) {
+    if (value == null) return null;
+    if (value.isNaN || value.isInfinite || value <= 0) return null;
+    return value.toInt();
+  }
+
   void _createImageProvider() {
     switch (widget.source) {
       case ImageSource.asset:
         imageProvider = _createOptimizedProvider(
-            AssetImage(widget.src, bundle: DefaultAssetBundle.of(context)));
+          AssetImage(widget.src, bundle: DefaultAssetBundle.of(context)),
+        );
         break;
       case ImageSource.network:
-        final Map<String, String>? headers =
-            !widget.useCache ? const {'cache-control': 'no-cache'} : null;
-
-        imageProvider = _createOptimizedProvider(
-            NetworkImage(widget.src, scale: widget.scale, headers: headers));
+        if (widget.useCache) {
+          imageProvider = CachedNetworkImageProvider(
+            widget.src,
+            cacheKey: widget.src,
+            maxHeight: _validSize(widget.height),
+            maxWidth: _validSize(widget.width),
+          );
+        } else {
+          final Map<String, String> headers = const {
+            'cache-control': 'no-cache'
+          };
+          imageProvider =
+              NetworkImage(widget.src, scale: widget.scale, headers: headers);
+        }
         break;
       case ImageSource.file:
         imageProvider = _createOptimizedProvider(FileImage(File(widget.src)));
@@ -292,20 +281,15 @@ class _AppImageState extends State<AppImage> with WidgetsBindingObserver {
   }
 
   ImageProvider _createOptimizedProvider(ImageProvider provider) {
-    if (widget.width != null && widget.height != null) {
-      final int? safeWidth =
-          widget.width!.isFinite ? widget.width!.toInt() : null;
-      final int? safeHeight =
-          widget.height!.isFinite ? widget.height!.toInt() : null;
-
-      if (safeWidth != null || safeHeight != null) {
-        return ResizeImage(
-          provider,
-          width: safeWidth,
-          height: safeHeight,
-          allowUpscaling: false,
-        );
-      }
+    final safeWidth = _validSize(widget.width);
+    final safeHeight = _validSize(widget.height);
+    if (safeWidth != null || safeHeight != null) {
+      return ResizeImage(
+        provider,
+        width: safeWidth,
+        height: safeHeight,
+        allowUpscaling: false,
+      );
     }
     return provider;
   }
@@ -314,57 +298,95 @@ class _AppImageState extends State<AppImage> with WidgetsBindingObserver {
   Widget build(BuildContext context) {
     Widget imageWidget;
 
-    imageWidget = Image(
-      image: imageProvider,
-      fit: widget.fit,
-      width: widget.width,
-      height: widget.height,
-      color: widget.color,
-      colorBlendMode: widget.colorBlendMode,
-      alignment: widget.alignment,
-      excludeFromSemantics: widget.excludeFromSemantics,
-      gaplessPlayback: widget.gaplessPlayback,
-      semanticLabel: widget.semanticLabel,
-      frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
-        if (wasSynchronouslyLoaded || frame != null) {
-          return AnimatedOpacity(
-            opacity: 1.0,
-            duration: widget.fadeInDuration,
-            child: child,
-          );
-        }
-        return widget.loadingWidget ?? _buildLoadingWidget();
-      },
-      errorBuilder: (context, error, stackTrace) {
-        // JANGAN SETSTATE!
-        return _buildErrorWidget();
-      },
-      loadingBuilder: widget.progressiveLoading
-          ? (context, child, loadingProgress) {
-              if (loadingProgress == null) {
-                return child;
-              }
-              return Stack(
-                children: [
-                  _buildLoadingWidget(),
-                  if (loadingProgress.expectedTotalBytes != null &&
-                      loadingProgress.cumulativeBytesLoaded > 0)
-                    Positioned.fill(
-                      child: Center(
-                        child: AppCircularProgress(
-                          value: loadingProgress.cumulativeBytesLoaded /
-                              loadingProgress.expectedTotalBytes!,
-                          size: 30,
-                          strokeWidth: 3,
-                          color: Theme.of(context).colorScheme.primary,
+    if (widget.source == ImageSource.network && widget.useCache) {
+      imageWidget = CachedNetworkImage(
+        imageUrl: widget.src,
+        fit: widget.fit,
+        width: widget.width,
+        height: widget.height,
+        alignment: widget.alignment,
+        color: widget.color,
+        colorBlendMode: widget.colorBlendMode,
+        fadeInDuration: widget.fadeInDuration,
+        placeholder: widget.progressiveLoading
+            ? null
+            : (context, url) => widget.loadingWidget ?? _buildLoadingWidget(),
+        errorWidget: (context, url, error) => _buildErrorWidget(),
+        progressIndicatorBuilder: widget.progressiveLoading
+            ? (context, url, progress) => Stack(
+                  children: [
+                    _buildLoadingWidget(),
+                    if (progress.totalSize != null && progress.totalSize! > 0)
+                      Positioned.fill(
+                        child: Center(
+                          child: AppCircularProgress(
+                            value: progress.downloaded / progress.totalSize!,
+                            size: 30,
+                            strokeWidth: 3,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
                         ),
                       ),
-                    ),
-                ],
-              );
-            }
-          : null,
-    );
+                  ],
+                )
+            : null,
+        useOldImageOnUrlChange: widget.gaplessPlayback,
+        memCacheWidth: _validSize(widget.width),
+        memCacheHeight: _validSize(widget.height),
+        cacheKey: widget.src,
+      );
+    } else {
+      imageWidget = Image(
+        image: imageProvider,
+        fit: widget.fit,
+        width: widget.width,
+        height: widget.height,
+        color: widget.color,
+        colorBlendMode: widget.colorBlendMode,
+        alignment: widget.alignment,
+        excludeFromSemantics: widget.excludeFromSemantics,
+        gaplessPlayback: widget.gaplessPlayback,
+        semanticLabel: widget.semanticLabel,
+        frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+          if (wasSynchronouslyLoaded || frame != null) {
+            return AnimatedOpacity(
+              opacity: 1.0,
+              duration: widget.fadeInDuration,
+              child: child,
+            );
+          }
+          return widget.loadingWidget ?? _buildLoadingWidget();
+        },
+        errorBuilder: (context, error, stackTrace) {
+          return _buildErrorWidget();
+        },
+        loadingBuilder: widget.progressiveLoading
+            ? (context, child, loadingProgress) {
+                if (loadingProgress == null) return child;
+                if (loadingProgress.expectedTotalBytes != null &&
+                    loadingProgress.expectedTotalBytes! > 0) {
+                  return Stack(
+                    children: [
+                      _buildLoadingWidget(),
+                      Positioned.fill(
+                        child: Center(
+                          child: AppCircularProgress(
+                            value: loadingProgress.cumulativeBytesLoaded /
+                                loadingProgress.expectedTotalBytes!,
+                            size: 30,
+                            strokeWidth: 3,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                }
+                return _buildLoadingWidget();
+              }
+            : null,
+      );
+    }
 
     if (widget.borderRadius != null) {
       imageWidget = ClipRRect(
@@ -382,7 +404,6 @@ class _AppImageState extends State<AppImage> with WidgetsBindingObserver {
       height: widget.height,
       color: Colors.grey.shade200,
     );
-
     return loadingWidget.asSkeleton(isLoading: true);
   }
 
@@ -390,7 +411,6 @@ class _AppImageState extends State<AppImage> with WidgetsBindingObserver {
     if (widget.errorWidget != null) {
       return widget.errorWidget!;
     }
-
     return Container(
       width: widget.width,
       height: widget.height,
