@@ -14,6 +14,7 @@ class ComicCard extends StatefulWidget {
   final bool isBookmarked;
   final bool showCountryFlag;
   final bool showBookmark;
+  final bool showChapter;
   final bool onlyTitle;
   final bool showTitle;
   final bool showUpdated;
@@ -27,8 +28,7 @@ class ComicCard extends StatefulWidget {
   final Function(bool)? onBookmarkChanged;
   final ComicCardStyle? style;
   final Widget? badgeWidget;
-  final String?
-      statusText;
+  final String? statusText;
   final Color? statusColor;
 
   const ComicCard({
@@ -43,6 +43,7 @@ class ComicCard extends StatefulWidget {
     this.isBookmarked = false,
     this.showCountryFlag = true,
     this.showBookmark = true,
+    this.showChapter = true,
     this.onlyTitle = false,
     this.showTitle = true,
     this.showUpdated = true,
@@ -148,7 +149,6 @@ class _ComicCardState extends State<ComicCard> {
                           errorWidget: _flagErrorWidget(style),
                         ),
                       ),
-
                     if (widget.showBookmark)
                       Positioned(
                         top: 8,
@@ -176,14 +176,12 @@ class _ComicCardState extends State<ComicCard> {
                           ),
                         ),
                       ),
-
                     if (widget.badgeWidget != null)
                       Positioned(
                         top: 8,
                         left: widget.showCountryFlag ? 40 : 8,
                         child: widget.badgeWidget!,
                       ),
-
                     if (widget.statusText != null)
                       Positioned(
                         bottom: 8,
@@ -206,7 +204,6 @@ class _ComicCardState extends State<ComicCard> {
                   ],
                 ),
               ),
-
               Expanded(
                 child: Padding(
                   padding: style.contentPadding ?? const EdgeInsets.all(12),
@@ -218,18 +215,19 @@ class _ComicCardState extends State<ComicCard> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Expanded(
-                              child: GestureDetector(
-                                onTap: widget.onChapterTap,
-                                child: AppText(
-                                  widget.chapter,
-                                  variant: TextVariant.bodySmall,
-                                  style: style.chapterStyle,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
+                            if (widget.showChapter)
+                              Expanded(
+                                child: GestureDetector(
+                                  onTap: widget.onChapterTap,
+                                  child: AppText(
+                                    widget.chapter,
+                                    variant: TextVariant.bodySmall,
+                                    style: style.chapterStyle,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
                                 ),
                               ),
-                            ),
                             if (widget.showLike && widget.likes.isNotEmpty)
                               Row(
                                 mainAxisSize: MainAxisSize.min,

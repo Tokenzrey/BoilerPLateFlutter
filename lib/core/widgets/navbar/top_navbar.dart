@@ -6,7 +6,7 @@ import 'package:boilerplate/core/widgets/search/popover_menu.dart';
 import 'package:boilerplate/core/widgets/search/search_modal.dart';
 import 'package:boilerplate/utils/routes/routes.dart';
 
-class TopNavbar extends StatelessWidget implements PreferredSizeWidget {
+class TopNavbar extends StatelessWidget {
   TopNavbar({super.key});
 
   final LayerLink _searchLayerLink = LayerLink();
@@ -15,36 +15,34 @@ class TopNavbar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     final double navbarRadius = 16;
-    final double horizontalPad = 18;
-    final double verticalPad = 12;
     final double logoSize = 38;
 
     return Container(
-      margin: const EdgeInsets.only(top: 24, left: 16, right: 16),
+      margin: const EdgeInsets.only(top: 32, left: 16, right: 16),
       child: Material(
-        elevation: 8,
+        elevation: 0,
         color: AppColors.primary.withValues(alpha: 0.98),
         borderRadius: BorderRadius.circular(navbarRadius),
         shadowColor: Colors.black.withValues(alpha: 0.15),
-        child: SafeArea(
-          bottom: false,
+        child: IntrinsicHeight(
           child: Container(
-            height: kToolbarHeight + verticalPad * 2,
-            padding: EdgeInsets.symmetric(
-                horizontal: horizontalPad, vertical: verticalPad),
+            padding: EdgeInsets.symmetric(horizontal: 18, vertical: 8),
             decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.98),
               borderRadius: BorderRadius.circular(navbarRadius),
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 ClipRRect(
                   borderRadius: BorderRadius.circular(4),
                   child: InkWell(
                     borderRadius: BorderRadius.circular(4),
                     onTap: () => context.push('home'),
-                    child: Container(
-                      color: Colors.transparent,
+                    child: SizedBox(
+                      height: logoSize,
+                      width: logoSize,
                       child: Image.asset(
                         'assets/icons/ic_app.png',
                         width: logoSize,
@@ -117,21 +115,25 @@ class TopNavbar extends StatelessWidget implements PreferredSizeWidget {
                         ),
                       );
                     },
-                    child: AppImage.avatar(
-                      src: "assets/images/avatar/avatar1.png",
-                      size: 36,
-                      source: ImageSource.asset,
-                      errorWidget: Container(
-                        width: 36,
-                        height: 36,
-                        decoration: BoxDecoration(
-                          color: AppColors.neutral.shade800,
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(
-                          Icons.person,
-                          size: 36,
-                          color: AppColors.neutral.shade400,
+                    child: SizedBox(
+                      height: 36,
+                      width: 36,
+                      child: AppImage.avatar(
+                        src: "assets/images/avatar/avatar1.png",
+                        size: 36,
+                        source: ImageSource.asset,
+                        errorWidget: Container(
+                          width: 36,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            color: AppColors.neutral.shade800,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.person,
+                            size: 36 / 2,
+                            color: AppColors.neutral.shade400,
+                          ),
                         ),
                       ),
                     ),
@@ -144,9 +146,6 @@ class TopNavbar extends StatelessWidget implements PreferredSizeWidget {
       ),
     );
   }
-
-  @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight + 32);
 }
 
 class _MinimalIconButton extends StatelessWidget {

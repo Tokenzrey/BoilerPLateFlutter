@@ -69,9 +69,6 @@ class BottomNavbar extends StatelessWidget {
                 width: double.infinity,
                 decoration: BoxDecoration(
                   color: AppColors.card.withValues(alpha: 0.97),
-                  border: Border(
-                    top: BorderSide(color: AppColors.neutral[200]!, width: 0.6),
-                  ),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
