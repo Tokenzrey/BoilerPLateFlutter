@@ -1,2 +1,0 @@
-C:/Flutter/comicIo/android/app/.cxx/Debug/1t4x43m3/x86/CMakeFiles/edit_cache.dir
-C:/Flutter/comicIo/android/app/.cxx/Debug/1t4x43m3/x86/CMakeFiles/rebuild_cache.dir
