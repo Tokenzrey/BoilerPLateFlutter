@@ -1,6 +1,7 @@
 import 'package:boilerplate/data/sharedpref/constants/preferences.dart';
 import 'package:boilerplate/di/service_locator.dart';
 import 'package:boilerplate/presentation/store/auth_firebase/auth_store.dart';
+import 'package:boilerplate/utils/hoc/check_auth.dart';
 import 'package:boilerplate/utils/routes/routes.dart';
 import 'package:boilerplate/utils/routes/routes_config.dart';
 import 'package:flutter/material.dart';
@@ -122,6 +123,9 @@ class PopoverMenu extends StatelessWidget {
             ),
             if (!isLoggedIn)
               _menuItem(
+            AuthWidget(
+              // Show Sign In option when user is not authenticated
+              noAuthBuilder: (context) => _menuItem(
                 context,
                 icon: Icons.login_rounded,
                 label: 'Sign In',
@@ -135,6 +139,9 @@ class PopoverMenu extends StatelessWidget {
             else
               // Show Sign Out option when user is authenticated
               _menuItem(
+              ),
+              // Show Sign Out option when user is authenticated
+              child: _menuItem(
                 context,
                 icon: Icons.logout_rounded,
                 label: 'Sign Out',
@@ -152,6 +159,7 @@ class PopoverMenu extends StatelessWidget {
                   onSignoutPressed?.call();
                 },
               ),
+            ),
           ],
         ),
       ),

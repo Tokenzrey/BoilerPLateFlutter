@@ -1,9 +1,10 @@
 import 'package:boilerplate/presentation/pages/auth/register/register.dart';
 import 'package:boilerplate/presentation/pages/auth/unauthorized/unauthorized.dart';
 import 'package:boilerplate/presentation/pages/comick_detail/comick_detail.dart';
+import 'package:boilerplate/presentation/pages/comic/reader.dart';
 import 'package:boilerplate/presentation/pages/home/home.dart';
 import 'package:boilerplate/presentation/pages/auth/login/login.dart';
-import 'package:boilerplate/presentation/pages/mylist/mylist.dart';
+import 'package:boilerplate/presentation/pages/users/list.dart';
 import 'package:boilerplate/presentation/pages/profile/profile.dart';
 import 'package:boilerplate/presentation/pages/sandbox/sandbox_page.dart';
 import 'package:flutter/material.dart';
@@ -18,6 +19,7 @@ class RoutePaths {
   static const String unauthorized = '/unauthorized';
   static const String mylist = '/my-list';
   static const String comicDetail = '/comicDetail/:comicId';
+  static const String comicContent = '/comic-content';
 }
 
 class RouteParams {
@@ -102,6 +104,15 @@ class RoutesConfig {
       path: RoutePaths.home,
       name: 'home',
       builder: (context, params) => const HomeScreen(),
+    RouteConfig(
+        path: RoutePaths.comicContent,
+        name: 'comic-content',
+        builder: (context, params) => const ReaderScreen()
+    ),
+    RouteConfig(
+      path: RoutePaths.home,
+      name: 'home',
+      builder: (context, params) => const HomeScreen()
     ),
   ];
 
