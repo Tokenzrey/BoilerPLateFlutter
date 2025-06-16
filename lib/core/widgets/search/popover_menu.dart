@@ -1,7 +1,6 @@
 import 'package:boilerplate/data/sharedpref/constants/preferences.dart';
 import 'package:boilerplate/di/service_locator.dart';
 import 'package:boilerplate/presentation/store/auth_firebase/auth_store.dart';
-import 'package:boilerplate/utils/hoc/check_auth.dart';
 import 'package:boilerplate/utils/routes/routes.dart';
 import 'package:boilerplate/utils/routes/routes_config.dart';
 import 'package:flutter/material.dart';
@@ -34,135 +33,128 @@ class PopoverMenu extends StatelessWidget {
     return Material(
       type: MaterialType.transparency,
       child: Container(
-        constraints: const BoxConstraints(
-          maxWidth: 220,
-          minWidth: 150,
-          maxHeight: 360, // Increased to accommodate username display
-        ),
-        decoration: BoxDecoration(
-          color: AppColors.neutral[850]?.withValues(alpha: 0.99) ??
-              Colors.grey.shade900,
-          borderRadius: borderRadius,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.14),
-              blurRadius: 18,
-              offset: const Offset(0, 8),
-            ),
-          ],
-        ),
-        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 18),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (isLoggedIn && username != null) ...[
-              // User profile info section
-              Row(
-                children: [
-                  // Avatar
-                  CircleAvatar(
-                    radius: 20,
-                    backgroundImage:
-                        AssetImage('assets/images/avatar/avatar$avatarId.png'),
-                    backgroundColor: AppColors.neutral.shade800,
-                    child: _buildPlaceholderIfNeeded(avatarId),
-                  ),
-                  const SizedBox(width: 12),
-                  // Username and status
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        AppText(
-                          username!,
-                          variant: TextVariant.labelLarge,
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600,
-                        ),
-                        AppText(
-                          'Online',
-                          variant: TextVariant.labelSmall,
-                          color: Colors.green.shade300,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+          constraints: const BoxConstraints(
+            maxWidth: 220,
+            minWidth: 150,
+            maxHeight: 360,
+          ),
+          decoration: BoxDecoration(
+            color: AppColors.neutral[850]?.withValues(alpha: 0.99) ??
+                Colors.grey.shade900,
+            borderRadius: borderRadius,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.14),
+                blurRadius: 18,
+                offset: const Offset(0, 8),
               ),
-              const SizedBox(height: 16),
-              Divider(
-                color: Colors.white.withValues(alpha: 0.15),
-                height: 1,
-              ),
-              const SizedBox(height: 16),
             ],
-            _menuItem(
-              context,
-              icon: Icons.person_outline_rounded,
-              label: 'Profile',
-              desc: isLoggedIn
-                  ? 'View and edit your profile'
-                  : 'Sign in to view profile',
-              onTap: () {
-                context.push('/profile');
-                closeOverlay(context, 'Profile');
-                onProfilePressed?.call();
-              },
-            ),
-            const SizedBox(height: 10),
-            _menuItem(
-              context,
-              icon: Icons.science_outlined,
-              label: 'Sandbox',
-              desc: 'Sandbox Component',
-              danger: true,
-              onTap: () {
-                context.push('/sandbox');
-                closeOverlay(context, 'Sandbox');
-              },
-            ),
-            if (!isLoggedIn)
+          ),
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 18),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (isLoggedIn && username != null) ...[
+                // Profile section
+                Row(
+                  children: [
+                    // Avatar
+                    CircleAvatar(
+                      radius: 20,
+                      backgroundColor: AppColors.neutral.shade800,
+                      backgroundImage: AssetImage(
+                          'assets/images/avatar/avatar$avatarId.png'),
+                      child: _buildPlaceholderIfNeeded(avatarId),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          AppText(
+                            username!,
+                            variant: TextVariant.labelLarge,
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          AppText(
+                            'Online',
+                            variant: TextVariant.labelSmall,
+                            color: Colors.green.shade300,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Divider(
+                  color: Colors.white.withValues(alpha: 0.15),
+                  height: 1,
+                ),
+                const SizedBox(height: 16),
+              ],
               _menuItem(
-            AuthWidget(
-              // Show Sign In option when user is not authenticated
-              noAuthBuilder: (context) => _menuItem(
                 context,
-                icon: Icons.login_rounded,
-                label: 'Sign In',
-                desc: 'Sign in to your account',
-                danger: false,
+                icon: Icons.person_outline_rounded,
+                label: 'Profile',
+                desc: isLoggedIn
+                    ? 'View and edit your profile'
+                    : 'Sign in to view profile',
                 onTap: () {
-                  context.push('/login');
-                  closeOverlay(context, 'SignIn');
+                  context.push('/profile');
+                  closeOverlay(context, 'Profile');
+                  onProfilePressed?.call();
                 },
-              )
-            else
-              // Show Sign Out option when user is authenticated
-              _menuItem(
               ),
-              // Show Sign Out option when user is authenticated
-              child: _menuItem(
+              const SizedBox(height: 10),
+              _menuItem(
                 context,
-                icon: Icons.logout_rounded,
-                label: 'Sign Out',
-                desc: 'Log out from this account',
+                icon: Icons.science_outlined,
+                label: 'Sandbox',
+                desc: 'Sandbox Component',
                 danger: true,
                 onTap: () {
-                  SharedPreferences.getInstance().then((preference) {
-                    preference.setBool(Preferences.isLoggedIn, false);
-                    authStore.logout();
+                  context.push('/sandbox');
+                  closeOverlay(context, 'Sandbox');
+                },
+              ),
+              const SizedBox(height: 10),
+              if (!isLoggedIn)
+                _menuItem(
+                  context,
+                  icon: Icons.login_rounded,
+                  label: 'Sign In',
+                  desc: 'Sign in to your account',
+                  danger: false,
+                  onTap: () {
+                    context.push('/login');
+                    closeOverlay(context, 'SignIn');
+                  },
+                )
+              else
+                _menuItem(
+                  context,
+                  icon: Icons.logout_rounded,
+                  label: 'Sign Out',
+                  desc: 'Log out from this account',
+                  danger: true,
+                  onTap: () async {
+                    final pref = await SharedPreferences.getInstance();
+                    await pref.setBool(Preferences.isLoggedIn, false);
+                    await authStore.logout();
                     if (context.mounted) {
                       context.go(RoutePaths.unauthorized);
                     }
-                  });
-                  closeOverlay(context, 'Signout');
-                  onSignoutPressed?.call();
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
+                    if (!context.mounted) {
+                      return;
+                    }
+                    closeOverlay(context, 'Signout');
+                    onSignoutPressed?.call();
+                  },
+                ),
+            ],
+          )),
     );
   }
 
