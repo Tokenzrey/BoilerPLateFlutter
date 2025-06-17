@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:boilerplate/data/local/datasources/auth/auth_firebase_datasource.dart';
+import 'package:boilerplate/data/local/datasources/history/history_datasource.dart';
 import 'package:boilerplate/data/local/datasources/user/setting_datasource.dart';
+import 'package:boilerplate/data/local/models/history_entry_model.dart';
 import 'package:boilerplate/data/local/models/settings_model.dart';
 import 'package:boilerplate/domain/repository/user/user_repository.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -66,6 +68,7 @@ class LocalModule {
 
     getIt<DatabaseService>().registerAdapter(UserModelAdapter());
     getIt<DatabaseService>().registerAdapter(SettingsModelAdapter());
+    getIt<DatabaseService>().registerAdapter(HistoryModelAdapter());
   }
 
   static Future<void> _registerDataSources() async {
@@ -106,8 +109,29 @@ class LocalModule {
       }
     }
 
+    Box<HistoryModel>? historyBox;
+    try {
+      historyBox =
+          await getIt<DatabaseService>().openBox<HistoryModel>('history_entry_model');
+    } catch (e) {
+      try {
+        await Hive.deleteBoxFromDisk('history_entry_model');
+        historyBox = await getIt<DatabaseService>()
+            .openBox<HistoryModel>('history_entry_model');
+      } catch (secondError) {
+        final databaseService = getIt<DatabaseService>();
+        if (databaseService is HiveService) {
+          await databaseService
+              .forceRecoveryAndOpen<HistoryModel>('history_entry_model');
+          historyBox =
+              await databaseService.openBox<HistoryModel>('history_entry_model');
+        }
+      }
+    }
+
     getIt.registerLazySingleton(() => UserLocalDataSource(userBox!));
     getIt.registerLazySingleton(() => SettingLocalDataSource(settingsBox!));
+    getIt.registerLazySingleton(() => HistoryLocalDataSource(historyBox!));
 
     getIt.registerLazySingleton(() => AuthLocalDataSource(
           getIt<FlutterSecureStorage>(),

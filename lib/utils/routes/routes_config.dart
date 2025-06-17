@@ -2,8 +2,10 @@ import 'package:boilerplate/presentation/pages/auth/register/register.dart';
 import 'package:boilerplate/presentation/pages/auth/unauthorized/unauthorized.dart';
 import 'package:boilerplate/presentation/pages/comick_detail/comick_detail.dart';
 import 'package:boilerplate/presentation/pages/comic/reader.dart';
+import 'package:boilerplate/presentation/pages/history/history.dart';
 import 'package:boilerplate/presentation/pages/home/home.dart';
 import 'package:boilerplate/presentation/pages/auth/login/login.dart';
+import 'package:boilerplate/presentation/pages/search/search.dart';
 import 'package:boilerplate/presentation/pages/users/list.dart';
 import 'package:boilerplate/presentation/pages/profile/profile.dart';
 import 'package:boilerplate/presentation/pages/sandbox/sandbox_page.dart';
@@ -19,7 +21,9 @@ class RoutePaths {
   static const String unauthorized = '/unauthorized';
   static const String mylist = '/my-list';
   static const String comicDetail = '/comicDetail/:comicId';
-  static const String comicContent = '/comic-content';
+  static const String comicContent = '/comic-content/:slug/:hid/:chap';
+  static const String search = '/search';
+  static const String history = '/history';
 }
 
 class RouteParams {
@@ -108,11 +112,24 @@ class RoutesConfig {
     RouteConfig(
         path: RoutePaths.comicContent,
         name: 'comic-content',
-        builder: (context, params) => const ReaderScreen()),
+        builder: (context, params) {
+          final slug = params.pathParams['slug'] ?? '';
+          final hid = params.pathParams['hid'] ?? '1';
+          final chap = params.pathParams['chap'] ?? '1';
+          return ReaderScreen(
+            slug: slug,
+            hid: hid, 
+            chap: chap
+          );
+        }),
     RouteConfig(
-        path: RoutePaths.home,
-        name: 'home',
-        builder: (context, params) => const HomeScreen()),
+        path: RoutePaths.search,
+        name: 'search',
+        builder: (context, params) => const SearchScreen()),
+    RouteConfig(
+        path: RoutePaths.history,
+        name: 'history',
+        builder: (context, params) => const HistoryScreen()),
   ];
 
   static final List<RouteConfig> authenticatedRoutes = [];

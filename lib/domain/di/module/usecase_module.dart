@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:boilerplate/domain/repository/api/home_repository.dart';
 import 'package:boilerplate/domain/repository/auth/auth_firebase_repository.dart';
+import 'package:boilerplate/domain/repository/history/history_repository.dart';
 import 'package:boilerplate/domain/repository/user/setting_repository.dart';
 import 'package:boilerplate/domain/repository/user/user_repository.dart';
 import 'package:boilerplate/domain/repository/auth/auth_repository.dart';
@@ -17,6 +18,10 @@ import 'package:boilerplate/domain/usecase/auth_firebase/save_is_logged_in_useca
 import 'package:boilerplate/domain/usecase/auth_firebase/save_user_data_usecase.dart';
 import 'package:boilerplate/domain/usecase/auth_firebase/update_password_usecase.dart';
 import 'package:boilerplate/domain/usecase/auth_firebase/update_user_usecase.dart';
+import 'package:boilerplate/domain/usecase/history/add_update_history_usecase.dart';
+import 'package:boilerplate/domain/usecase/history/clear_history_usecase.dart';
+import 'package:boilerplate/domain/usecase/history/delete_history_usecase.dart';
+import 'package:boilerplate/domain/usecase/history/fetch_recent_history_usecase.dart';
 import 'package:boilerplate/domain/usecase/settings/delete_setting_db_usecase.dart';
 import 'package:boilerplate/domain/usecase/settings/find_setting_db_usecase.dart';
 import 'package:boilerplate/domain/usecase/settings/get_current_setting_usecase.dart';
@@ -163,6 +168,20 @@ class UseCaseModule {
     );
     getIt.registerSingleton<RemoveCurrentSettingsUseCase>(
       RemoveCurrentSettingsUseCase(getIt<SettingsRepository>()),
+    );
+
+    // History
+    getIt.registerSingleton<FetchRecentHistoryUsecase>(
+      FetchRecentHistoryUsecase(getIt<HistoryRepository>()),
+    );
+    getIt.registerSingleton<AddUpdateHistoryUsecase>(
+      AddUpdateHistoryUsecase(getIt<HistoryRepository>()),
+    );
+    getIt.registerSingleton<DeleteHistoryByIdUsecase>(
+      DeleteHistoryByIdUsecase(getIt<HistoryRepository>()),
+    );
+    getIt.registerSingleton<ClearHistoryByIdUsecase>(
+      ClearHistoryByIdUsecase(getIt<HistoryRepository>()),
     );
 
     // API

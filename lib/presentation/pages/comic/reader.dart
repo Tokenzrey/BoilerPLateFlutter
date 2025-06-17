@@ -1,18 +1,50 @@
 import 'package:boilerplate/constants/colors.dart';
 import 'package:boilerplate/core/widgets/components/typography.dart';
-import 'package:boilerplate/core/widgets/empty_app_bar_widget.dart';
+import 'package:boilerplate/core/widgets/navbar/navigation.dart';
+import 'package:boilerplate/di/service_locator.dart';
+import 'package:boilerplate/presentation/store/history/history_store.dart';
 import 'package:flutter/material.dart';
 
 
 class ReaderScreen extends StatefulWidget {
-  const ReaderScreen({super.key});
+  final String slug;
+  final String hid;
+  final String chap;
+
+  const ReaderScreen({
+    super.key,
+    required this.slug,
+    required this.hid,
+    this.chap = '1',
+  });
 
   @override
   State<ReaderScreen> createState() => _ReaderScreenState();
 }
 
 class _ReaderScreenState extends State<ReaderScreen> {
-  int curChap = 1;
+
+  late final HistoryStore _historyStore;
+  
+  @override
+  void initState() {
+    super.initState();
+    _historyStore = getIt<HistoryStore>();
+
+    _addHistory(widget.chap);
+  }
+
+  Future<void> _addHistory(String chap) async {
+    await _historyStore.addOrUpdateHistory(
+      widget.slug,
+      widget.hid,
+      chap,
+    );
+
+    print(_historyStore.historyList);
+  }
+
+  late int? curChap = int.tryParse(widget.chap);
   final Map<int, List<String>> comicPicture = {
     1: [
       "https://meo.comick.pictures/0-e3bsK_El-7LFt.webp",
@@ -26,10 +58,9 @@ class _ReaderScreenState extends State<ReaderScreen> {
   @override
   Widget build(BuildContext context) {
     final List<String> images = comicPicture[curChap] ?? [];
-    return Scaffold(
-      appBar: EmptyAppBar(),
+    return ScaffoldWithNavBar(
       backgroundColor: AppColors.background,
-      body: SingleChildScrollView(
+      child: SingleChildScrollView(
         child: Column(
           children: [
             Padding(
@@ -48,6 +79,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                   if(value != null) {
                     setState((){
                       curChap = value;
+                      _addHistory(curChap.toString());
                     });
                   }
                 },

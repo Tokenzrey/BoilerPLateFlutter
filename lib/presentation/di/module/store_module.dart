@@ -20,6 +20,11 @@ import 'package:boilerplate/domain/usecase/auth_firebase/get_is_logged_in_usecas
     as firebase_auth;
 import 'package:boilerplate/domain/usecase/auth_firebase/get_current_user_usecase.dart'
     as firebase_auth;
+
+import 'package:boilerplate/domain/usecase/history/add_update_history_usecase.dart';
+import 'package:boilerplate/domain/usecase/history/clear_history_usecase.dart';
+import 'package:boilerplate/domain/usecase/history/delete_history_usecase.dart';
+import 'package:boilerplate/domain/usecase/history/fetch_recent_history_usecase.dart';
 import 'package:boilerplate/domain/usecase/settings/delete_setting_db_usecase.dart';
 import 'package:boilerplate/domain/usecase/settings/find_setting_db_usecase.dart';
 import 'package:boilerplate/domain/usecase/settings/get_current_setting_usecase.dart';
@@ -32,6 +37,7 @@ import 'package:boilerplate/presentation/store/home/home_store.dart';
 import 'package:boilerplate/presentation/store/language/language_store.dart';
 import 'package:boilerplate/presentation/store/settings/settings_store.dart';
 import 'package:boilerplate/presentation/store/theme/theme_store.dart';
+import 'package:boilerplate/presentation/store/history/history_store.dart';
 
 import '../../../di/service_locator.dart';
 
@@ -92,6 +98,16 @@ class StoreModule {
         getIt<TopApiUseCase>(),
         getIt<LatestChaptersUseCase>(),
         getIt<SettingsStore>(),
+      ),
+    );
+
+    getIt.registerSingleton<HistoryStore>(
+      HistoryStore(
+        authStore: getIt<AuthStore>(),
+        fetchRecentHistoryUseCase: getIt<FetchRecentHistoryUsecase>(),
+        addUpdateHistoryUseCase: getIt<AddUpdateHistoryUsecase>(),  
+        deleteByIdUseCase: getIt<DeleteHistoryByIdUsecase>(),
+        clearHistoryByIdUsecase: getIt<ClearHistoryByIdUsecase>(),
       ),
     );
   }

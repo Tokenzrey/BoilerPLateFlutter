@@ -51,8 +51,14 @@ class _ComicDetailScreenState extends State<ComicDetailScreen> {
     });
   }
 
-  void _startReading() {
+  void _startReading(int chap) {
     debugPrint('Start reading...');
+    debugPrint(widget.comicId);
+    context.goNamed('comic-content', pathParameters: {
+        'slug': widget.comicId,
+        'hid': widget.comicId,
+        'chap': chap.toString(),
+      });
   }
 
   @override
@@ -159,7 +165,7 @@ class _ComicDetailScreenState extends State<ComicDetailScreen> {
             borderRadius: BorderRadius.all(Radius.circular(24)),
             expanded: true,
           ),
-          onPressed: _startReading,
+          onPressed: () => _startReading(1),
         ),
         const SizedBox(height: 10),
         Button(

@@ -6,6 +6,7 @@ enum NavbarItem {
   home,
   myList,
   search,
+  history
 }
 
 NavbarItem getNavbarItemFromRoute(String? routeName) {
@@ -19,6 +20,9 @@ NavbarItem getNavbarItemFromRoute(String? routeName) {
     case '/search':
     case 'search':
       return NavbarItem.search;
+    case '/history':
+    case 'history':
+      return NavbarItem.history;
     default:
       return NavbarItem.search;
   }
@@ -32,6 +36,8 @@ String getRouteFromNavbarItem(NavbarItem item) {
       return '/my-list';
     case NavbarItem.search:
       return '/search';
+    case NavbarItem.history:
+      return '/history';
   }
 }
 
@@ -107,6 +113,18 @@ class BottomNavbar extends StatelessWidget {
                           context.goNamed('search');
                         }
                         onItemSelected?.call(NavbarItem.search);
+                      },
+                    ),
+                    _NavItem(
+                      icon: Icons.history,
+                      label: "History",
+                      isActive: currentItem == NavbarItem.history,
+                      onTap: () {
+                        if (currentItem != NavbarItem.history) {
+                          debugPrint('Navigating to History...');
+                          context.goNamed('history');
+                        }
+                        onItemSelected?.call(NavbarItem.history);
                       },
                     ),
                   ],
