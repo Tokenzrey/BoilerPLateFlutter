@@ -123,6 +123,7 @@ class _SettingsTabState extends State<SettingsTab> {
   ];
 
   bool _isSaving = false;
+  bool _isFormReady = false;
 
   @override
   void initState() {
@@ -133,6 +134,8 @@ class _SettingsTabState extends State<SettingsTab> {
 
   Future<void> _initFormFromSettings() async {
     await _settingsStore.getSettings();
+    debugPrint('[DEBUG][initFormFromSettings] settingsStore.settings: '
+        '${_settingsStore.settings?.toJson()}');
     final entity = _settingsStore.settings;
     final defaultData = entity != null
         ? SettingsData.fromEntity(entity)
@@ -145,18 +148,26 @@ class _SettingsTabState extends State<SettingsTab> {
       defaultValues: defaultData,
       fromJson: SettingsData.fromJson,
       toJson: (data) => data.toJson(),
-      mode: ValidationMode.onBlur,
+      mode: ValidationMode.onChange,
     );
     _formController.watchAll().listen((map) {
       final data = SettingsData.fromJson(map);
       _onFormChanged(data);
     });
-    if (mounted) setState(() {});
+    // Set form ready
+    setState(() {
+      _isFormReady = true;
+    });
   }
 
   Future<void> _onFormChanged(SettingsData data) async {
     setState(() => _isSaving = true);
     await _settingsStore.saveOrUpdateSettings(data.toEntity());
+
+    debugPrint('[DEBUG][onFormChanged] Form value changed: ${data.toJson()}');
+    debugPrint('[DEBUG][onFormChanged] settingsStore.settings: '
+        '${_settingsStore.settings?.toJson()}');
+
     setState(() => _isSaving = false);
   }
 
@@ -171,6 +182,11 @@ class _SettingsTabState extends State<SettingsTab> {
 
   @override
   Widget build(BuildContext context) {
+    if (!_isFormReady) {
+      return const Center(
+        child: CircularProgressIndicator(),
+      );
+    }
     return FormScope<SettingsData>(
       controller: _formController,
       child: AbsorbPointer(
