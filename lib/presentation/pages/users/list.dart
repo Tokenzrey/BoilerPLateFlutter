@@ -91,35 +91,15 @@ class _MylistScreenState extends State<MylistScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Button(
-                    variant: ButtonVariant.outlined,
-                    onPressed: () {},
-                    layout: const ButtonLayout(
-                      padding:
-                          EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                      borderRadius: BorderRadius.all(Radius.circular(12)),
-                    ),
-                    colors: ButtonColors(
-                      background: Colors.transparent,
-                      border: AppColors.primary.withAlpha(90),
-                    ),
-                    child: Row(
-                      children: const [
-                        Icon(Icons.filter_list, color: Colors.blue, size: 18),
-                        SizedBox(width: 6),
-                        AppText("Filter",
-                            color: Colors.blue, fontWeight: FontWeight.w600),
-                      ],
-                    ),
-                  ),
                 ],
               ),
             ),
             Expanded(
               child: Observer(
                 builder: (_) {
-                  final comics = comicStore.filteredComics?? [];
+                  final comics = comicStore.filteredComics.where((comic) {
+                    return comic.title.toLowerCase().contains(searchVal.toLowerCase());
+                  }).toList();
                   if (comics.isEmpty) {
                     return Center(
                       child: AppText(

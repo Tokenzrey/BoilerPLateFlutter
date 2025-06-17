@@ -1,6 +1,7 @@
 import 'package:boilerplate/domain/entity/comic/comic.dart';
 import 'package:boilerplate/domain/usecase/comic/followed_comic_usecase.dart';
 import 'package:mobx/mobx.dart';
+import 'package:uuid/uuid.dart';
 
 part 'comic_store.g.dart';
 
@@ -46,6 +47,7 @@ abstract class FollowedComicStoreBase with Store {
       },
           (_) {
         followedComics.add(FollowedComicEntity(
+          id: Uuid().v4(),
           userId: params.userId,
           slug: params.slug,
           hid: params.hid,

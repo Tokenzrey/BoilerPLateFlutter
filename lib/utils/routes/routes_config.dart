@@ -19,7 +19,7 @@ class RoutePaths {
   static const String unauthorized = '/unauthorized';
   static const String mylist = '/my-list';
   static const String comicDetail = '/comicDetail/:comicId';
-  static const String comicContent = '/comic-content';
+  static const String comicContent = '/comic-content/:hid';
 }
 
 class RouteParams {
@@ -113,17 +113,11 @@ class RoutesConfig {
     ),
     RouteConfig(
         path: RoutePaths.comicContent,
-        name: 'comic-content/:hid',
+        name: 'comic-content',
         builder: (context, params) {
-          final hid = params.pathParams['hid'];
-          return ReaderScreen(hid: hid);
+          return ReaderScreen(hid: "IXi2ivB6");
         },
         requiresAuth: true
-    ),
-    RouteConfig(
-        path: RoutePaths.comicContent,
-        name: 'comic-content',
-        builder: (context, params) => const ReaderScreen()
     ),
   ];
 
