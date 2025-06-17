@@ -254,7 +254,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                       data.fullName,
                                     );
                                     if (!context.mounted) return;
-                                    if (success && mounted) {
+                                    if (success) {
                                       Navigator.of(context).pop();
                                     } else {
                                       // Use generic error message
