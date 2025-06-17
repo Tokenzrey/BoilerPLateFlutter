@@ -7,17 +7,17 @@ import 'package:boilerplate/domain/repository/auth/auth_firebase_repository.dart
 class UpdateUserDataParams {
   final String fullName;
   final String username;
-  final String? photoUrl;
+  final String avatar;
 
   const UpdateUserDataParams({
     required this.fullName,
     required this.username,
-    this.photoUrl,
+    required this.avatar,
   });
 
   @override
   String toString() {
-    return 'UpdateUserDataParams(fullName: $fullName, username: $username, photoUrl: $photoUrl)';
+    return 'UpdateUserDataParams(fullName: $fullName, username: $username, avatar: $avatar)';
   }
 
   @override
@@ -26,12 +26,12 @@ class UpdateUserDataParams {
     return other is UpdateUserDataParams &&
         other.fullName == fullName &&
         other.username == username &&
-        other.photoUrl == photoUrl;
+        other.avatar == avatar;
   }
 
   @override
   int get hashCode {
-    return fullName.hashCode ^ username.hashCode ^ photoUrl.hashCode;
+    return fullName.hashCode ^ username.hashCode ^ avatar.hashCode;
   }
 }
 
@@ -45,7 +45,7 @@ class UpdateUserUseCase extends UseCase<User, UpdateUserDataParams> {
     return repository.updateUserData(
       params.fullName,
       params.username,
-      params.photoUrl,
+      params.avatar,
     );
   }
 }

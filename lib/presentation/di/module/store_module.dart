@@ -5,6 +5,7 @@ import 'package:boilerplate/core/stores/form/form_store.dart';
 import 'package:boilerplate/domain/repository/setting/setting_repository.dart';
 import 'package:boilerplate/domain/usecase/api/chapter_top_usecase.dart';
 import 'package:boilerplate/domain/usecase/api/top_api_usecase.dart';
+import 'package:boilerplate/domain/usecase/auth_firebase/delete_account_usecase.dart';
 
 import 'package:boilerplate/domain/usecase/auth_firebase/register_usecase.dart';
 import 'package:boilerplate/domain/usecase/auth_firebase/login_usecase.dart'
@@ -57,6 +58,8 @@ class StoreModule {
         getIt<firebase_auth.GetCurrentUserUseCase>(),
         getIt<SaveUserDataUseCase>(),
         getIt<SaveLoginStatusUseCase>(),
+        getIt<DeleteAccountUseCase>(),
+        getIt<DeleteAccountByIdUseCase>(),
         getIt<FormErrorStore>(),
         getIt<ErrorStore>(),
       ),

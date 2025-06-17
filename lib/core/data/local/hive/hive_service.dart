@@ -1,69 +1,9 @@
-/// Implementasi database service menggunakan Hive untuk Flutter.
-///
-/// HiveService memberikan lapisan abstraksi di atas database Hive yang
-/// menangani operasi umum seperti inisialisasi, enkripsi, backup, pemulihan,
-/// dan manajemen box. Kelas ini mengimplementasikan [DatabaseService] untuk
-/// memberikan antarmuka yang konsisten dan dapat diuji.
-///
-/// ## Fitur Utama
-///
-/// - **Enkripsi Database**: Mendukung AES-256 untuk mengenkripsi data sensitif
-/// - **Backup & Restore**: Sistem backup otomatis dengan strategi pemulihan
-/// - **Penanganan Korupsi**: Mendukung berbagai strategi untuk menangani database korup
-/// - **Lazy Loading**: Mendukung LazyBox untuk kinerja yang lebih baik dengan dataset besar
-/// - **Mode In-Memory**: Penyimpanan sementara untuk pengujian
-///
-/// ## Cara Penggunaan
-///
-/// ```dart
-/// // Inisialisasi dengan konfigurasi default
-/// final databaseService = HiveService();
-/// await databaseService.init();
-///
-/// // Atau dengan konfigurasi kustom
-/// final customConfig = DatabaseConfig(
-///   encryptionEnabled: true,
-///   autoBackup: true,
-///   backupPath: '/path/to/backup',
-/// );
-/// final databaseService = HiveService(config: customConfig);
-/// await databaseService.init();
-///
-/// // Daftarkan adapter untuk model kustom
-/// databaseService.registerAdapter(UserModelAdapter());
-///
-/// // Buka box dan gunakan
-/// final userBox = await databaseService.openBox<UserModel>('users');
-/// ```
-///
-/// ## Keamanan & Enkripsi
-///
-/// Ketika enkripsi diaktifkan, HiveService menggunakan AES-256 dengan kunci yang
-/// disimpan di secure storage perangkat. Ini memastikan data terlindungi bahkan
-/// pada perangkat yang di-root.
-///
-/// ## Backup & Pemulihan
-///
-/// Fitur backup otomatis membuat salinan box saat ditutup dan dapat dipulihkan
-/// jika terjadi korupsi data. Jalur backup dapat dikonfigurasi melalui
-/// `DatabaseConfig.backupPath`.
-///
-/// ## Menangani Korupsi Database
-///
-/// Terdapat beberapa strategi pemulihan yang didukung:
-/// - Menghapus dan membuat ulang box yang rusak
-/// - Memulihkan dari backup
-/// - Mempertahankan data yang tidak rusak
-///
-/// @version 1.0.0
-library;
-
 import 'dart:io';
-import 'dart:typed_data';
 import 'package:boilerplate/core/logging/logger.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart' as path_provider;
+import 'package:flutter/foundation.dart'; // Untuk debugPrint
 
 import 'config/database_service.dart';
 import 'config/database_exception.dart';
@@ -82,13 +22,6 @@ class HiveService implements DatabaseService {
   bool _isInitialized = false;
   String? _databaseDir;
 
-  /// Membuat instance HiveService.
-  ///
-  /// [encryption] adalah implementasi enkripsi untuk Hive.
-  /// Jika tidak disediakan, akan menggunakan [HiveEncryption] default.
-  ///
-  /// [config] adalah konfigurasi database.
-  /// Jika tidak disediakan, akan menggunakan [DatabaseConfig.defaultConfig].
   HiveService({
     HiveEncryption? encryption,
     DatabaseConfig? config,
@@ -97,6 +30,7 @@ class HiveService implements DatabaseService {
 
   @override
   Future<void> init() async {
+    debugPrint('[HiveService][init] Mulai inisialisasi...');
     try {
       if (_config.loggingEnabled) {
         _logger = getIt<Logger>().withTag('[HiveDatabase]');
@@ -114,28 +48,36 @@ class HiveService implements DatabaseService {
 
       if (_config.inMemoryStorage) {
         Hive.init(null);
+        debugPrint('[HiveService][init] Mode in-memory aktif.');
       } else {
         await Hive.initFlutter(_config.databaseDir);
 
         _databaseDir = _config.databaseDir ??
             (await path_provider.getApplicationDocumentsDirectory()).path;
+        debugPrint('[HiveService][init] Database path: $_databaseDir');
 
         if (_config.autoBackup && _config.backupPath != null) {
           final backupDir = Directory(_config.backupPath!);
           if (!await backupDir.exists()) {
             await backupDir.create(recursive: true);
+            debugPrint(
+                '[HiveService][init] Membuat direktori backup: ${_config.backupPath}');
           }
         }
       }
 
       if (_config.clearDatabaseOnInit) {
+        debugPrint(
+            '[HiveService][init] clearDatabaseOnInit: TRUE, menghapus data dari disk...');
         await Hive.deleteFromDisk();
       }
 
       _logSuccess('Database Hive berhasil diinisialisasi');
+      debugPrint('[HiveService][init] Selesai inisialisasi!');
       _isInitialized = true;
     } catch (e) {
       _logError('Gagal menginisialisasi database Hive, $e');
+      debugPrint('[HiveService][init][ERROR] $e');
       throw DatabaseException(
         message: 'Gagal menginisialisasi Hive',
         code: 'INIT_ERROR',
@@ -147,9 +89,12 @@ class HiveService implements DatabaseService {
   @override
   Future<Box<T>> openBox<T>(String boxName) async {
     checkInitialized();
+    debugPrint('[HiveService][openBox] Membuka box: $boxName');
 
     if (_openBoxes.containsKey(boxName)) {
-      _logDebug('Membuka box: $boxName');
+      _logDebug('Membuka box: $boxName (cached)');
+      debugPrint(
+          '[HiveService][openBox] Box "$boxName" sudah dibuka sebelumnya (cached)');
       return _openBoxes[boxName] as Box<T>;
     }
 
@@ -157,15 +102,15 @@ class HiveService implements DatabaseService {
       HiveCipher? cipher;
 
       if (_config.encryptionEnabled) {
+        debugPrint(
+            '[HiveService][openBox] Enkripsi aktif. Mengambil encryption key...');
         final Uint8List encryptionKey;
-
         if (_config.encryptionKey != null) {
           encryptionKey = Uint8List.fromList(_config.encryptionKey!);
         } else {
           encryptionKey = Uint8List.fromList(
               await _encryption.getEncryptionKey(_config.encryptionKeyName));
         }
-
         cipher = _encryption.createCipher(encryptionKey);
       }
 
@@ -175,13 +120,14 @@ class HiveService implements DatabaseService {
       while (true) {
         try {
           if (_config.lazyBoxMode) {
+            debugPrint('[HiveService][openBox] Membuka LazyBox: $boxName');
             box = await Hive.openLazyBox<T>(
               boxName,
               encryptionCipher: cipher,
               crashRecovery: true,
             ) as Box<T>;
           } else {
-            // Buka box standar
+            debugPrint('[HiveService][openBox] Membuka Box standar: $boxName');
             box = await Hive.openBox<T>(
               boxName,
               encryptionCipher: cipher,
@@ -189,13 +135,16 @@ class HiveService implements DatabaseService {
             );
 
             if (_config.compactOnOpen) {
+              debugPrint(
+                  '[HiveService][openBox] compactOnOpen aktif. Kompaksi...');
               await box.compact();
-
               final stats = box.toMap();
               final entries = stats.length;
               final deletedEntries = await _countDeletedEntries(box);
 
               if (_shouldCompact(entries, deletedEntries)) {
+                debugPrint(
+                    '[HiveService][openBox] Kompaksi kedua, karena banyak deleted entry.');
                 await box.compact();
               }
             }
@@ -203,31 +152,37 @@ class HiveService implements DatabaseService {
           break;
         } catch (e) {
           recoveryAttempts++;
+          debugPrint(
+              '[HiveService][openBox][ERROR] Percobaan recovery ke-$recoveryAttempts: $e');
 
           if (recoveryAttempts >= _config.maxRecoveryAttempts) {
+            debugPrint('[HiveService][openBox][ERROR] Max recovery attempts.');
             rethrow;
           }
 
           switch (_config.recoveryStrategy) {
             case RecoveryStrategy.deleteBoxIfCorrupted:
+              debugPrint(
+                  '[HiveService][openBox][RECOVERY] Menghapus box rusak: $boxName');
               await Hive.deleteBoxFromDisk(boxName);
               break;
-
             case RecoveryStrategy.restoreFromBackup:
+              debugPrint(
+                  '[HiveService][openBox][RECOVERY] Restore from backup...');
               if (_config.backupPath != null) {
                 await _restoreFromBackup(boxName);
               } else {
                 await Hive.deleteBoxFromDisk(boxName);
               }
               break;
-
             case RecoveryStrategy.throwException:
               throw DatabaseException.boxOpenError(
                 boxName: boxName,
                 error: e,
               );
-
             case RecoveryStrategy.recoverAndDeleteCorruptedData:
+              debugPrint(
+                  '[HiveService][openBox][RECOVERY] recoverAndDeleteCorruptedData, lanjut loop...');
               continue;
           }
         }
@@ -236,13 +191,17 @@ class HiveService implements DatabaseService {
       _openBoxes[boxName] = box;
 
       if (_config.autoBackup && _config.backupPath != null) {
+        debugPrint(
+            '[HiveService][openBox] autoBackup aktif. Membuat backup...');
         await createBackup(boxName);
       }
 
       _logDebug('Membuka box: $boxName');
+      debugPrint('[HiveService][openBox] Box "$boxName" berhasil dibuka!');
       return box;
     } catch (e) {
       _logError('Gagal membuka box: $boxName, exception: $e');
+      debugPrint('[HiveService][openBox][ERROR] $e');
       throw DatabaseException.boxOpenError(
         boxName: boxName,
         error: e,
@@ -252,18 +211,17 @@ class HiveService implements DatabaseService {
 
   Future<Box<T>> forceRecoveryAndOpen<T>(String boxName) async {
     checkInitialized();
+    debugPrint(
+        '[HiveService][forceRecoveryAndOpen] Forcing recovery: $boxName');
 
-    _logDebug('Forcing recovery for box: $boxName');
-
-    // First try to delete the box
     try {
       await Hive.deleteBoxFromDisk(boxName);
-      _logDebug('Box deleted for recovery: $boxName');
+      debugPrint('[HiveService][forceRecoveryAndOpen] Box deleted: $boxName');
     } catch (e) {
-      _logError('Failed to delete box for recovery: $boxName, $e');
+      debugPrint(
+          '[HiveService][forceRecoveryAndOpen][ERROR] Gagal hapus box: $boxName, $e');
     }
 
-    // Try to find and delete any related files
     if (!_config.inMemoryStorage && _databaseDir != null) {
       try {
         final directory = Directory(_databaseDir!);
@@ -273,19 +231,21 @@ class HiveService implements DatabaseService {
             if (file.path.contains(boxName)) {
               try {
                 await File(file.path).delete();
-                _logDebug('Deleted related file: ${file.path}');
+                debugPrint(
+                    '[HiveService][forceRecoveryAndOpen] File terkait dihapus: ${file.path}');
               } catch (e) {
-                _logError('Failed to delete related file: ${file.path}, $e');
+                debugPrint(
+                    '[HiveService][forceRecoveryAndOpen][ERROR] Gagal hapus file: ${file.path}, $e');
               }
             }
           }
         }
       } catch (e) {
-        _logError('Error cleaning up box files: $e');
+        debugPrint(
+            '[HiveService][forceRecoveryAndOpen][ERROR] Gagal bersihkan file: $e');
       }
     }
 
-    // Now try to open the box with minimal settings
     final box = await Hive.openBox<T>(
       boxName,
       crashRecovery: true,
@@ -293,81 +253,39 @@ class HiveService implements DatabaseService {
 
     _openBoxes[boxName] = box;
     _logSuccess('Successfully recovered and opened box: $boxName');
+    debugPrint(
+        '[HiveService][forceRecoveryAndOpen] Sukses recovery dan buka box: $boxName');
     return box;
   }
 
-  /// Menghitung perkiraan jumlah entri yang dihapus dalam sebuah box
-  ///
-  /// Metode ini menganalisis struktur internal Hive Box untuk memberikan
-  /// estimasi akurat tentang jumlah entri yang telah dihapus tetapi belum
-  /// dibebaskan ruangannya dalam file penyimpanan.
   Future<int> _countDeletedEntries(Box box) async {
     try {
-      // Cara 1: Menggunakan informasi internal box (pendekatan paling akurat)
       if (box.isOpen) {
-        // Jika box dibuka dengan Lazy Loading, pendekatan berbeda diperlukan
         if (box is LazyBox) {
-          // Untuk LazyBox, kita perlu menggunakan pendekatan metadata
           final String boxPath = box.path ?? '';
           if (boxPath.isNotEmpty) {
             final File boxFile = File(boxPath);
             if (await boxFile.exists()) {
               final int fileSize = await boxFile.length();
               final int currentEntries = box.length;
-
-              // Rata-rata 100 bytes per entri (asumsi konservatif)
-              // Ini sebenarnya tergantung pada ukuran data Anda
               const int avgEntrySize = 100;
-
-              // Memperkirakan kapasitas total berdasarkan ukuran file
               final int estimatedCapacity = fileSize ~/ avgEntrySize;
-
-              // Memperkirakan jumlah yang dihapus berdasarkan perbedaan kapasitas dan entri aktual
               final int estimatedDeleted = estimatedCapacity - currentEntries;
-
-              // Mengembalikan estimasi dengan batas bawah 0
               return estimatedDeleted > 0 ? estimatedDeleted : 0;
             }
           }
-
-          // Fallback: Perkiraan berdasarkan persentase ukuran box
-          return (box.length * 0.2).round(); // Asumsi 20% deleted
+          return (box.length * 0.2).round();
         }
 
-        // Untuk box standar, kita bisa mendapatkan informasi yang lebih akurat
-        // dengan akses ke frame data dan memeriksa tanda deleted
-
-        // 1. Dapatkan data internal box (jumlah maksimum slot dan slot yang digunakan)
         final boxLength = box.length;
-
-        // 2. Hitung entri yang dihapus menggunakan metrik internal Hive
-        // Kita mengakses metadata Hive yang menyimpan informasi tentang jumlah frame
-        // dan frame yang ditandai dihapus
-
-        // Metode ini tergantung pada struktur internal Hive, yang mungkin berubah
-        // antar versi, jadi kita gunakan pendekatan alternatif yang lebih aman
-
-        // Hitung berdasarkan jumlah operasi delete dan put sejak terakhir kompaksi
-        // Karena Hive tidak menyediakan API publik untuk ini, kita gunakan metrik alternatif
-
-        // Gunakan heuristik: Jika ukuran file terlalu besar dibanding jumlah entri,
-        // kemungkinan banyak entri yang dihapus
-
-        // Periksa ukuran file dibanding dengan jumlah entri yang ada
         final boxPath = box.path;
         if (boxPath != null) {
           final File boxFile = File(boxPath);
           if (await boxFile.exists()) {
             final fileSize = await boxFile.length();
-
-            // Perkirakan ukuran per entri (asumsi: rata-rata 40 bytes overhead + ukuran data)
-            // Ini perkiraan yang konservatif, ukuran sebenarnya bervariasi
             int totalDataSize = 0;
             box.toMap().forEach((key, value) {
-              // Perkiraan ukuran kunci (minimal 4 bytes untuk integer, lebih untuk string)
               int keySize = key is String ? key.length * 2 + 6 : 4;
-
-              // Perkiraan ukuran nilai
               int valueSize;
               if (value == null) {
                 valueSize = 1;
@@ -380,92 +298,50 @@ class HiveService implements DatabaseService {
               } else if (value is Map) {
                 valueSize = value.length * 8 + 10;
               } else {
-                // Untuk tipe lain, gunakan estimasi yang lebih tinggi
                 valueSize = 100;
               }
-
-              totalDataSize +=
-                  keySize + valueSize + 40; // 40 bytes overhead per entry
+              totalDataSize += keySize + valueSize + 40;
             });
 
-            // Jika ukuran file signifikan lebih besar dari perkiraan total data,
-            // kemungkinan banyak entri yang telah dihapus
             if (totalDataSize > 0 && fileSize > totalDataSize * 1.5) {
-              // Perkirakan jumlah entri yang dihapus
               return ((fileSize - totalDataSize) / (totalDataSize / boxLength))
                   .round();
             }
-
-            // Fallback jika estimasi di atas tidak memungkinkan
             if (fileSize > boxLength * 200) {
-              // Asumsi rata-rata 200 bytes per entri
               return (fileSize / 200 - boxLength).round();
             }
           }
         }
-
-        // Jika tidak ada informasi file, gunakan heuristik sederhana
-        // berdasarkan ukuran box
         if (boxLength > 100) {
-          // Untuk box besar, asumsikan 15% entri mungkin telah dihapus
           return (boxLength * 0.15).round();
         } else if (boxLength > 20) {
-          // Untuk box medium, asumsikan 10% entri mungkin telah dihapus
           return (boxLength * 0.1).round();
         }
       }
-
-      // Untuk box kecil atau tidak ada informasi yang cukup
       return 0;
     } catch (e) {
-      // Log error jika konfigurasi logging diaktifkan
       if (_config.loggingEnabled) {
         _logger.debug('Error menghitung entri yang dihapus: $e');
       }
-
-      // Fallback konservatif jika terjadi error:
-      // Perkirakan berdasarkan jumlah entri saat ini
       final int currentEntries = box.length;
       if (currentEntries > 1000) {
-        return (currentEntries * 0.1)
-            .round(); // Asumsi 10% deleted untuk box besar
+        return (currentEntries * 0.1).round();
       } else if (currentEntries > 100) {
-        return (currentEntries * 0.05)
-            .round(); // Asumsi 5% deleted untuk box sedang
+        return (currentEntries * 0.05).round();
       }
-
-      // Untuk box kecil, kemungkinan tidak perlu kompaksi
       return 0;
     }
   }
 
-  /// Menentukan apakah box perlu dikompaksi berdasarkan jumlah entri dan entri yang dihapus
   bool _shouldCompact(int entries, int deletedEntries) {
     if (entries == 0) return false;
-
-    if (deletedEntries > 50) {
-      return true;
-    }
-
-    if (entries > 500 && deletedEntries > entries * 0.1) {
-      return true;
-    }
-
-    if (entries > 100 && deletedEntries > entries * 0.2) {
-      return true;
-    }
-
-    if (entries > 0 && deletedEntries > entries * 0.5) {
-      return true;
-    }
-
+    if (deletedEntries > 50) return true;
+    if (entries > 500 && deletedEntries > entries * 0.1) return true;
+    if (entries > 100 && deletedEntries > entries * 0.2) return true;
+    if (entries > 0 && deletedEntries > entries * 0.5) return true;
     return false;
   }
 
-  /// Menganalisis efisiensi penyimpanan dari sebuah box
-  ///
-  /// Mengembalikan persentase ruang penyimpanan yang digunakan secara efektif.
-  /// Nilai yang mendekati 100% menunjukkan efisiensi tinggi dengan sedikit ruang terbuang.
   @override
   Future<double> analyzeStorageEfficiency(String boxName) async {
     checkInitialized();
@@ -476,24 +352,25 @@ class HiveService implements DatabaseService {
       final deletedEntries = await _countDeletedEntries(box);
       final totalEntries = entries + deletedEntries;
 
+      debugPrint(
+          '[HiveService][analyzeStorageEfficiency] $boxName -> entries: $entries, deleted: $deletedEntries, total: $totalEntries');
+
       if (totalEntries == 0) return 100.0;
 
       return (entries / totalEntries) * 100;
     } catch (e) {
       _logError('Gagal menganalisis efisiensi storage untuk box $boxName: $e');
+      debugPrint('[HiveService][analyzeStorageEfficiency][ERROR] $e');
       return 0.0;
     }
   }
 
-  /// Memadatkan semua box yang memenuhi kriteria kompaksi
-  ///
-  /// Berguna untuk operasi pemeliharaan rutin database
   @override
   Future<Map<String, bool>> compactAllBoxesIfNeeded() async {
     checkInitialized();
+    debugPrint('[HiveService][compactAllBoxesIfNeeded] Mulai...');
 
     final results = <String, bool>{};
-
     for (final boxName in _openBoxes.keys) {
       try {
         final box = _openBoxes[boxName]!;
@@ -501,6 +378,8 @@ class HiveService implements DatabaseService {
         final deletedEntries = await _countDeletedEntries(box);
 
         if (_shouldCompact(entries, deletedEntries)) {
+          debugPrint(
+              '[HiveService][compactAllBoxesIfNeeded] Kompaksi: $boxName');
           await box.compact();
           results[boxName] = true;
         } else {
@@ -508,18 +387,20 @@ class HiveService implements DatabaseService {
         }
       } catch (e) {
         _logError('Gagal kompaksi box $boxName: $e');
+        debugPrint('[HiveService][compactAllBoxesIfNeeded][ERROR] $e');
         results[boxName] = false;
       }
     }
 
+    debugPrint('[HiveService][compactAllBoxesIfNeeded] Selesai!');
     return results;
   }
 
-  /// Membuat backup dari box tertentu
   @override
   Future<void> createBackup(String boxName) async {
     if (_config.backupPath == null || _databaseDir == null) return;
 
+    debugPrint('[HiveService][createBackup] Membuat backup: $boxName');
     try {
       final boxDir = path.join(_databaseDir!, boxName);
       final backupDir = path.join(_config.backupPath!, boxName);
@@ -527,6 +408,8 @@ class HiveService implements DatabaseService {
       final backupDirObj = Directory(backupDir);
       if (!await backupDirObj.exists()) {
         await backupDirObj.create(recursive: true);
+        debugPrint(
+            '[HiveService][createBackup] Membuat direktori backup: $backupDir');
       }
 
       final boxDirObj = Directory(boxDir);
@@ -536,45 +419,48 @@ class HiveService implements DatabaseService {
             final fileName = path.basename(file.path);
             final backupFile = File(path.join(backupDir, fileName));
             await file.copy(backupFile.path);
+            debugPrint('[HiveService][createBackup] Backup file: $fileName');
           }
         }
       }
     } catch (e) {
       _logError('Error saat membuat backup untuk $boxName: $e');
+      debugPrint('[HiveService][createBackup][ERROR] $e');
     }
   }
 
-  /// Helper untuk logging error
   void _logError(String message) {
     if (_config.loggingEnabled) {
       _logger.error(message);
     }
+    debugPrint('[HiveService][ERROR] $message');
   }
 
-  /// Helper untuk logging success
   void _logSuccess(String message) {
     if (_config.loggingEnabled) {
       _logger.info(message);
     }
+    debugPrint('[HiveService][SUCCESS] $message');
   }
 
-  /// Helper untuk logging debug
   void _logDebug(String message) {
     if (_config.loggingEnabled) {
       _logger.debug(message);
     }
+    debugPrint('[HiveService][DEBUG] $message');
   }
 
-  /// Memulihkan box dari backup
   Future<void> _restoreFromBackup(String boxName) async {
     if (_config.backupPath == null || _databaseDir == null) return;
 
+    debugPrint('[HiveService][_restoreFromBackup] Mulai restore: $boxName');
     try {
       final boxDir = path.join(_databaseDir!, boxName);
       final backupDir = path.join(_config.backupPath!, boxName);
 
       final backupDirObj = Directory(backupDir);
       if (!await backupDirObj.exists()) {
+        debugPrint('[HiveService][_restoreFromBackup] Tidak ada backup!');
         return;
       }
 
@@ -590,10 +476,13 @@ class HiveService implements DatabaseService {
           final fileName = path.basename(file.path);
           final boxFile = File(path.join(boxDir, fileName));
           await file.copy(boxFile.path);
+          debugPrint(
+              '[HiveService][_restoreFromBackup] Restore file: $fileName');
         }
       }
     } catch (e) {
       _logError('Error saat memulihkan backup untuk $boxName: $e');
+      debugPrint('[HiveService][_restoreFromBackup][ERROR] $e');
       await Hive.deleteBoxFromDisk(boxName);
     }
   }
@@ -601,6 +490,7 @@ class HiveService implements DatabaseService {
   @override
   Future<void> closeBox(String boxName) async {
     checkInitialized();
+    debugPrint('[HiveService][closeBox] Menutup box: $boxName');
 
     if (_openBoxes.containsKey(boxName)) {
       if (_config.autoBackup && _config.backupPath != null) {
@@ -610,78 +500,81 @@ class HiveService implements DatabaseService {
       final box = _openBoxes[boxName]!;
       await box.close();
       _openBoxes.remove(boxName);
+      debugPrint('[HiveService][closeBox] Box ditutup: $boxName');
     }
   }
 
   @override
   Future<void> closeAllBoxes() async {
     checkInitialized();
-
+    debugPrint('[HiveService][closeAllBoxes] Menutup semua box...');
     for (final boxName in List.from(_openBoxes.keys)) {
       await closeBox(boxName);
     }
+    debugPrint('[HiveService][closeAllBoxes] Semua box sudah ditutup.');
   }
 
   @override
   Future<void> clearBox(String boxName) async {
     checkInitialized();
-
+    debugPrint('[HiveService][clearBox] Mengosongkan box: $boxName');
     if (_openBoxes.containsKey(boxName)) {
       await _openBoxes[boxName]!.clear();
     } else {
       final box = await openBox(boxName);
       await box.clear();
     }
+    debugPrint('[HiveService][clearBox] Box dikosongkan: $boxName');
   }
 
   @override
   Future<bool> boxExists(String boxName) async {
     checkInitialized();
+    debugPrint('[HiveService][boxExists] Mengecek box: $boxName');
     return Hive.boxExists(boxName);
   }
 
   @override
   List<String> getOpenBoxes() {
     checkInitialized();
+    debugPrint('[HiveService][getOpenBoxes] ${_openBoxes.keys}');
     return _openBoxes.keys.toList();
   }
 
   @override
   void registerAdapter<T>(dynamic adapter) {
     checkInitialized();
-
     if (!Hive.isAdapterRegistered(adapter.typeId)) {
       Hive.registerAdapter<T>(adapter);
+      debugPrint(
+          '[HiveService][registerAdapter] Adapter registered: ${adapter.runtimeType}');
     }
   }
 
-  /// Memastikan bahwa database telah diinisialisasi
   @override
   void checkInitialized() {
     if (!_isInitialized) {
       _logError('Database belum terinisialisasi');
+      debugPrint(
+          '[HiveService][checkInitialized][ERROR] Database belum di-init!');
       throw DatabaseException.notInitialized();
     }
   }
 
-  /// Mendapatkan box yang telah dibuka
-  ///
-  /// Mengembalikan null jika box dengan nama [boxName] belum pernah dibuka
   @override
   Box<T>? getOpenBox<T>(String boxName) {
     if (_openBoxes.containsKey(boxName)) {
+      debugPrint('[HiveService][getOpenBox] Get open box: $boxName');
       return _openBoxes[boxName] as Box<T>;
     }
+    debugPrint('[HiveService][getOpenBox] Box belum dibuka: $boxName');
     return null;
   }
 
-  /// Membuat backup database penuh dari semua box
-  ///
-  /// Mengembalikan path direktori backup, atau null jika backup gagal
   @override
   Future<String?> createFullBackup() async {
     if (_config.backupPath == null) return null;
-
+    debugPrint('[HiveService][createFullBackup] Membuat full backup...');
     try {
       final timestamp = DateTime.now().toIso8601String().replaceAll(':', '-');
       final backupDir =
@@ -695,35 +588,30 @@ class HiveService implements DatabaseService {
       for (final boxName in _openBoxes.keys) {
         await createBackup(boxName);
       }
-
+      debugPrint('[HiveService][createFullBackup] Selesai.');
       return backupDir;
     } catch (e) {
       _logError('Full backup gagal: $e');
+      debugPrint('[HiveService][createFullBackup][ERROR] $e');
       return null;
     }
   }
 
-  /// Mendapatkan versi skema database saat ini
   @override
   int getSchemaVersion() => _config.schemaVersion;
 
-  /// Memadatkan box untuk mengurangi ukuran penyimpanan
-  ///
-  /// Ini berguna setelah menghapus banyak entri dari box
   @override
   Future<void> compactBox(String boxName) async {
     checkInitialized();
-
     if (_openBoxes.containsKey(boxName)) {
       await _openBoxes[boxName]!.compact();
+      debugPrint('[HiveService][compactBox] Kompaksi: $boxName');
     }
   }
 
-  /// Mendapatkan path direktori database
-  ///
-  /// Mengembalikan null jika database dijalankan dalam mode in-memory
   @override
   String? getDatabaseDirectory() {
+    debugPrint('[HiveService][getDatabaseDirectory] $_databaseDir');
     return _databaseDir;
   }
 }

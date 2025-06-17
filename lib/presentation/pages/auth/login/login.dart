@@ -1,7 +1,4 @@
-// ignore_for_file: use_build_context_synchronously
-
 import 'package:boilerplate/constants/colors.dart';
-import 'package:boilerplate/core/widgets/empty_app_bar_widget.dart';
 import 'package:boilerplate/core/widgets/components/typography.dart';
 import 'package:boilerplate/core/widgets/components/forms/app_form.dart';
 import 'package:boilerplate/core/widgets/components/forms/input.dart';
@@ -62,8 +59,27 @@ class LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: EmptyAppBar(),
-      // Using SafeArea and LayoutBuilder to ensure content is properly scrollable
+      appBar: AppBar(
+        backgroundColor: AppColors.background,
+        elevation: 0,
+        automaticallyImplyLeading: false,
+        title: Row(
+          children: [
+            Button(
+              leftIcon: Icons.arrow_back,
+              iconOnly: true,
+              density: ButtonDensity.icon,
+              variant: ButtonVariant.ghost,
+              colors: ButtonColors(
+                text: AppColors.neutral[200],
+              ),
+              onPressed: () {
+                context.go('/home');
+              },
+            ),
+          ],
+        ),
+      ),
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {

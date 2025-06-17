@@ -15,10 +15,11 @@ class AuthFirebaseRepositoryImpl implements AuthFirebaseRepository {
 
   @override
   Future<Either<Failure, User>> register(
-      String email, String password, String username, String fullName) async {
+      String email, String password, String username, String fullName,
+      {String avatar = "0"}) async {
     try {
-      final userModel =
-          await dataSource.register(email, password, username, fullName);
+      final userModel = await dataSource
+          .register(email, password, username, fullName, avatar: avatar);
       return Right(_mapFirebaseUserToUser(userModel));
     } catch (e) {
       return Left(AuthFailure(e.toString()));
@@ -41,10 +42,10 @@ class AuthFirebaseRepositoryImpl implements AuthFirebaseRepository {
 
   @override
   Future<Either<Failure, User>> updateUserData(
-      String fullName, String username, String? photoUrl) async {
+      String fullName, String username, String avatar) async {
     try {
       final userModel =
-          await dataSource.updateUserData(fullName, username, photoUrl);
+          await dataSource.updateUserData(fullName, username, avatar);
       final user = _mapFirebaseUserToUser(userModel);
 
       await sharedPrefsHelper.setUserData(user);
@@ -59,6 +60,28 @@ class AuthFirebaseRepositoryImpl implements AuthFirebaseRepository {
       String currentPassword, String newPassword) async {
     try {
       await dataSource.updatePassword(currentPassword, newPassword);
+      return const Right(null);
+    } catch (e) {
+      return Left(AuthFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> deleteAccount(String password) async {
+    try {
+      await dataSource.deleteAccount(password);
+      await sharedPrefsHelper.saveIsLoggedIn(false);
+      await sharedPrefsHelper.removeUserData();
+      return const Right(null);
+    } catch (e) {
+      return Left(AuthFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> deleteAccountById(String uid) async {
+    try {
+      await dataSource.deleteAccountById(uid);
       return const Right(null);
     } catch (e) {
       return Left(AuthFailure(e.toString()));
@@ -131,6 +154,7 @@ class AuthFirebaseRepositoryImpl implements AuthFirebaseRepository {
       createdAt: model.createdAt,
       lastLogin: model.lastLogin,
       roles: model.roles,
+      avatar: model.avatar,
     );
   }
 }

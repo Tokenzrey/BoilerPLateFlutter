@@ -85,9 +85,10 @@ mixin _$AuthStore on AuthStoreBase, Store {
 
   @override
   Future<bool> register(
-      String email, String password, String username, String fullName) {
-    return _$registerAsyncAction
-        .run(() => super.register(email, password, username, fullName));
+      String email, String password, String username, String fullName,
+      {String avatar = "0"}) {
+    return _$registerAsyncAction.run(() =>
+        super.register(email, password, username, fullName, avatar: avatar));
   }
 
   late final _$loginAsyncAction =
@@ -102,10 +103,9 @@ mixin _$AuthStore on AuthStoreBase, Store {
       AsyncAction('AuthStoreBase.updateUserData', context: context);
 
   @override
-  Future<bool> updateUserData(
-      String fullName, String username, String? photoUrl) {
+  Future<bool> updateUserData(String fullName, String username, String avatar) {
     return _$updateUserDataAsyncAction
-        .run(() => super.updateUserData(fullName, username, photoUrl));
+        .run(() => super.updateUserData(fullName, username, avatar));
   }
 
   late final _$updatePasswordAsyncAction =
@@ -115,6 +115,23 @@ mixin _$AuthStore on AuthStoreBase, Store {
   Future<bool> updatePassword(String currentPassword, String newPassword) {
     return _$updatePasswordAsyncAction
         .run(() => super.updatePassword(currentPassword, newPassword));
+  }
+
+  late final _$deleteAccountAsyncAction =
+      AsyncAction('AuthStoreBase.deleteAccount', context: context);
+
+  @override
+  Future<bool> deleteAccount(String password) {
+    return _$deleteAccountAsyncAction.run(() => super.deleteAccount(password));
+  }
+
+  late final _$deleteAccountByIdAsyncAction =
+      AsyncAction('AuthStoreBase.deleteAccountById', context: context);
+
+  @override
+  Future<bool> deleteAccountById(String uid) {
+    return _$deleteAccountByIdAsyncAction
+        .run(() => super.deleteAccountById(uid));
   }
 
   late final _$logoutAsyncAction =

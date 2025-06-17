@@ -11,6 +11,7 @@ class FirebaseUserModel extends Equatable {
   final DateTime createdAt;
   final DateTime? lastLogin;
   final List<String> roles;
+  final String avatar;
 
   const FirebaseUserModel({
     required this.id,
@@ -20,12 +21,14 @@ class FirebaseUserModel extends Equatable {
     required this.createdAt,
     this.lastLogin,
     this.roles = const ['user'],
+    this.avatar = "0",
   });
 
   factory FirebaseUserModel.create({
     required String email,
     required String username,
     required String fullName,
+    String avatar = "0",
   }) {
     return FirebaseUserModel(
       id: const Uuid().v4(),
@@ -34,6 +37,7 @@ class FirebaseUserModel extends Equatable {
       fullName: fullName.trim(),
       createdAt: DateTime.now(),
       roles: const ['user'],
+      avatar: avatar,
     );
   }
 
@@ -53,6 +57,7 @@ class FirebaseUserModel extends Equatable {
       createdAt: createdTimestamp?.toDate() ?? DateTime.now(),
       lastLogin: lastLoginTimestamp?.toDate(),
       roles: List<String>.from(data['roles'] ?? ['user']),
+      avatar: data['avatar'] ?? "0",
     );
   }
 
@@ -62,6 +67,7 @@ class FirebaseUserModel extends Equatable {
     String? fullName,
     DateTime? lastLogin,
     List<String>? roles,
+    String? avatar,
   }) {
     return FirebaseUserModel(
       id: id,
@@ -71,6 +77,7 @@ class FirebaseUserModel extends Equatable {
       createdAt: createdAt,
       lastLogin: lastLogin ?? this.lastLogin,
       roles: roles ?? this.roles,
+      avatar: avatar ?? this.avatar,
     );
   }
 
@@ -82,10 +89,11 @@ class FirebaseUserModel extends Equatable {
       'createdAt': Timestamp.fromDate(createdAt),
       'lastLogin': lastLogin != null ? Timestamp.fromDate(lastLogin!) : null,
       'roles': roles,
+      'avatar': avatar,
     };
   }
 
   @override
   List<Object?> get props =>
-      [id, email, username, fullName, createdAt, lastLogin, roles];
+      [id, email, username, fullName, createdAt, lastLogin, roles, avatar];
 }

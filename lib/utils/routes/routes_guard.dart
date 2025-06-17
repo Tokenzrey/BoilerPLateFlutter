@@ -28,24 +28,56 @@ class RouteGuard extends StatefulWidget {
     final authNotifier = authStateChanges;
 
     if (authNotifier.isLoading) {
-      // Biarkan router menunggu
+      // Biarkan router menunggu proses auth
       return null;
     }
 
     final isLoggedIn = authNotifier.isLoggedIn;
-    final publicPaths = RoutesConfig.publicRoutes.map((r) => r.path).toList();
-    final isPublicRoute = publicPaths.contains(state.matchedLocation);
+    final location = state.matchedLocation;
 
-    // Jika belum login dan akses route privat, arahkan ke login
-    if (!isLoggedIn && !isPublicRoute) {
+    // Improved route matching function
+    bool isPublicRoute(String location) {
+      // First, handle exact matches
+      if (RoutesConfig.publicRoutes.any((route) => route.path == location)) {
+        return true;
+      }
+
+      // Then handle routes with parameters
+      for (final route in RoutesConfig.publicRoutes) {
+        // Convert route path pattern like '/comicDetail/:comicId' to regex
+        final pattern =
+            '^${route.path.replaceAllMapped(RegExp(r':(\w+)'), (match) => '([^/]+)')}\$';
+
+        try {
+          if (RegExp(pattern).hasMatch(location)) {
+            return true;
+          }
+        } catch (e) {
+          // Log error but continue checking other routes
+          debugPrint('Error matching route pattern: $e');
+        }
+      }
+      return false;
+    }
+
+    // First check: Is this a public route? If yes, allow navigation regardless of auth
+    if (isPublicRoute(location)) {
+      return null;
+    }
+
+    // Second check: For non-public routes, check auth status
+    if (!isLoggedIn) {
+      // Only redirect to login for non-public routes when not logged in
       return RoutePaths.login;
     }
 
-    // Jika sudah login dan akses ke login page, arahkan ke home
-    if (isLoggedIn && state.matchedLocation == RoutePaths.login) {
+    // Special case: If logged in but trying to access login/register, redirect home
+    if (isLoggedIn &&
+        (location == RoutePaths.login || location == RoutePaths.register)) {
       return RoutePaths.home;
     }
 
+    // Allow the navigation
     return null;
   }
 }
@@ -53,6 +85,7 @@ class RouteGuard extends StatefulWidget {
 /// Widget guard untuk role-based access di page
 class _RouteGuardState extends State<RouteGuard> {
   final AuthStore _authStore = getIt<AuthStore>();
+  final bool _isLocalAuthCheck = true; // Made final as it's never reassigned
 
   bool _isLoading = true;
   bool _isAuthorized = false;
@@ -83,11 +116,14 @@ class _RouteGuardState extends State<RouteGuard> {
         _isAuthorized = hasAccess;
       });
 
-      if (!hasAccess && mounted) {
-        context.go(RoutePaths.unauthorized);
-      }
-      if (user == null && mounted) {
-        context.go(RoutePaths.login);
+      // Only navigate if this isn't just a local UI check
+      if (!_isLocalAuthCheck) {
+        if (!hasAccess && mounted) {
+          context.go(RoutePaths.unauthorized);
+        }
+        if (user == null && mounted) {
+          context.go(RoutePaths.login);
+        }
       }
     } catch (e) {
       if (!mounted) return;
@@ -95,7 +131,9 @@ class _RouteGuardState extends State<RouteGuard> {
         _isLoading = false;
         _isAuthorized = false;
       });
-      if (mounted) {
+
+      // Only navigate if this isn't just a local UI check
+      if (!_isLocalAuthCheck && mounted) {
         context.go(RoutePaths.login);
       }
     }
@@ -117,9 +155,13 @@ class _RouteGuardState extends State<RouteGuard> {
     }
 
     if (!_isAuthorized) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        context.go(RoutePaths.unauthorized);
-      });
+      // Only navigate if this isn't a local UI check
+      if (!_isLocalAuthCheck) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          context.go(RoutePaths.unauthorized);
+        });
+      }
+
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
       );
@@ -135,6 +177,7 @@ class AuthStateNotifier extends ChangeNotifier {
   bool _isLoggedIn = false;
   bool _isLoading = true;
   User? _currentUser;
+  bool _isNavigating = false; // Added to prevent notification loops
 
   final AuthStore _authStore = getIt<AuthStore>();
   late final List<ReactionDisposer> _disposers;
@@ -153,17 +196,29 @@ class AuthStateNotifier extends ChangeNotifier {
     // Reaction MobX agar GoRouter refresh jika Auth berubah
     _disposers = [
       reaction((_) => _authStore.isLoggedIn, (bool isLoggedIn) {
-        _isLoggedIn = isLoggedIn;
-        notifyListeners();
+        if (_isLoggedIn != isLoggedIn && !_isNavigating) {
+          _isLoggedIn = isLoggedIn;
+          _isNavigating = true;
+          notifyListeners();
+          // Reset flag after notification has been processed
+          Future.microtask(() => _isNavigating = false);
+        }
       }),
       reaction((_) => _authStore.isLoading, (bool loading) {
-        _isLoading = loading;
-        notifyListeners();
+        if (_isLoading != loading && !_isNavigating) {
+          _isLoading = loading;
+          notifyListeners();
+        }
       }),
       reaction((_) => _authStore.currentUser, (user) {
-        _currentUser = user;
-        _isLoggedIn = user != null;
-        notifyListeners();
+        if (_currentUser?.id != user?.id && !_isNavigating) {
+          _currentUser = user;
+          _isLoggedIn = user != null;
+          _isNavigating = true;
+          notifyListeners();
+          // Reset flag after notification has been processed
+          Future.microtask(() => _isNavigating = false);
+        }
       }),
     ];
   }

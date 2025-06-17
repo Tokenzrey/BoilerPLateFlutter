@@ -120,6 +120,11 @@ class RoutesConfig {
         },
         requiresAuth: true
     ),
+    RouteConfig(
+        path: RoutePaths.comicContent,
+        name: 'comic-content',
+        builder: (context, params) => const ReaderScreen()
+    ),
   ];
 
   static List<RouteConfig> get allRoutes => [
