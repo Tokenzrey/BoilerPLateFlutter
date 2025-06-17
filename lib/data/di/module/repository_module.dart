@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:boilerplate/core/data/jwt/jwt_service.dart';
 import 'package:boilerplate/data/local/datasources/auth/auth_datasource.dart';
 import 'package:boilerplate/data/local/datasources/auth/auth_firebase_datasource.dart';
+import 'package:boilerplate/data/local/datasources/comic/comic_datasource.dart';
 import 'package:boilerplate/data/local/datasources/user/setting_datasource.dart';
 import 'package:boilerplate/data/local/datasources/user/user_datasource.dart';
 import 'package:boilerplate/data/network/api/chapter_top_service.dart';
@@ -13,6 +14,7 @@ import 'package:boilerplate/data/repository/api/comic_details_impl.dart';
 import 'package:boilerplate/data/repository/api/home_impl.dart';
 import 'package:boilerplate/data/repository/auth/auth_firebase_repository_impl.dart';
 import 'package:boilerplate/data/repository/auth/auth_repository_impl.dart';
+import 'package:boilerplate/data/repository/comic/comic_repository_impl.dart';
 import 'package:boilerplate/data/repository/setting/setting_repository_impl.dart';
 import 'package:boilerplate/data/repository/user/settings_repository_impl.dart';
 import 'package:boilerplate/data/repository/user/user_repository_impl.dart';
@@ -21,6 +23,7 @@ import 'package:boilerplate/domain/repository/api/comic_details_repository.dart'
 import 'package:boilerplate/domain/repository/api/home_repository.dart';
 import 'package:boilerplate/domain/repository/auth/auth_firebase_repository.dart';
 import 'package:boilerplate/domain/repository/auth/auth_repository.dart';
+import 'package:boilerplate/domain/repository/comic/comic_repository.dart';
 import 'package:boilerplate/domain/repository/setting/setting_repository.dart';
 import 'package:boilerplate/domain/repository/user/setting_repository.dart';
 import 'package:boilerplate/domain/repository/user/user_repository.dart';
@@ -73,6 +76,12 @@ class RepositoryModule {
       ComicDetailsRepositoryImpl(
         comicDetailApiService: getIt<ComicDetailApiService>(),
         chapterDetailApiService: getIt<ChapterDetailApiService>(),
+      ),
+    );
+
+    getIt.registerSingleton<FollowedComicRepository>(
+      FollowedComicRepositoryImpl(
+        localDataSource: getIt<FollowedComicLocalDataSource>()
       ),
     );
   }

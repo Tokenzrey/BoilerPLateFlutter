@@ -20,6 +20,7 @@ import 'package:boilerplate/domain/usecase/auth_firebase/get_is_logged_in_usecas
     as firebase_auth;
 import 'package:boilerplate/domain/usecase/auth_firebase/get_current_user_usecase.dart'
     as firebase_auth;
+import 'package:boilerplate/domain/usecase/comic/followed_comic_usecase.dart';
 import 'package:boilerplate/domain/usecase/settings/delete_setting_db_usecase.dart';
 import 'package:boilerplate/domain/usecase/settings/find_setting_db_usecase.dart';
 import 'package:boilerplate/domain/usecase/settings/get_current_setting_usecase.dart';
@@ -28,6 +29,7 @@ import 'package:boilerplate/domain/usecase/settings/save_current_setting_usecase
 import 'package:boilerplate/domain/usecase/settings/save_setting_db_usecase.dart';
 
 import 'package:boilerplate/presentation/store/auth_firebase/auth_store.dart';
+import 'package:boilerplate/presentation/store/comic/comic_store.dart';
 import 'package:boilerplate/presentation/store/home/home_store.dart';
 import 'package:boilerplate/presentation/store/language/language_store.dart';
 import 'package:boilerplate/presentation/store/settings/settings_store.dart';
@@ -93,6 +95,13 @@ class StoreModule {
         getIt<LatestChaptersUseCase>(),
         getIt<SettingsStore>(),
       ),
+    );
+
+    getIt.registerSingleton<FollowedComicStore>(
+      FollowedComicStore(
+        getIt<AddFollowedComicUseCase>(),
+        getIt<GetFollowedComicsUseCase>()
+      )
     );
   }
 }

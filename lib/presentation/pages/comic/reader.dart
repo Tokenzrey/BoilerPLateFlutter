@@ -1,11 +1,15 @@
+import 'dart:convert';
+
 import 'package:boilerplate/constants/colors.dart';
-import 'package:boilerplate/core/widgets/components/typography.dart';
-import 'package:boilerplate/core/widgets/empty_app_bar_widget.dart';
+import 'package:boilerplate/core/widgets/navbar/navigation.dart';
+import 'package:boilerplate/data/network/dio/configs/environment.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 
 
 class ReaderScreen extends StatefulWidget {
-  const ReaderScreen({super.key});
+  final String? hid;
+  const ReaderScreen({super.key, this.hid="IXi2ivB6"});
 
   @override
   State<ReaderScreen> createState() => _ReaderScreenState();
@@ -13,60 +17,52 @@ class ReaderScreen extends StatefulWidget {
 
 class _ReaderScreenState extends State<ReaderScreen> {
   int curChap = 1;
-  final Map<int, List<String>> comicPicture = {
-    1: [
-      "https://meo.comick.pictures/0-e3bsK_El-7LFt.webp",
-      "https://meo.comick.pictures/1-4KQtkJESrOG9o.webp"
-    ],
-    2: [
-      "https://meo.comick.pictures/0-6z19572nGi62j.png"
-    ]
-  };
+  bool isLoading = true;
+  List<String> comicPicture = [];
+
+  Future<void> getImagesChapter() async {
+    try {
+      final res = await http.get(Uri.parse('${Environment.current.apiBaseUrl}chapter/${widget.hid}/get_images'));
+      if(res.statusCode == 200) {
+        final List<dynamic> data = json.decode(res.body);
+        final urls = data.map<String>((item) {
+          return  "https://meo.comick.pictures/${item["b2key"]}";
+        }).toList();
+        setState(() {
+          comicPicture = urls;
+          isLoading = false;
+        });
+      }
+    } catch(e) {
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    getImagesChapter();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final List<String> images = comicPicture[curChap] ?? [];
-    return Scaffold(
-      appBar: EmptyAppBar(),
+    return ScaffoldWithNavBar(
       backgroundColor: AppColors.background,
-      body: SingleChildScrollView(
+      child: isLoading ?
+        const Center(child: CircularProgressIndicator()) : SingleChildScrollView(
         child: Column(
           children: [
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: DropdownButton(
-                value: curChap,
-                isExpanded: true,
-                dropdownColor: AppColors.subtleBackground,
-                items: comicPicture.keys.map((idx) {
-                  return DropdownMenuItem<int>(
-                    value: idx,
-                    child: AppText("Ch $idx", color: AppColors.neutral, fontWeight: FontWeight.bold),
-                  );
-                }).toList(),
-                onChanged: (int? value) {
-                  if(value != null) {
-                    setState((){
-                      curChap = value;
-                    });
-                  }
-                },
-              ),
-            ),
-            Column(
-              children: images.map((url) {
-                return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8.0),
-                  child: Image.network(
-                    url,
-                    fit: BoxFit.fitWidth,
-                  ),
-                );
-              }).toList()
-            )
-          ],
-        ),
-      ),
+            const SizedBox(height: kToolbarHeight + 24),
+            ...comicPicture.map((url)
+              => Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Image.network(url, fit: BoxFit.fitWidth),
+              ))
+          ]
+        )
+      )
     );
   }
 }
