@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:boilerplate/domain/repository/api/comic_details_repository.dart';
 import 'package:boilerplate/domain/repository/api/home_repository.dart';
 import 'package:boilerplate/domain/repository/auth/auth_firebase_repository.dart';
 import 'package:boilerplate/domain/repository/comic/comic_repository.dart';
@@ -7,6 +8,8 @@ import 'package:boilerplate/domain/repository/user/setting_repository.dart';
 import 'package:boilerplate/domain/repository/user/user_repository.dart';
 import 'package:boilerplate/domain/repository/auth/auth_repository.dart';
 import 'package:boilerplate/domain/usecase/api/chapter_top_usecase.dart';
+import 'package:boilerplate/domain/usecase/api/comic_chapters_usecase.dart';
+import 'package:boilerplate/domain/usecase/api/comic_details_usecase.dart';
 import 'package:boilerplate/domain/usecase/api/top_api_usecase.dart';
 import 'package:boilerplate/domain/usecase/auth_firebase/delete_account_usecase.dart';
 import 'package:boilerplate/domain/usecase/auth_firebase/get_current_user_usecase.dart';
@@ -172,11 +175,16 @@ class UseCaseModule {
       AddFollowedComicUseCase(getIt<FollowedComicRepository>()),
     );
     getIt.registerSingleton<GetFollowedComicsUseCase>(
-      GetFollowedComicsUseCase(getIt<FollowedComicRepository>())
-    );
+        GetFollowedComicsUseCase(getIt<FollowedComicRepository>()));
     getIt.registerSingleton<DeleteFollowedComicsUseCase>(
-      DeleteFollowedComicsUseCase(getIt<FollowedComicRepository>())
-    );
+        DeleteFollowedComicsUseCase(getIt<FollowedComicRepository>()));
+
+    // comic detail
+    getIt.registerSingleton<ComicDetailsUseCase>(
+        ComicDetailsUseCase(getIt<ComicDetailsRepository>()));
+
+    getIt.registerSingleton<ComicChaptersUseCase>(
+        ComicChaptersUseCase(getIt<ComicDetailsRepository>()));
 
     // API
     getIt.registerSingleton<TopApiUseCase>(

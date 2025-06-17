@@ -6,7 +6,6 @@ import 'package:boilerplate/di/service_locator.dart';
 import 'package:boilerplate/domain/entity/user/setting.dart';
 import 'package:boilerplate/presentation/store/home/home_store.dart';
 import 'package:boilerplate/presentation/store/settings/settings_store.dart';
-import 'package:boilerplate/utils/hoc/check_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:boilerplate/constants/colors.dart';
 import 'package:boilerplate/core/widgets/components/display/button.dart';
@@ -119,16 +118,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _fetchHomeData() async {
     try {
-      // Fetch trending comics for top sections
-      await _homeStore.fetchTrendingWithSettings();
+      // Initialize the HomeStore which will check auth status
+      await _homeStore.initialize();
 
       if (_homeStore.hasTopData) {
         _updateMostRecentFromStore();
         _updatePopularNewFromStore();
       }
-
-      // Fetch latest chapters for updates section
-      await _homeStore.fetchLatestChaptersWithSettings();
 
       setState(() {});
     } catch (e, stackTrace) {
@@ -195,7 +191,6 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _loadInitialSections() {
-    _loadMoreData('followedComics');
     _loadMoreData('readingHistory');
     _loadMoreData('mostRecent_$_selectedRecentTab');
     _loadMoreData('popularNew_$_selectedPopularTab');
@@ -268,9 +263,10 @@ class _HomeScreenState extends State<HomeScreen> {
     });
 
     try {
-      // Reset pagination in homeStore when refreshing
-      _homeStore.resetChaptersPagination();
+      // Reset HomeStore for refresh
+      _homeStore.resetState();
 
+      // Re-initialize everything
       await _fetchAndApplySettings();
       await _fetchHomeData();
       _loadInitialSections();
@@ -396,7 +392,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                             );
                           }
-                          return SizedBox.shrink();
+                          return const SizedBox.shrink();
                         },
                       ),
                     ],
@@ -414,9 +410,10 @@ class _HomeScreenState extends State<HomeScreen> {
         _buildSectionHeader('Followed Comics'),
         SizedBox(
           height: 270,
-          child: AuthWidget(
-            noAuthBuilder: (context) => _buildLoginPrompt(),
-            child: _buildFollowedComicsContent(),
+          child: Observer(
+            builder: (_) => _homeStore.isUserLoggedIn
+                ? _buildFollowedComicsContent()
+                : _buildLoginPrompt(),
           ),
         ),
       ],
@@ -473,14 +470,21 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildFollowedComicsContent() {
-    final comics = _dataRepository.getVisibleData('followedComics');
-    final isLoading = _isLoading['followedComics'] == true;
-    final controller = _horizontalControllers['followedComics']!;
-    final hasComics = comics.isNotEmpty;
+    return Observer(
+      builder: (_) {
+        final isLoading = _homeStore.isFollowedLoading;
+        final hasError = _homeStore.followedErrorMessage?.isNotEmpty == true;
+        final comics = _homeStore.followedComicsForUI;
+        final controller = _horizontalControllers['followedComics']!;
+        final hasComics = comics.isNotEmpty;
 
-    return isLoading && !hasComics
-        ? _buildCenteredLoadingIndicator("Loading followed comics...")
-        : _buildHorizontalComicList(
+        if (isLoading && !hasComics) {
+          return _buildCenteredLoadingIndicator("Loading followed comics...");
+        } else if (hasError && !hasComics) {
+          return _buildErrorState(_homeStore.followedErrorMessage ??
+              "Error loading followed comics");
+        } else {
+          return _buildHorizontalComicList(
             comics: comics,
             controller: controller,
             isLoading: isLoading,
@@ -491,9 +495,63 @@ class _HomeScreenState extends State<HomeScreen> {
               variant: ButtonVariant.text,
               size: ButtonSize.small,
               colors: ButtonColors(text: AppColors.blue[400]),
-              onPressed: () {},
+              onPressed: () {
+                context.push('/my-list');
+              },
             ),
           );
+        }
+      },
+    );
+  }
+
+  Widget _buildErrorState(String message) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16.0),
+      padding: const EdgeInsets.all(24.0),
+      decoration: BoxDecoration(
+        color: AppColors.card,
+        borderRadius: BorderRadius.circular(12.0),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.error_outline,
+            size: 48,
+            color: AppColors.destructive,
+          ),
+          const SizedBox(height: 16.0),
+          AppText(
+            'Oops! Something went wrong',
+            variant: TextVariant.titleLarge,
+            color: AppColors.cardForeground,
+            fontWeight: FontWeight.bold,
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 8.0),
+          AppText(
+            message,
+            variant: TextVariant.bodyMedium,
+            color: AppColors.mutedForeground,
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 24.0),
+          Button(
+            text: 'Try Again',
+            variant: ButtonVariant.primary,
+            size: ButtonSize.large,
+            colors: ButtonColors(
+              background: AppColors.primary,
+              text: AppColors.primaryForeground,
+            ),
+            onPressed: () => _homeStore.refreshFollowedComics(),
+            leftIcon: Icons.refresh,
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildReadingHistorySection() {
@@ -638,46 +696,6 @@ class _HomeScreenState extends State<HomeScreen> {
             },
           ),
         ),
-      ],
-    );
-  }
-
-  Widget _buildUpdateGrid(
-      List<ChapterResponseModel> chapters, bool isLoading, bool hasMoreData) {
-    return Column(
-      children: [
-        GridView.builder(
-          physics: const NeverScrollableScrollPhysics(),
-          shrinkWrap: true,
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            childAspectRatio: 0.6,
-            crossAxisSpacing: 16,
-            mainAxisSpacing: 16,
-          ),
-          itemCount: chapters.length,
-          itemBuilder: (context, index) {
-            return _buildChapterCard(chapters[index], index);
-          },
-        ),
-        if (isLoading && chapters.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16.0),
-            child: _buildSmallLoadingIndicator("Loading more updates..."),
-          ),
-        if (!hasMoreData && chapters.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16.0),
-            child: Center(
-              child: Text(
-                "No more updates",
-                style: TextStyle(
-                  color: AppColors.neutral[500],
-                  fontSize: 14,
-                ),
-              ),
-            ),
-          ),
       ],
     );
   }
@@ -926,7 +944,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
                 strokeWidth: 3,
               ),
-              SizedBox(height: 8),
+              const SizedBox(height: 8),
               AppText(
                 "Loading",
                 variant: TextVariant.labelSmall,
@@ -947,7 +965,7 @@ class _HomeScreenState extends State<HomeScreen> {
           CircularProgressIndicator(
             valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
           ),
-          SizedBox(height: 16),
+          const SizedBox(height: 16),
           AppText(
             message,
             variant: TextVariant.bodyMedium,
@@ -970,7 +988,7 @@ class _HomeScreenState extends State<HomeScreen> {
             strokeWidth: 2,
           ),
         ),
-        SizedBox(width: 8),
+        const SizedBox(width: 8),
         AppText(
           message,
           variant: TextVariant.labelMedium,
@@ -1028,12 +1046,33 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  String formatTimeAgo(String dateTimeString) {
+    if (dateTimeString.isEmpty) return '';
+    try {
+      DateTime dateTime = DateTime.tryParse(dateTimeString) ?? DateTime.now();
+      final now = DateTime.now();
+      final diff = now.difference(dateTime);
+
+      if (diff.inSeconds < 60) return "${diff.inSeconds} seconds ago";
+      if (diff.inMinutes < 60) return "${diff.inMinutes} minutes ago";
+      if (diff.inHours < 24) return "${diff.inHours} hours ago";
+      if (diff.inDays < 7) return "${diff.inDays} days ago";
+      if (diff.inDays < 30) return "${(diff.inDays / 7).floor()} weeks ago";
+      if (diff.inDays < 365) return "${(diff.inDays / 30).floor()} months ago";
+      return "${(diff.inDays / 365).floor()} years ago";
+    } catch (_) {
+      return dateTimeString;
+    }
+  }
+
   Widget _buildFollowedComicCard(Map<String, dynamic> comic, int index) {
     return ComicCard(
       title: comic['title'] as String,
-      imageUrl: "https://meo.comick.pictures/${comic['cover']}",
+      imageUrl: comic['cover'].toString().startsWith('http')
+          ? comic['cover'] as String
+          : "https://meo.comick.pictures/${comic['cover']}",
       chapter: comic['chapter'] as String,
-      updated: comic['time'] as String,
+      updated: formatTimeAgo(comic['time'] as String),
       scanlator: (comic['scanlator'] ?? 'Unknown') as String,
       likes: (comic['count'] ?? '0').toString(),
       countryCodeUrl: comic['language'] == 'en'
@@ -1041,8 +1080,9 @@ class _HomeScreenState extends State<HomeScreen> {
           : 'assets/flags/jp.png',
       isBookmarked: true,
       showBookmark: false,
-      showLike: true,
-      showCountryFlag: true,
+      showLike: false,
+      showChapter: false,
+      showCountryFlag: false,
       showUpdated: true,
       showScanlator: false,
       onTap: () => context.goNamed('comicDetail', pathParameters: {
@@ -1202,6 +1242,46 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
+  Widget _buildUpdateGrid(
+      List<ChapterResponseModel> chapters, bool isLoading, bool hasMoreData) {
+    return Column(
+      children: [
+        GridView.builder(
+          physics: const NeverScrollableScrollPhysics(),
+          shrinkWrap: true,
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            childAspectRatio: 0.6,
+            crossAxisSpacing: 16,
+            mainAxisSpacing: 16,
+          ),
+          itemCount: chapters.length,
+          itemBuilder: (context, index) {
+            return _buildChapterCard(chapters[index], index);
+          },
+        ),
+        if (isLoading && chapters.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16.0),
+            child: _buildSmallLoadingIndicator("Loading more updates..."),
+          ),
+        if (!hasMoreData && chapters.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16.0),
+            child: Center(
+              child: Text(
+                "No more updates",
+                style: TextStyle(
+                  color: AppColors.neutral[500],
+                  fontSize: 14,
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
   Widget _buildSheetContent(BuildContext parentContext, String title,
       String description, IconData icon, Color color) {
     return SettingsSheet(
@@ -1245,6 +1325,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
+// Keep the DataRepository and SettingsSheet classes unchanged
 class DataRepository {
   final Map<String, List<Map<String, dynamic>>> _allComics = {
     'followedComics': [],

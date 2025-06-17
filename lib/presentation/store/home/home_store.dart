@@ -1,10 +1,14 @@
 import 'dart:async';
+import 'package:boilerplate/core/domain/usecase/use_case.dart';
 import 'package:boilerplate/data/local/models/chapter_hot_model.dart';
 import 'package:boilerplate/data/local/models/top_response_model.dart';
 import 'package:boilerplate/data/network/api/chapter_top_service.dart';
 import 'package:boilerplate/data/network/api/top_api_service.dart';
+import 'package:boilerplate/domain/entity/comic/comic.dart';
 import 'package:boilerplate/domain/usecase/api/chapter_top_usecase.dart';
 import 'package:boilerplate/domain/usecase/api/top_api_usecase.dart';
+import 'package:boilerplate/domain/usecase/auth_firebase/get_current_user_usecase.dart';
+import 'package:boilerplate/domain/usecase/comic/followed_comic_usecase.dart';
 import 'package:boilerplate/presentation/store/settings/settings_store.dart';
 import 'package:mobx/mobx.dart';
 import 'package:flutter/foundation.dart';
@@ -17,12 +21,16 @@ enum TopPeriod { seven, thirty, ninety }
 
 abstract class HomeStoreBase with Store {
   final TopApiUseCase _topApiUseCase;
+  final GetFollowedComicsUseCase _getFollowedComicsUseCase;
   final LatestChaptersUseCase _latestChaptersUseCase;
+  final GetCurrentUserUseCase _getCurrentUserUseCase;
   final SettingsStore settingsStore;
 
   HomeStoreBase(
     this._topApiUseCase,
     this._latestChaptersUseCase,
+    this._getFollowedComicsUseCase,
+    this._getCurrentUserUseCase,
     this.settingsStore,
   ) {
     _setupReactions();
@@ -30,7 +38,7 @@ abstract class HomeStoreBase with Store {
 
   List<ReactionDisposer>? _disposers;
 
-  // State
+  // Top State
   @observable
   bool isTopLoading = false;
   @observable
@@ -38,6 +46,7 @@ abstract class HomeStoreBase with Store {
   @observable
   TopResponseModel? topData;
 
+  // Chapters State
   @observable
   bool isHotChaptersLoading = false;
   @observable
@@ -57,40 +66,119 @@ abstract class HomeStoreBase with Store {
   bool hasMoreHotChapters = true;
   @observable
   bool hasMoreNewChapters = true;
+
+  // Followed Comics State
+  @observable
+  bool isFollowedLoading = false;
+  @observable
+  String? followedErrorMessage;
+  @observable
+  ObservableList<FollowedComicEntity> followedComics = ObservableList();
+  @observable
+  int followedPage = 1;
+  @observable
+  bool hasMoreFollowedComics = true;
+  @observable
+  String? currentUserId;
+
+  // General State
   @observable
   bool isInitialized = false;
 
-  // Computed
+  // Computed Properties
   @computed
   bool get hasTopError => topErrorMessage?.isNotEmpty == true;
+
   @computed
   bool get hasTopData => topData != null;
+
   @computed
   Map<TopPeriod, List<dynamic>> get topFollowComicsMap => {
         TopPeriod.seven: topData?.topFollowComics.seven ?? [],
         TopPeriod.thirty: topData?.topFollowComics.thirty ?? [],
         TopPeriod.ninety: topData?.topFollowComics.ninety ?? [],
       };
+
   @computed
   Map<TopPeriod, List<dynamic>> get topFollowNewComicsMap => {
         TopPeriod.seven: topData?.topFollowNewComics.seven ?? [],
         TopPeriod.thirty: topData?.topFollowNewComics.thirty ?? [],
         TopPeriod.ninety: topData?.topFollowNewComics.ninety ?? [],
       };
+
   @computed
   bool get hasChaptersError => chaptersErrorMessage?.isNotEmpty == true;
+
   @computed
   bool get hasHotChaptersData => hotChapters.isNotEmpty;
+
   @computed
   bool get hasNewChaptersData => newChapters.isNotEmpty;
+
+  @computed
+  bool get hasFollowedError => followedErrorMessage?.isNotEmpty == true;
+
+  @computed
+  bool get hasFollowedData => followedComics.isNotEmpty;
+
+  @computed
+  bool get isUserLoggedIn => currentUserId != null && currentUserId!.isNotEmpty;
+
+  @computed
+  List<Map<String, dynamic>> get followedComicsForUI => followedComics
+      .map((comic) => {
+            'title': comic.title,
+            'cover': comic.imageUrl,
+            'slug': comic.slug,
+            'chapter': comic.chap,
+            'time': comic.updatedAt,
+            'id': comic.id,
+            'hid': comic.hid,
+          })
+      .toList();
 
   @action
   Future<void> initialize() async {
     if (isInitialized) return;
     resetState();
-    await fetchTrendingWithSettings();
-    await fetchLatestChaptersWithSettings();
+
+    // Check if user is logged in
+    await _checkCurrentUser();
+
+    // Load all sections
+    await Future.wait([
+      fetchTrendingWithSettings(),
+      fetchLatestChaptersWithSettings(),
+      if (isUserLoggedIn) fetchFollowedComics(),
+    ]);
+
     isInitialized = true;
+  }
+
+  @action
+  Future<void> _checkCurrentUser() async {
+    try {
+      final userResult = await _getCurrentUserUseCase.execute(NoParams());
+      userResult.fold(
+        (failure) {
+          if (kDebugMode) {
+            print("Failed to get user: ${failure.message}");
+          }
+          currentUserId = null;
+        },
+        (user) {
+          currentUserId = user?.id;
+          if (kDebugMode) {
+            print("Current user ID: ${currentUserId ?? 'Not logged in'}");
+          }
+        },
+      );
+    } catch (e) {
+      if (kDebugMode) {
+        print("Error checking user: $e");
+      }
+      currentUserId = null;
+    }
   }
 
   @action
@@ -98,8 +186,12 @@ abstract class HomeStoreBase with Store {
     topData = null;
     topErrorMessage = null;
     isTopLoading = false;
+
     resetChaptersPagination();
     chaptersErrorMessage = null;
+
+    resetFollowedComics();
+
     isInitialized = false;
   }
 
@@ -120,6 +212,72 @@ abstract class HomeStoreBase with Store {
     list
       ..clear()
       ..addAll(newItems);
+  }
+
+  // --- FOLLOWED COMICS
+  @action
+  Future<void> fetchFollowedComics({bool appendResults = false}) async {
+    if (isFollowedLoading || (appendResults && !hasMoreFollowedComics)) return;
+    if (!isUserLoggedIn) {
+      followedErrorMessage = "You need to login to see your followed comics";
+      return;
+    }
+
+    isFollowedLoading = true;
+    if (!appendResults) followedErrorMessage = null;
+
+    try {
+      final result = await _getFollowedComicsUseCase
+          .execute(GetFollowedComicParams(userId: currentUserId!));
+
+      result.fold(
+        (failure) => followedErrorMessage = failure.message,
+        (comics) {
+          if (comics.isEmpty) {
+            hasMoreFollowedComics = false;
+          } else {
+            final sortedComics = List<FollowedComicEntity>.from(comics)
+              ..sort((a, b) {
+                try {
+                  final dateA = DateTime.parse(a.updatedAt);
+                  final dateB = DateTime.parse(b.updatedAt);
+                  return dateB.compareTo(dateA);
+                } catch (e) {
+                  return 0;
+                }
+              });
+            if (appendResults) {
+              followedComics.addAll(sortedComics);
+            } else {
+              _replaceList(followedComics, sortedComics);
+            }
+            // If pagination is implemented for followed comics
+            // followedPage++;
+          }
+        },
+      );
+    } catch (e) {
+      followedErrorMessage = "Failed to load followed comics: $e";
+    }
+
+    isFollowedLoading = false;
+  }
+
+  @action
+  void resetFollowedComics() {
+    followedComics.clear();
+    followedPage = 1;
+    hasMoreFollowedComics = true;
+    isFollowedLoading = false;
+    followedErrorMessage = null;
+  }
+
+  @action
+  Future<void> refreshFollowedComics() async {
+    if (!isUserLoggedIn) return;
+    followedPage = 1;
+    hasMoreFollowedComics = true;
+    await fetchFollowedComics();
   }
 
   // --- TOP
@@ -179,9 +337,11 @@ abstract class HomeStoreBase with Store {
   @action
   Future<void> fetchTrendingManga() =>
       _fetchTopPreset(TopApiParams.trendingManga(), 'trending manga');
+
   @action
   Future<void> fetchPopularForFemaleReaders() => _fetchTopPreset(
       TopApiParams.popularForFemaleReaders(), 'female-targeted content');
+
   @action
   Future<void> fetchCustom({
     TopGender gender = TopGender.male,
@@ -394,8 +554,21 @@ abstract class HomeStoreBase with Store {
           print("New chapters loaded with ${newChapters.length} items");
         }
       }),
+      reaction((_) => followedComics.length, (_) {
+        if (kDebugMode) {
+          print("Followed comics loaded with ${followedComics.length} items");
+        }
+      }),
       reaction((_) => isInitialized, (initialized) {
         if (kDebugMode) print("HomeStore initialized: $initialized");
+      }),
+      reaction((_) => currentUserId, (userId) {
+        if (kDebugMode) print("User ID changed: ${userId ?? 'Not logged in'}");
+        if (userId != null && userId.isNotEmpty) {
+          fetchFollowedComics();
+        } else {
+          resetFollowedComics();
+        }
       }),
     ];
   }

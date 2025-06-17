@@ -4,6 +4,8 @@ import 'package:boilerplate/core/stores/error/error_store.dart';
 import 'package:boilerplate/core/stores/form/form_store.dart';
 import 'package:boilerplate/domain/repository/setting/setting_repository.dart';
 import 'package:boilerplate/domain/usecase/api/chapter_top_usecase.dart';
+import 'package:boilerplate/domain/usecase/api/comic_chapters_usecase.dart';
+import 'package:boilerplate/domain/usecase/api/comic_details_usecase.dart';
 import 'package:boilerplate/domain/usecase/api/top_api_usecase.dart';
 import 'package:boilerplate/domain/usecase/auth_firebase/delete_account_usecase.dart';
 
@@ -30,6 +32,7 @@ import 'package:boilerplate/domain/usecase/settings/save_setting_db_usecase.dart
 
 import 'package:boilerplate/presentation/store/auth_firebase/auth_store.dart';
 import 'package:boilerplate/presentation/store/comic/comic_store.dart';
+import 'package:boilerplate/presentation/store/comic_detail/comic_detail_store.dart';
 import 'package:boilerplate/presentation/store/home/home_store.dart';
 import 'package:boilerplate/presentation/store/language/language_store.dart';
 import 'package:boilerplate/presentation/store/settings/settings_store.dart';
@@ -93,16 +96,24 @@ class StoreModule {
       HomeStore(
         getIt<TopApiUseCase>(),
         getIt<LatestChaptersUseCase>(),
+        getIt<GetFollowedComicsUseCase>(),
+        getIt<firebase_auth.GetCurrentUserUseCase>(),
         getIt<SettingsStore>(),
       ),
     );
 
-    getIt.registerSingleton<FollowedComicStore>(
-      FollowedComicStore(
+    getIt.registerSingleton<FollowedComicStore>(FollowedComicStore(
         getIt<AddFollowedComicUseCase>(),
         getIt<GetFollowedComicsUseCase>(),
-        getIt<DeleteFollowedComicsUseCase>()
-      )
-    );
+        getIt<DeleteFollowedComicsUseCase>()));
+
+    getIt.registerSingleton<ComicDetailStore>(ComicDetailStore(
+      getIt<ComicDetailsUseCase>(),
+      getIt<ComicChaptersUseCase>(),
+      getIt<firebase_auth.GetCurrentUserUseCase>(),
+      getIt<AddFollowedComicUseCase>(),
+      getIt<GetFollowedComicsUseCase>(),
+      getIt<DeleteFollowedComicsUseCase>(),
+    ));
   }
 }

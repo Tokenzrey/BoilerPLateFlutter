@@ -23,10 +23,10 @@ class ComicDetailResponse {
   final bool? recommendable;
 
   @JsonKey(name: 'demographic')
-  final int? demographic; // Changed from dynamic to int?
+  final String? demographic;
 
   @JsonKey(name: 'englishLink')
-  final String? englishLink; // Changed from dynamic to String?
+  final dynamic englishLink; // Changed back to dynamic as per API def
 
   @JsonKey(name: 'matureContent')
   final bool? matureContent;
@@ -79,7 +79,7 @@ class FirstChapModel {
   final List<String>? groupName;
 
   @JsonKey(name: 'vol')
-  final String? vol; // Changed from dynamic to String?
+  final dynamic vol; // Changed back to dynamic as per API definition
 
   FirstChapModel({
     this.chap,
@@ -129,7 +129,7 @@ class ComicModel {
   final int? chapterCount;
 
   @JsonKey(name: 'demographic')
-  final int? demographic; // Changed from dynamic to int?
+  final int? demographic; // Changed to int to match API definition
 
   @JsonKey(name: 'user_follow_count')
   final int? userFollowCount;
@@ -149,11 +149,14 @@ class ComicModel {
   @JsonKey(name: 'slug')
   final String? slug;
 
+  @JsonKey(name: 'mismatch')
+  final dynamic mismatch; // Added to match API definition
+
   @JsonKey(name: 'year')
   final int? year;
 
   @JsonKey(name: 'bayesian_rating')
-  final String? bayesianRating;
+  final dynamic bayesianRating; // Changed to dynamic to match API definition
 
   @JsonKey(name: 'rating_count')
   final int? ratingCount;
@@ -162,31 +165,55 @@ class ComicModel {
   final String? contentRating;
 
   @JsonKey(name: 'translation_completed')
-  final bool? translationCompleted;
+  final dynamic translationCompleted; // Changed to dynamic to match API
+
+  @JsonKey(name: 'chapter_numbers_reset_on_new_volume_manual')
+  final bool? chapterNumbersResetOnNewVolumeManual;
 
   @JsonKey(name: 'final_chapter')
-  final String? finalChapter; // Changed from dynamic to String?
+  final dynamic finalChapter;
 
   @JsonKey(name: 'final_volume')
-  final String? finalVolume; // Changed from dynamic to String?
+  final dynamic finalVolume;
+
+  @JsonKey(name: 'noindex')
+  final bool? noindex;
+
+  @JsonKey(name: 'adsense')
+  final bool? adsense;
+
+  @JsonKey(name: 'login_required')
+  final bool? loginRequired;
 
   @JsonKey(name: 'recommendations')
-  final List<RecommendationModel>? recommendations;
+  final List<dynamic>? recommendations; // Changed to match API definition
 
   @JsonKey(name: 'relate_from')
-  final List<RelateFromModel>? relateFrom;
+  final List<dynamic>? relateFrom; // Changed to match API definition
 
   @JsonKey(name: 'md_titles')
   final List<MdTitleModel>? mdTitles;
 
   @JsonKey(name: 'is_english_title')
-  final bool? isEnglishTitle; // Changed from dynamic to bool?
+  final dynamic isEnglishTitle;
 
   @JsonKey(name: 'md_comic_md_genres')
   final List<MdComicGenreModel>? mdComicMdGenres;
 
   @JsonKey(name: 'md_covers')
   final List<MdCoverModel>? mdCovers;
+
+  @JsonKey(name: 'mu_comics')
+  final dynamic muComics; // Changed to dynamic to match API definition
+
+  @JsonKey(name: 'iso639_1')
+  final String? iso639_1;
+
+  @JsonKey(name: 'lang_name')
+  final String? langName;
+
+  @JsonKey(name: 'lang_native')
+  final String? langNative;
 
   @JsonKey(name: 'cover_url')
   final String? coverUrl;
@@ -207,19 +234,28 @@ class ComicModel {
     this.desc,
     this.parsed,
     this.slug,
+    this.mismatch,
     this.year,
     this.bayesianRating,
     this.ratingCount,
     this.contentRating,
     this.translationCompleted,
+    this.chapterNumbersResetOnNewVolumeManual,
     this.finalChapter,
     this.finalVolume,
+    this.noindex,
+    this.adsense,
+    this.loginRequired,
     this.recommendations,
     this.relateFrom,
     this.mdTitles,
     this.isEnglishTitle,
     this.mdComicMdGenres,
     this.mdCovers,
+    this.muComics,
+    this.iso639_1,
+    this.langName,
+    this.langNative,
     this.coverUrl,
   });
 
@@ -232,22 +268,34 @@ class ComicModel {
         links: LinksModel.empty(),
         lastChapter: 0,
         chapterCount: 0,
+        demographic: 0,
         userFollowCount: 0,
         followRank: 0,
         followCount: 0,
         desc: '',
         parsed: '',
         slug: '',
+        mismatch: null,
         year: 0,
-        bayesianRating: '0.0',
+        bayesianRating: null,
         ratingCount: 0,
         contentRating: 'safe',
-        translationCompleted: false,
+        translationCompleted: null,
+        chapterNumbersResetOnNewVolumeManual: false,
+        finalChapter: null,
+        finalVolume: null,
+        noindex: false,
+        adsense: false,
+        loginRequired: false,
         recommendations: [],
         relateFrom: [],
         mdTitles: [],
         mdComicMdGenres: [],
         mdCovers: [],
+        muComics: null,
+        iso639_1: '',
+        langName: '',
+        langNative: '',
         coverUrl: '',
       );
 
@@ -259,40 +307,15 @@ class ComicModel {
 
 @JsonSerializable()
 class LinksModel {
-  @JsonKey(name: 'ap')
-  final String? ap;
-
-  @JsonKey(name: 'bw')
-  final String? bw;
-
-  @JsonKey(name: 'kt')
-  final String? kt;
-
   @JsonKey(name: 'mu')
-  final String? mu;
-
-  @JsonKey(name: 'amz')
-  final String? amz;
-
-  @JsonKey(name: 'engtl')
-  final String? engtl;
+  final String? mu; // Simplified to match API definition
 
   LinksModel({
-    this.ap,
-    this.bw,
-    this.kt,
     this.mu,
-    this.amz,
-    this.engtl,
   });
 
   factory LinksModel.empty() => LinksModel(
-        ap: '',
-        bw: '',
-        kt: '',
         mu: '',
-        amz: '',
-        engtl: '',
       );
 
   factory LinksModel.fromJson(Map<String, dynamic> json) =>
@@ -302,138 +325,27 @@ class LinksModel {
 }
 
 @JsonSerializable()
-class RecommendationModel {
-  @JsonKey(name: 'up')
-  final int? up;
-
-  @JsonKey(name: 'down')
-  final int? down;
-
-  @JsonKey(name: 'total')
-  final int? total;
-
-  @JsonKey(name: 'relates')
-  final RelatesModel? relates;
-
-  RecommendationModel({
-    this.up,
-    this.down,
-    this.total,
-    this.relates,
-  });
-
-  factory RecommendationModel.empty() => RecommendationModel(
-        up: 0,
-        down: 0,
-        total: 0,
-        relates: RelatesModel.empty(),
-      );
-
-  factory RecommendationModel.fromJson(Map<String, dynamic> json) =>
-      _$RecommendationModelFromJson(json);
-
-  Map<String, dynamic> toJson() => _$RecommendationModelToJson(this);
-}
-
-@JsonSerializable()
-class RelatesModel {
+class MdTitleModel {
   @JsonKey(name: 'title')
   final String? title;
 
-  @JsonKey(name: 'slug')
-  final String? slug;
+  @JsonKey(name: 'lang')
+  final String? lang;
 
-  @JsonKey(name: 'hid')
-  final String? hid;
-
-  @JsonKey(name: 'md_covers')
-  final List<MdCoverModel>? mdCovers;
-
-  RelatesModel({
+  MdTitleModel({
     this.title,
-    this.slug,
-    this.hid,
-    this.mdCovers,
+    this.lang,
   });
 
-  factory RelatesModel.empty() => RelatesModel(
+  factory MdTitleModel.empty() => MdTitleModel(
         title: '',
-        slug: '',
-        hid: '',
-        mdCovers: [],
+        lang: '',
       );
 
-  factory RelatesModel.fromJson(Map<String, dynamic> json) =>
-      _$RelatesModelFromJson(json);
+  factory MdTitleModel.fromJson(Map<String, dynamic> json) =>
+      _$MdTitleModelFromJson(json);
 
-  Map<String, dynamic> toJson() => _$RelatesModelToJson(this);
-}
-
-@JsonSerializable()
-class RelateFromModel {
-  @JsonKey(name: 'relate_to')
-  final RelateToModel? relateTo;
-
-  @JsonKey(name: 'md_relates')
-  final MdRelatesModel? mdRelates;
-
-  RelateFromModel({
-    this.relateTo,
-    this.mdRelates,
-  });
-
-  factory RelateFromModel.empty() => RelateFromModel(
-        relateTo: RelateToModel.empty(),
-        mdRelates: MdRelatesModel.empty(),
-      );
-
-  factory RelateFromModel.fromJson(Map<String, dynamic> json) =>
-      _$RelateFromModelFromJson(json);
-
-  Map<String, dynamic> toJson() => _$RelateFromModelToJson(this);
-}
-
-@JsonSerializable()
-class RelateToModel {
-  @JsonKey(name: 'slug')
-  final String? slug;
-
-  @JsonKey(name: 'title')
-  final String? title;
-
-  RelateToModel({
-    this.slug,
-    this.title,
-  });
-
-  factory RelateToModel.empty() => RelateToModel(
-        slug: '',
-        title: '',
-      );
-
-  factory RelateToModel.fromJson(Map<String, dynamic> json) =>
-      _$RelateToModelFromJson(json);
-
-  Map<String, dynamic> toJson() => _$RelateToModelToJson(this);
-}
-
-@JsonSerializable()
-class MdRelatesModel {
-  @JsonKey(name: 'name')
-  final String? name;
-
-  MdRelatesModel({
-    this.name,
-  });
-
-  factory MdRelatesModel.empty() => MdRelatesModel(
-        name: '',
-      );
-
-  factory MdRelatesModel.fromJson(Map<String, dynamic> json) =>
-      _$MdRelatesModelFromJson(json);
-
-  Map<String, dynamic> toJson() => _$MdRelatesModelToJson(this);
+  Map<String, dynamic> toJson() => _$MdTitleModelToJson(this);
 }
 
 @JsonSerializable()
@@ -490,31 +402,10 @@ class MdGenresModel {
 }
 
 @JsonSerializable()
-class MdTitleModel {
-  @JsonKey(name: 'title')
-  final String? title;
-
-  @JsonKey(name: 'lang')
-  final String? lang;
-
-  MdTitleModel({
-    this.title,
-    this.lang,
-  });
-
-  factory MdTitleModel.empty() => MdTitleModel(
-        title: '',
-        lang: '',
-      );
-
-  factory MdTitleModel.fromJson(Map<String, dynamic> json) =>
-      _$MdTitleModelFromJson(json);
-
-  Map<String, dynamic> toJson() => _$MdTitleModelToJson(this);
-}
-
-@JsonSerializable()
 class MdCoverModel {
+  @JsonKey(name: 'vol')
+  final String? vol; // Added to match API definition
+
   @JsonKey(name: 'w')
   final int? w;
 
@@ -525,12 +416,14 @@ class MdCoverModel {
   final String? b2key;
 
   MdCoverModel({
+    this.vol,
     this.w,
     this.h,
     this.b2key,
   });
 
   factory MdCoverModel.empty() => MdCoverModel(
+        vol: '',
         w: 0,
         h: 0,
         b2key: '',
