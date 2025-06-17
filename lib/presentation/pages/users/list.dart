@@ -3,7 +3,6 @@ import 'package:boilerplate/core/widgets/components/display/button.dart';
 import 'package:boilerplate/core/widgets/components/typography.dart';
 import 'package:boilerplate/core/widgets/navbar/navigation.dart';
 import 'package:boilerplate/di/service_locator.dart';
-import 'package:boilerplate/domain/usecase/comic/followed_comic_usecase.dart';
 import 'package:boilerplate/presentation/store/comic/comic_store.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -25,31 +24,31 @@ class MylistScreen extends StatefulWidget {
 }
 
 class _MylistScreenState extends State<MylistScreen> {
-  // static final uId = FirebaseAuth.instance.currentUser?.uid;
+  static final uId = FirebaseAuth.instance.currentUser?.uid;
   String searchVal = "";
-  static final uId = "123";
   List<String> comics = [];
 
   final Map<int, String> curStatus = {};
   final FollowedComicStore comicStore = getIt<FollowedComicStore>();
 
+  // comicStore.addComic(AddFollowedComicParams(
+  //     userId: "$uId",
+  //     slug: "tes",
+  //     hid: "tes",
+  //     chap: "tes",
+  //     title: "The Sword God From the Destroyed World",
+  //     imageUrl: "ezXpBL.jpg",
+  //     rating: "1",
+  //     totalContent: "1",
+  //     lastRead: "2025-06-16T13:18:37.148Z",
+  //     updatedAt: "2025-06-16T13:18:37.148Z",
+  //     addedAt: "2025-06-16T13:18:37.148Z",
+  // ));
+
   @override
   void initState() {
     super.initState();
-    comicStore.addComic(AddFollowedComicParams(
-        userId: "123",
-        slug: "tes",
-        hid: "tes",
-        chap: "tes",
-        title: "The Sword God From the Destroyed World",
-        imageUrl: "ezXpBL.jpg",
-        rating: "1",
-        totalContent: "1",
-        lastRead: "2025-06-16T13:18:37.148Z",
-        updatedAt: "2025-06-16T13:18:37.148Z",
-        addedAt: "2025-06-16T13:18:37.148Z",
-    ));
-    comicStore.loadComics(uId);
+    comicStore.loadComics(uId!);
   }
 
   @override
@@ -120,7 +119,6 @@ class _MylistScreenState extends State<MylistScreen> {
               child: Observer(
                 builder: (_) {
                   final comics = comicStore.filteredComics?? [];
-                  print(comics);
                   if (comics.isEmpty) {
                     return Center(
                       child: AppText(

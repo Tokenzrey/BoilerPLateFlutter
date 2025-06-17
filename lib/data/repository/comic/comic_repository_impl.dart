@@ -16,7 +16,7 @@ class FollowedComicRepositoryImpl implements FollowedComicRepository {
       final comics = await localDataSource.getFollowedComicsByUserId(userId);
       return right(comics.map((e) => e.toEntity()).toList());
     } catch (e) {
-      return left(CacheFailure(e.toString()));
+      return left(DatabaseFailure(e.toString()));
     }
   }
 
@@ -27,17 +27,18 @@ class FollowedComicRepositoryImpl implements FollowedComicRepository {
       await localDataSource.followComic(model);
       return right(unit);
     } catch (e) {
-      return left(CacheFailure(e.toString()));
+      return left(DatabaseFailure(e.toString()));
     }
   }
 
   @override
-  Future<Either<Failure, Unit>> unfollowComic(String userId, String hid) async {
+  Future<Either<Failure, Unit>> unfollowComic(FollowedComicEntity comic) async {
     try {
-      await localDataSource.unfollowComic(userId, hid);
+      final model = FollowedComic.fromEntity(comic);
+      await localDataSource.unfollowComic(model);
       return right(unit);
     } catch (e) {
-      return left(CacheFailure(e.toString()));
+      return left(DatabaseFailure(e.toString()));
     }
   }
 }

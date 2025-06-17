@@ -116,7 +116,7 @@ class LocalModule {
       try {
         await Hive.deleteBoxFromDisk('fc_box');
         fcBox =
-        await getIt<DatabaseService>().openBox<UserModel>('fc_box');
+        await getIt<DatabaseService>().openBox<FollowedComic>('fc_box');
       } catch (secondError) {
         final databaseService = getIt<DatabaseService>();
         if (databaseService is HiveService) {

@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 
 class FollowedComicEntity extends Equatable {
+  final String? id;
   final String userId;
   final String slug;
   final String hid;
@@ -14,6 +15,7 @@ class FollowedComicEntity extends Equatable {
   final String addedAt;
 
   const FollowedComicEntity({
+    this.id,
     required this.userId,
     required this.slug,
     required this.hid,
@@ -29,6 +31,7 @@ class FollowedComicEntity extends Equatable {
 
   @override
   List<Object?> get props => [
+    id,
     userId,
     slug,
     hid,

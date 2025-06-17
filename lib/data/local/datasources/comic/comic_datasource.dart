@@ -6,17 +6,15 @@ class FollowedComicLocalDataSource {
 
   FollowedComicLocalDataSource(this._comicBox);
 
-  Future<List<FollowedComic>> getFollowedComicsByUserId(String userId) async {
-    return _comicBox.values.where((comic) => comic.userId == userId).toList();
-  }
+    Future<List<FollowedComic>> getFollowedComicsByUserId(String userId) async {
+      return _comicBox.values.where((comic) => comic.userId == userId).toList();
+    }
 
   Future<void> followComic(FollowedComic comic) async {
-    final key = '${comic.userId}_${comic.hid}';
-    await _comicBox.put(key, comic);
+    await _comicBox.put(comic.id, comic);
   }
 
-  Future<void> unfollowComic(String userId, String hid) async {
-    final key = '${userId}_$hid';
-    await _comicBox.delete(key);
+  Future<void> unfollowComic(FollowedComic comic) async {
+    await _comicBox.delete(comic.id);
   }
 }

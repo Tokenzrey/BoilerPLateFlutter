@@ -1,6 +1,7 @@
 import 'package:boilerplate/domain/entity/comic/comic.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:hive/hive.dart';
+import 'package:uuid/uuid.dart';
 
 part 'comic_followed_model.freezed.dart';
 part 'comic_followed_model.g.dart';
@@ -9,17 +10,18 @@ part 'comic_followed_model.g.dart';
 @HiveType(typeId: 3)
 class FollowedComic with _$FollowedComic {
   const factory FollowedComic({
-    @HiveField(0) required String userId,
-    @HiveField(1) required String slug,
-    @HiveField(2) required String hid,
-    @HiveField(3) required String chap,
-    @HiveField(4) required String title,
-    @HiveField(5) required String imageUrl,
-    @HiveField(6) required String rating,
-    @HiveField(7) required String totalContent,
-    @HiveField(8) required String lastRead,
-    @HiveField(9) required String updatedAt,
-    @HiveField(10) required String addedAt,
+    @HiveField(0) required String id,
+    @HiveField(1) required String userId,
+    @HiveField(2) required String slug,
+    @HiveField(3) required String hid,
+    @HiveField(4) required String chap,
+    @HiveField(5) required String title,
+    @HiveField(6) required String imageUrl,
+    @HiveField(7) required String rating,
+    @HiveField(8) required String totalContent,
+    @HiveField(9) required String lastRead,
+    @HiveField(10) required String updatedAt,
+    @HiveField(11) required String addedAt,
   }) = _FollowedComic;
 
   factory FollowedComic.create({
@@ -36,6 +38,7 @@ class FollowedComic with _$FollowedComic {
     required String addedAt
   }) {
     return FollowedComic(
+      id: const Uuid().v4(),
       userId: userId,
       slug: slug,
       hid: hid,
@@ -55,6 +58,7 @@ class FollowedComic with _$FollowedComic {
 
   factory FollowedComic.fromEntity(FollowedComicEntity entity) =>
       FollowedComic(
+        id: entity.id!,
         userId: entity.userId,
         slug: entity.slug,
         hid: entity.hid,
@@ -71,6 +75,7 @@ class FollowedComic with _$FollowedComic {
 
 extension FollowedComicMapper on FollowedComic {
   FollowedComicEntity toEntity() => FollowedComicEntity(
+    id: id,
     userId: userId,
     slug: slug,
     hid: hid,

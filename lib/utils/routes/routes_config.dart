@@ -89,11 +89,6 @@ class RoutesConfig {
       builder: (context, params) => const ProfileSettingsScreen(),
     ),
     RouteConfig(
-        path: RoutePaths.mylist,
-        name: 'my-list',
-        builder: (context, params) => const MylistScreen()
-    ),
-    RouteConfig(
       path: RoutePaths.comicDetail,
       name: 'comicDetail',
       builder: (context, params) {
@@ -106,14 +101,22 @@ class RoutesConfig {
         name: 'comic-content',
         builder: (context, params) => const ReaderScreen()
     ),
-    RouteConfig(
-      path: RoutePaths.home,
-      name: 'home',
-      builder: (context, params) => const HomeScreen()
-    ),
   ];
 
-  static final List<RouteConfig> authenticatedRoutes = [];
+  static final List<RouteConfig> authenticatedRoutes = [
+    RouteConfig(
+        path: RoutePaths.home,
+        name: 'home',
+        builder: (context, params) => const HomeScreen(),
+        requiresAuth: true
+    ),
+    RouteConfig(
+        path: RoutePaths.mylist,
+        name: 'my-list',
+        builder: (context, params) => const MylistScreen(),
+        requiresAuth: true
+    ),
+  ];
 
   static List<RouteConfig> get allRoutes => [
         ...publicRoutes,

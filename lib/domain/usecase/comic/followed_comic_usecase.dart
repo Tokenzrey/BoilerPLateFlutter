@@ -4,6 +4,7 @@ import 'package:boilerplate/domain/entity/comic/comic.dart';
 import 'package:boilerplate/domain/repository/comic/comic_repository.dart';
 import 'package:equatable/equatable.dart';
 import 'package:fpdart/fpdart.dart';
+import 'package:uuid/uuid.dart';
 
 class AddFollowedComicParams extends Equatable {
     final String userId;
@@ -54,6 +55,7 @@ class AddFollowedComicParams extends Equatable {
     Future<Either<Failure, Unit>> execute(AddFollowedComicParams params) async {
       final res = await repo.followComic(
           FollowedComicEntity(
+            id: Uuid().v4(),
             userId: params.userId,
             slug: params.slug,
             hid: params.hid,
