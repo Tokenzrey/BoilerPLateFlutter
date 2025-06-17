@@ -97,6 +97,7 @@ class StoreModule {
     getIt.registerSingleton<FollowedComicStore>(
       FollowedComicStore(
         getIt<AddFollowedComicUseCase>(),
+        getIt<GetFollowedComicsUseCase>()
       )
     );
   }

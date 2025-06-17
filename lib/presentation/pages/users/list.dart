@@ -2,7 +2,12 @@ import 'package:boilerplate/constants/colors.dart';
 import 'package:boilerplate/core/widgets/components/display/button.dart';
 import 'package:boilerplate/core/widgets/components/typography.dart';
 import 'package:boilerplate/core/widgets/navbar/navigation.dart';
+import 'package:boilerplate/di/service_locator.dart';
+import 'package:boilerplate/domain/usecase/comic/followed_comic_usecase.dart';
+import 'package:boilerplate/presentation/store/comic/comic_store.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_mobx/flutter_mobx.dart';
 
 const List<String> items = [
   "Reading",
@@ -20,30 +25,41 @@ class MylistScreen extends StatefulWidget {
 }
 
 class _MylistScreenState extends State<MylistScreen> {
+  // static final uId = FirebaseAuth.instance.currentUser?.uid;
   String searchVal = "";
-  final List<String> comics = [
-    "Attack on Titan",
-    "One Piece",
-    "Demon Slayer",
-    "Solo Leveling",
-    "Jujutsu Kaisen",
-    "Spy x Family",
-  ];
+  static final uId = "123";
+  List<String> comics = [];
+
   final Map<int, String> curStatus = {};
+  final FollowedComicStore comicStore = getIt<FollowedComicStore>();
+
+  @override
+  void initState() {
+    super.initState();
+    comicStore.addComic(AddFollowedComicParams(
+        userId: "123",
+        slug: "tes",
+        hid: "tes",
+        chap: "tes",
+        title: "The Sword God From the Destroyed World",
+        imageUrl: "ezXpBL.jpg",
+        rating: "1",
+        totalContent: "1",
+        lastRead: "2025-06-16T13:18:37.148Z",
+        updatedAt: "2025-06-16T13:18:37.148Z",
+        addedAt: "2025-06-16T13:18:37.148Z",
+    ));
+    comicStore.loadComics(uId);
+  }
 
   @override
   Widget build(BuildContext context) {
-    List<String> filtered = comics.where((comics) {
-      return comics.toLowerCase().contains(searchVal.toLowerCase());
-    }).toList();
-
     return ScaffoldWithNavBar(
       backgroundColor: AppColors.background,
       child: Padding(
         padding: const EdgeInsets.fromLTRB(0, 80, 0, 64),
         child: Column(
           children: [
-            // Search & Filter
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 18, 16, 16),
               child: Row(
@@ -100,41 +116,48 @@ class _MylistScreenState extends State<MylistScreen> {
                 ],
               ),
             ),
-            // List
             Expanded(
-              child: filtered.isEmpty
-                  ? Center(
+              child: Observer(
+                builder: (_) {
+                  final comics = comicStore.filteredComics?? [];
+                  print(comics);
+                  if (comics.isEmpty) {
+                    return Center(
                       child: AppText(
                         "No comics found.",
                         color: AppColors.neutral[500],
                         style: const TextStyle(fontSize: 16),
                         fontWeight: FontWeight.w500,
                       ),
-                    )
-                  : ListView.builder(
-                      padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
-                      itemCount: filtered.length,
-                      itemBuilder: (ctx, idx) {
-                        final curVal = curStatus[idx] ?? items.first;
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 12),
-                          child: ComicListTile(
-                            title: filtered[idx],
-                            status: curVal,
-                            onStatusChanged: (val) => setState(
-                                () => curStatus[idx] = val ?? items.first),
-                            imageUrl:
-                                "https://meo.comick.pictures/ezXpBL-s.jpg",
-                            continueVal: "Ch. ${idx + 1}",
-                            rating: "8.${idx + 1}",
-                            allContent: "50",
-                            lastRead: "1d ago",
-                            updated: "4h ago",
-                            added: "2d ago",
-                          ),
-                        );
-                      },
-                    ),
+                    );
+                  }
+
+                  return ListView.builder(
+                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+                    itemCount: comics.length,
+                    itemBuilder: (ctx, idx) {
+                      final comic = comics[idx];
+                      final curVal = curStatus[idx] ?? items.first;
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: ComicListTile(
+                          title: comic.title,
+                          status: curVal,
+                          onStatusChanged: (val) =>
+                              setState(() => curStatus[idx] = val ?? items.first),
+                          imageUrl: "https://meo.comick.pictures/${comic.imageUrl}",
+                          continueVal: "Ch. ${idx + 1}",
+                          rating: comic.addedAt,
+                          allContent: comic.totalContent,
+                          lastRead: comic.lastRead,
+                          updated: comic.updatedAt,
+                          added: comic.addedAt,
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
             ),
           ],
         ),
@@ -201,8 +224,6 @@ class ComicListTile extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 12),
-
-              // Info Column (title + stats)
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -217,8 +238,6 @@ class ComicListTile extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 6),
-
-                    // Stats Row
                     Row(
                       children: [
                         _buildStat(Icons.book, continueVal, AppColors.primary),
@@ -229,13 +248,9 @@ class ComicListTile extends StatelessWidget {
                             AppColors.neutral[600]!),
                       ],
                     ),
-
                     const SizedBox(height: 6),
-
-                    // Status and Dates Row
                     Row(
                       children: [
-                        // Status Dropdown
                         Container(
                           padding: const EdgeInsets.symmetric(
                               horizontal: 8, vertical: 1),

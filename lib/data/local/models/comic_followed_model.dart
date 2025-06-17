@@ -13,7 +13,13 @@ class FollowedComic with _$FollowedComic {
     @HiveField(1) required String slug,
     @HiveField(2) required String hid,
     @HiveField(3) required String chap,
-    @HiveField(4) DateTime? createdAt,
+    @HiveField(4) required String title,
+    @HiveField(5) required String imageUrl,
+    @HiveField(6) required String rating,
+    @HiveField(7) required String totalContent,
+    @HiveField(8) required String lastRead,
+    @HiveField(9) required String updatedAt,
+    @HiveField(10) required String addedAt,
   }) = _FollowedComic;
 
   factory FollowedComic.create({
@@ -21,14 +27,26 @@ class FollowedComic with _$FollowedComic {
     required String slug,
     required String hid,
     required String chap,
-    DateTime? createdAt,
+    required String title,
+    required String imageUrl,
+    required String rating,
+    required String totalContent,
+    required String lastRead,
+    required String updatedAt,
+    required String addedAt
   }) {
     return FollowedComic(
       userId: userId,
       slug: slug,
       hid: hid,
       chap: chap,
-      createdAt: createdAt ?? DateTime.now(),
+      title: title,
+      imageUrl: imageUrl,
+      rating: rating,
+      totalContent: totalContent,
+      lastRead: lastRead,
+      updatedAt: updatedAt,
+      addedAt: addedAt
     );
   }
 
@@ -41,7 +59,13 @@ class FollowedComic with _$FollowedComic {
         slug: entity.slug,
         hid: entity.hid,
         chap: entity.chap,
-        createdAt: entity.createdAt
+        title: entity.title,
+        imageUrl: entity.imageUrl,
+        rating: entity.rating,
+        totalContent: entity.totalContent,
+        lastRead: entity.lastRead,
+        updatedAt: entity.updatedAt,
+        addedAt: entity.addedAt
       );
 }
 
@@ -51,6 +75,12 @@ extension FollowedComicMapper on FollowedComic {
     slug: slug,
     hid: hid,
     chap: chap,
-    createdAt: createdAt ?? DateTime.now(),
+    title: title,
+    imageUrl: imageUrl,
+    rating: rating,
+    totalContent: totalContent,
+    lastRead: lastRead,
+    updatedAt: updatedAt,
+    addedAt: addedAt
   );
 }

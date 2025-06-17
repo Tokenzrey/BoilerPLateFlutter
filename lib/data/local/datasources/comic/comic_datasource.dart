@@ -11,23 +11,12 @@ class FollowedComicLocalDataSource {
   }
 
   Future<void> followComic(FollowedComic comic) async {
-    final exists = _comicBox.values.any(
-            (c) => c.userId == comic.userId && c.hid == comic.hid);
-    if (!exists) {
-      await _comicBox.add(comic);
-    }
+    final key = '${comic.userId}_${comic.hid}';
+    await _comicBox.put(key, comic);
   }
 
   Future<void> unfollowComic(String userId, String hid) async {
-    final key = _comicBox.keys.firstWhere(
-          (key) {
-        final c = _comicBox.get(key);
-        return c?.userId == userId && c?.hid == hid;
-      },
-      orElse: () => null,
-    );
-    if (key != null) {
-      await _comicBox.delete(key);
-    }
+    final key = '${userId}_$hid';
+    await _comicBox.delete(key);
   }
 }
