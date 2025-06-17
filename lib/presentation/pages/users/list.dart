@@ -3,6 +3,7 @@ import 'package:boilerplate/core/widgets/components/display/button.dart';
 import 'package:boilerplate/core/widgets/components/typography.dart';
 import 'package:boilerplate/core/widgets/navbar/navigation.dart';
 import 'package:boilerplate/di/service_locator.dart';
+// import 'package:boilerplate/domain/usecase/comic/followed_comic_usecase.dart';
 import 'package:boilerplate/presentation/store/comic/comic_store.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -31,23 +32,23 @@ class _MylistScreenState extends State<MylistScreen> {
   final Map<int, String> curStatus = {};
   final FollowedComicStore comicStore = getIt<FollowedComicStore>();
 
-  // comicStore.addComic(AddFollowedComicParams(
-  //     userId: "$uId",
-  //     slug: "tes",
-  //     hid: "tes",
-  //     chap: "tes",
-  //     title: "The Sword God From the Destroyed World",
-  //     imageUrl: "ezXpBL.jpg",
-  //     rating: "1",
-  //     totalContent: "1",
-  //     lastRead: "2025-06-16T13:18:37.148Z",
-  //     updatedAt: "2025-06-16T13:18:37.148Z",
-  //     addedAt: "2025-06-16T13:18:37.148Z",
-  // ));
 
   @override
   void initState() {
     super.initState();
+    // comicStore.addComic(AddFollowedComicParams(
+    //   userId: "$uId",
+    //   slug: "tes",
+    //   hid: "tes",
+    //   chap: "tes",
+    //   title: "The Sword God From the Destroyed World",
+    //   imageUrl: "ezXpBL.jpg",
+    //   rating: "1",
+    //   totalContent: "1",
+    //   lastRead: "2025-06-16",
+    //   updatedAt: "2025-06-16",
+    //   addedAt: "2025-06-16",
+    // ));
     comicStore.loadComics(uId!);
   }
 
@@ -141,8 +142,14 @@ class _MylistScreenState extends State<MylistScreen> {
                         child: ComicListTile(
                           title: comic.title,
                           status: curVal,
-                          onStatusChanged: (val) =>
-                              setState(() => curStatus[idx] = val ?? items.first),
+                          onStatusChanged: (val) {
+                            final newVal = val ?? items.first;
+                            setState(() => curStatus[idx] = newVal);
+                            if (newVal == "Unfollow") {
+                              // print(comic.id);
+                              comicStore.removeComic(comic.id!);
+                            }
+                          },
                           imageUrl: "https://meo.comick.pictures/${comic.imageUrl}",
                           continueVal: "Ch. ${idx + 1}",
                           rating: comic.addedAt,

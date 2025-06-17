@@ -14,7 +14,7 @@ class FollowedComicLocalDataSource {
     await _comicBox.put(comic.id, comic);
   }
 
-  Future<void> unfollowComic(FollowedComic comic) async {
-    await _comicBox.delete(comic.id);
+  Future<void> unfollowComic(String comicId) async {
+    await _comicBox.delete(comicId);
   }
 }

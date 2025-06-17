@@ -85,13 +85,34 @@ class GetFollowedComicParams extends Equatable {
   List<Object?> get props => [userId];
 }
 
-  class GetFollowedComicsUseCase extends UseCase<List<FollowedComicEntity>, GetFollowedComicParams> {
-    final FollowedComicRepository repo;
-    GetFollowedComicsUseCase(this.repo);
+class GetFollowedComicsUseCase extends UseCase<List<FollowedComicEntity>, GetFollowedComicParams> {
+  final FollowedComicRepository repo;
+  GetFollowedComicsUseCase(this.repo);
 
-    @override
-    Future<Either<Failure, List<FollowedComicEntity>>> execute(GetFollowedComicParams params) async {
-      return repo.getFollowedComics(params.userId);
-    }
+  @override
+  Future<Either<Failure, List<FollowedComicEntity>>> execute(GetFollowedComicParams params) async {
+    return repo.getFollowedComics(params.userId);
   }
+}
 
+class DeleteFollowedComicsParams extends Equatable {
+  final String comicId;
+
+  const DeleteFollowedComicsParams({
+    required this.comicId
+  });
+
+  @override
+  List<Object?> get props => [comicId];
+}
+
+class DeleteFollowedComicsUseCase extends UseCase<Unit, DeleteFollowedComicsParams> {
+  final FollowedComicRepository repo;
+  DeleteFollowedComicsUseCase(this.repo);
+
+  @override
+  Future<Either<Failure, Unit>> execute(DeleteFollowedComicsParams params) async {
+    final res = await repo.unfollowComic(params.comicId);
+    return res;
+  }
+}

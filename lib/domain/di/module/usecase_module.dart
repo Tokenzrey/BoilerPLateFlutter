@@ -174,6 +174,9 @@ class UseCaseModule {
     getIt.registerSingleton<GetFollowedComicsUseCase>(
       GetFollowedComicsUseCase(getIt<FollowedComicRepository>())
     );
+    getIt.registerSingleton<DeleteFollowedComicsUseCase>(
+      DeleteFollowedComicsUseCase(getIt<FollowedComicRepository>())
+    );
 
     // API
     getIt.registerSingleton<TopApiUseCase>(

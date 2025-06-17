@@ -9,8 +9,9 @@ class FollowedComicStore = FollowedComicStoreBase with _$FollowedComicStore;
 abstract class FollowedComicStoreBase with Store {
   final AddFollowedComicUseCase addFollowedComicUseCase;
   final GetFollowedComicsUseCase getFollowedComicsUseCase;
+  final DeleteFollowedComicsUseCase deleteFollowedComicsUseCase;
 
-  FollowedComicStoreBase(this.addFollowedComicUseCase, this.getFollowedComicsUseCase);
+  FollowedComicStoreBase(this.addFollowedComicUseCase, this.getFollowedComicsUseCase, this.deleteFollowedComicsUseCase);
 
   @observable
   ObservableList<FollowedComicEntity> followedComics = ObservableList<FollowedComicEntity>();
@@ -75,6 +76,24 @@ abstract class FollowedComicStoreBase with Store {
       },
           (comics) {
         followedComics = ObservableList.of(comics);
+      },
+    );
+
+    isLoading = false;
+  }
+
+  @action
+  Future<void> removeComic(String comicId) async {
+    isLoading = true;
+    errorMessage = '';
+
+    final result = await deleteFollowedComicsUseCase(DeleteFollowedComicsParams(comicId: comicId));
+    result.match(
+          (failure) {
+        errorMessage = failure.message;
+      },
+          (_) {
+            followedComics.removeWhere((comic) => comic.id == comicId);
       },
     );
 

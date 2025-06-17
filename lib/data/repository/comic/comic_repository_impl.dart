@@ -32,10 +32,9 @@ class FollowedComicRepositoryImpl implements FollowedComicRepository {
   }
 
   @override
-  Future<Either<Failure, Unit>> unfollowComic(FollowedComicEntity comic) async {
+  Future<Either<Failure, Unit>> unfollowComic(String comicId) async {
     try {
-      final model = FollowedComic.fromEntity(comic);
-      await localDataSource.unfollowComic(model);
+      await localDataSource.unfollowComic(comicId);
       return right(unit);
     } catch (e) {
       return left(DatabaseFailure(e.toString()));
